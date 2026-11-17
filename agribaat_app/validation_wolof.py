@@ -39,6 +39,22 @@ TEMPLATE_FR = {
     "aide": "Je peux vous donner le prix d'un produit au marché, la production, les "
             "surfaces cultivées et le rendement. Exemple : « Combien coûte le kilo de "
             "mil à Kaolack ? »",
+    "varietes": "D'après le Catalogue ouest-africain, voici des variétés de {produit} "
+                "inscrites au Sénégal{precision} : {liste}.",
+    "pas_de_variete": "Je n'ai pas de variété de {produit}{precision} dans le catalogue.",
+    "variete_sans_produit": "Dites-moi quelle culture : mil, sorgho, arachide ou niébé.",
+    "pluie_lieu": "Pendant la décade ({periode}), il est tombé {mm} à {lieu}.",
+    "pluie_zone": "Pendant la décade ({periode}), {zone}, la pluie la plus faible est {mm_min} "
+                  "à {lieu_min}, la plus forte {mm_max} à {lieu_max}.",
+    "pluie_ancienne": "Ce sont les dernières informations dont je dispose.",
+    "pas_de_pluie": "Je n'ai pas d'information sur la pluie à {lieu}.",
+    "conseils": "Dans le bulletin ANACIM ({periode}), il y a {n} conseils : sur {themes}. "
+                "Ils sont écrits en français.",
+    "conseils_plusieurs": "Dans les derniers bulletins ANACIM, il y a {n} conseils : sur "
+                          "{themes}. Ils sont écrits en français.",
+    "conseils_sans_sujet": "Je n'ai pas de conseil sur {sujet}. Voici les derniers.",
+    "extrait": "Je n'ai pas de réponse précise, mais j'ai trouvé cette information dans "
+               "{source}. Elle est écrite en français.",
 }
 
 EXAMPLES = [
@@ -47,13 +63,18 @@ EXAMPLES = [
     "Quelle a été la production d'arachide en 2024 ?", "rendement du mil à Birkilane",
     "superficie de riz à Saint Louis", "production de mil à Kaolack en 2025",
     "Quel temps fait-il ?",
+    "Quelle variété de mil à cycle court ?", "variété d'arachide résistante à la sécheresse",
+    "Il a plu combien à Mbour ?", "pluie dans la région de Kaolack",
+    "Quand récolter l'arachide ?", "conseils pour les semis de mil",
+    "nouvelles variétés de blé homologuées",
 ]
 
 NUMBERS = [0, 1, 7, 10, 15, 20, 25, 99, 100, 150, 300, 344, 500, 1000, 1725, 2026, 15000,
            62000, 140000, 1700000]
 
 UNIT_FR = {"fcfa": "FCFA (à l'oral)", "t": "tonnes", "ha": "hectares",
-           "kg/ha": "kilos (rendement)", "pct": "pour cent (à l'oral)"}
+           "kg/ha": "kilos (rendement)", "pct": "pour cent (à l'oral)",
+           "mm": "millimètres (pluie)", "kg": "kilos"}
 
 
 def rows() -> list[list[str]]:
@@ -75,6 +96,12 @@ def rows() -> list[list[str]]:
                  "septembre", "octobre", "novembre", "décembre")
     for fr, wolof in zip(months_fr, wo.MONTHS_WO):
         add("4. Mois", fr, fr, wolof)
+    for key, value in wo.CYCLE_WO.items():
+        add("2b. Conseils", f"cycle {key}", f"(variétés) à cycle {key}", value.strip())
+    add("2b. Conseils", "secheresse", "(variétés) tolérantes à la sécheresse",
+        wo.DROUGHT_WO.strip())
+    for key, value in wo.THEMES_WO.items():
+        add("2b. Conseils", f"thème {key}", key, value, "thème d'une recommandation ANACIM")
     for key, (_, spoken) in wo.UNITS_WO.items():
         if key:
             add("5. Unités", key, UNIT_FR[key], spoken)
@@ -93,7 +120,8 @@ def rows() -> list[list[str]]:
 
     for intent, words in INTENT_KEYWORDS.items():
         wolof_words = [w for w in words if w in ("njeg", "njegu", "jend", "jaay", "jar",
-                                                 "marse", "seer", "yomb", "benn ektaar",
+                                                 "marse", "seer", "yomb", "benn ektaar", "taw", "xeet",
+                                                 "xeeti", "jiwu", "digal", "ndigal",
                                                  "ektaar", "tool", "bey", "goob", "jur",
                                                  "tonn")]
         add("9. Mots-clés compris", intent, intent, ", ".join(wolof_words),

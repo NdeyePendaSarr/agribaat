@@ -24,7 +24,7 @@ pip install -r requirements.txt
 ## Lancement
 
 ```bat
-python prepare_data.py     :: 1. construit data\processed\*.csv (quelques secondes)
+python prepare_data.py     :: 1. construit data\processed\*.csv (prix, stats, pluies, conseils, passages)
 python check_models.py     :: 2. télécharge et teste les modèles (~4 Go, 1re fois seulement)
 python app.py              :: 3. ouvre http://127.0.0.1:7860
 pytest                     :: tests du moteur de réponses
@@ -62,6 +62,8 @@ Les machines de 16 Go ou plus peuvent essayer les deux modèles plus gros, plus 
 | `agribaat/answers.py` | Réponses en français et en wolof, chiffrées et sourcées |
 | `agribaat/wolof.py` | Vocabulaire, phrases modèles et nombres wolof (**à faire valider**) |
 | `validation_wolof.py` | Génère `validation_wolof.csv`, la fiche de relecture pour un locuteur natif |
+| `agribaat/search.py` | Recherche de passages (secours, extraits cités ISRA / ANACIM) |
+| `data/curated/varietes.csv` | Variétés inscrites au Sénégal, saisies depuis le Catalogue ouest-africain |
 | `agribaat/models.py` | ASR, traduction, TTS (chargés à la demande) |
 | `agribaat/pipeline.py` | Enchaînement complet, mode dégradé, chronométrage |
 | `app.py` | Interface Gradio (assistant + graphique des prix) |
@@ -71,6 +73,11 @@ Les machines de 16 Go ou plus peuvent essayer les deux modèles plus gros, plus 
 - **Prix** (2000–2026, 67 marchés) : « Quel est le prix du mil à Kaolack ? »
 - **Production / superficie / rendement nationaux** (FAOSTAT, 1961–2024)
 - **Par région ou département** (DAPSA, 2017–2022) : « Rendement du mil à Birkilane »
+- **Variétés** (Catalogue ouest-africain, 31 variétés de mil, sorgho, arachide, niébé) :
+  « Quelle variété de mil à cycle court ? », « variété d'arachide résistante à la sécheresse »
+- **Pluies** (bulletins ANACIM 2023–2026, 152 localités) : « Il a plu combien à Mbour ? »
+- **Conseils** (recommandations ANACIM) : « Quand récolter l'arachide ? »
+- **Questions ouvertes** : extrait cité des documents ISRA / ANACIM, s'il est pertinent
 
 Produits : mil, sorgho, maïs, riz, arachide, niébé, oignon, manioc, fonio.
 

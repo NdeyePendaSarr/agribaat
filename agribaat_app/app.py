@@ -9,8 +9,9 @@ import gradio as gr
 import pandas as pd
 
 import config
-from agribaat.answers import fmt_month, fmt_number, place
+from agribaat.answers import CATALOGUE, fmt_month, fmt_number, fmt_period, place
 from agribaat.knowledge import KnowledgeBase
+from agribaat.knowledge import decade_end
 from agribaat.lexicon import PRODUCT_BY_KEY, PRODUCTS
 from agribaat.pipeline import Assistant, Result
 
@@ -40,6 +41,9 @@ EXAMPLES = [
     ("Combien coûte le riz ?", "Français"),
     ("Quelle a été la production d'arachide en 2024 ?", "Français"),
     ("Rendement du mil dans la région de Kaffrine", "Français"),
+    ("Quelle variété de mil à cycle court ?", "Français"),
+    ("Il a plu combien à Mbour ?", "Français"),
+    ("Quand récolter l'arachide ?", "Français"),
     ("njëg dugub ci Kaolack", "Wolof"),
 ]
 
@@ -294,6 +298,60 @@ def on_stats(product: str, indicator: str):
             gr.BarPlot(value=bars, title=title))
 
 
+# ---------------------------------------------------------------- conseils
+VARIETY_CROPS = [(PRODUCT_BY_KEY[c].label.capitalize(), c)
+                 for c in (kb.varieties["culture"].unique() if not kb.varieties.empty else [])]
+CYCLES = [("Tous les cycles", "tous"), ("Cycle court (≤ 95 jours)", "court"),
+          ("Cycle long (≥ 110 jours)", "long")]
+DECADES = ([(fmt_period(d, decade_end(d)).removeprefix("du ").capitalize(), d.isoformat())
+            for d in sorted(kb.rain["decade_debut"].unique(), reverse=True)]
+           if not kb.rain.empty else [])
+ADVICE_READY = not kb.varieties.empty or not kb.rain.empty
+
+
+def _span(lo, hi, unit: str = "") -> str:
+    if pd.isna(lo):
+        return "—"
+    return (f"{lo:g}" if lo == hi else f"{lo:g}–{hi:g}") + unit
+
+
+def variety_table(crop: str, cycle: str, drought: bool) -> pd.DataFrame:
+    df = kb.variety_list(crop, cycle=None if cycle == "tous" else cycle, drought=drought,
+                         limit=None)
+    return pd.DataFrame({
+        "Variété": df["variete"],
+        "Cycle (jours)": [_span(a, b) for a, b in zip(df["cycle_min"], df["cycle_max"])],
+        "Rendement potentiel (kg/ha)": [_span(a * 1000, b * 1000)
+                                        for a, b in zip(df["rendement_min"], df["rendement_max"])],
+        "Pluie adaptée (mm/an)": [_span(a, b) for a, b in zip(df["pluie_min"], df["pluie_max"])],
+        "Points forts et faiblesses": df["caracteristiques"].fillna(""),
+        "Usage": df["vocation"].fillna(""),
+    })
+
+
+def rain_by_region(decade: str) -> tuple[pd.DataFrame, pd.DataFrame, str]:
+    day = pd.Timestamp(decade)
+    cur = kb.rain[kb.rain["decade_debut"] == day]
+    bars = (cur.dropna(subset=["region"]).groupby("region", as_index=False)["pluie_mm"].max()
+            .assign(region=lambda d: d["region"].map(place))
+            .sort_values("pluie_mm", ascending=False))
+    table = pd.DataFrame({"Localité": cur["localite"].map(place),
+                          "Région": cur["region"].fillna("").map(place),
+                          "Pluie (mm)": cur["pluie_mm"].round(1)}
+                         ).sort_values("Pluie (mm)", ascending=False)
+    advice = kb.advice[kb.advice["decade_debut"] == day]["recommandation"].tolist()
+    md = (f"**Recommandations ANACIM ({fmt_period(day, decade_end(day))})**\n\n"
+          + "\n".join(f"- {html.escape(a)}" for a in advice)
+          if advice else "_Pas de recommandation dans ce bulletin._")
+    return bars, table, md
+
+
+def on_rain(decade: str):
+    bars, table, md = rain_by_region(decade)
+    top = float(bars["pluie_mm"].max()) if not bars.empty else 100.0
+    return gr.BarPlot(value=bars, y_lim=[0, round(top * 1.1)]), table, md  # axe à partir de 0
+
+
 # ---------------------------------------------------------------- interface
 THEME = gr.themes.Soft(primary_hue="green", secondary_hue="amber",
                        font=[gr.themes.GoogleFont("Inter"), "sans-serif"])
@@ -365,6 +423,35 @@ with gr.Blocks(title="AgriBaat", css=CSS, theme=THEME) as demo:
         for comp in stat_inputs:
             comp.change(on_stats, stat_inputs, [stat_cards, nat_chart, reg_chart])
         demo.load(on_stats, stat_inputs, [stat_cards, nat_chart, reg_chart])
+
+    if ADVICE_READY:
+        with gr.Tab("🌦️ Conseils"):
+            with gr.Accordion("Variétés recommandées (inscrites au Sénégal)", open=True):
+                with gr.Row():
+                    dd_vcrop = gr.Dropdown(VARIETY_CROPS, value="arachide", label="Culture")
+                    dd_cycle = gr.Dropdown(CYCLES, value="tous", label="Cycle")
+                    cb_drought = gr.Checkbox(label="Tolérante à la sécheresse")
+                v_table = gr.Dataframe(interactive=False, wrap=True, max_height=380,
+                                       column_widths=["14%", "10%", "13%", "11%", "40%", "12%"])
+                gr.Markdown(f"<span id='source'>Source : {CATALOGUE} (CEDEAO / CORAF). "
+                            "Rendement potentiel : en conditions favorables.</span>")
+                v_inputs = [dd_vcrop, dd_cycle, cb_drought]
+                for comp in v_inputs:
+                    comp.change(variety_table, v_inputs, v_table)
+                demo.load(variety_table, v_inputs, v_table)
+            with gr.Accordion("Pluies et recommandations ANACIM", open=True):
+                dd_decade = gr.Dropdown(DECADES, value=DECADES[0][1] if DECADES else None,
+                                        label="Décade (bulletin agrométéorologique)")
+                with gr.Row(equal_height=False):
+                    rain_chart = gr.BarPlot(x="region", y="pluie_mm", height=320, x_title=" ",
+                                            y_title="mm (relevé max. de la région)",
+                                            title="Pluie de la décade par région", sort="-y",
+                                            scale=3)
+                    advice_md = gr.Markdown()
+                with gr.Accordion("Détail par localité", open=False):
+                    rain_table = gr.Dataframe(interactive=False, max_height=320)
+                dd_decade.change(on_rain, dd_decade, [rain_chart, rain_table, advice_md])
+                demo.load(on_rain, dd_decade, [rain_chart, rain_table, advice_md])
 
     with gr.Tab("ℹ️ À propos"):
         gr.Markdown("""

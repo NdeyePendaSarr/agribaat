@@ -16,6 +16,7 @@ corrigez directement les dictionnaires et gabarits ci-dessous.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 
 # ------------------------------------------------------------ vocabulaire
@@ -69,6 +70,31 @@ T = {
     "produit_inconnu": "Xammeewuma ndab li nga wax.",
     "aide": "Man naa la wax njëgu ndab ci marse, walla góob, tool yi ñu bey ak li benn "
             "ektaar di jur. Misaal: « Ñaata la kilo dugub di jar ci Kaolack? »",
+    # --- conseils (catalogue des variétés, ANACIM)
+    "varietes": "Ci Katalog bu Afrig sowwu jant, xeeti {produit} yii ñu ngi ci Senegaal"
+                "{precision}: {liste}.",
+    "pas_de_variete": "Amuma xeetu {produit}{precision} ci Katalog bi.",
+    "variete_sans_produit": "Waxal ma ban mbay: dugub, basi, gerte walla ñebbe.",
+    "pluie_lieu": "Ci fukki fan yi ({periode}), taw bi ci {lieu} tollu na ci {mm}.",
+    "pluie_zone": "Ci fukki fan yi ({periode}), {zone}, taw bi mi gën a tuuti mooy {mm_min} "
+                  "ci {lieu_min}, bi gën a bari mooy {mm_max} ci {lieu_max}.",
+    "pluie_ancienne": "Lii mooy xibaar yi mujj yi ma am.",
+    "pas_de_pluie": "Amuma xibaaru taw ci {lieu}.",
+    "conseils": "Ci bulletin ANACIM bi ({periode}), am na {n} digal: ci {themes}. "
+                "Bind nañu leen ci farañse.",
+    "conseils_plusieurs": "Ci bulletin ANACIM yi mujj, am na {n} digal: ci {themes}. "
+                          "Bind nañu leen ci farañse.",
+    "conseils_sans_sujet": "Amuma digal bu jëm ci {sujet}. Yii ñoo mujj.",
+    "extrait": "Amuma tontu bu leer, waaye gis naa xibaar bii ci {source}. "
+               "Ci farañse la bind.",
+}
+
+CYCLE_WO = {"court": " yu gaaw", "long": " yu yàgg"}
+DROUGHT_WO = " yu mën a muñ ñàkk taw"
+THEMES_WO = {  # thème de recommandation -> wolof
+    "semis": "ji gi", "recolte": "góob gi", "ravageurs": "aar tool yi",
+    "previsions": "xibaari taw bi", "elevage": "mala yi", "eau": "ndox mi",
+    "autre": "yeneen liggéey",
 }
 
 UNITS_WO = {  # unité -> (écran, oral)
@@ -77,6 +103,8 @@ UNITS_WO = {  # unité -> (écran, oral)
     "ha": ("ektaar", "ektaar"),
     "kg/ha": ("kilo", "kilo"),
     "pct": ("%", "ci téeméer"),
+    "mm": ("mm", "milimetar"),
+    "kg": ("kg", "kilo"),
     "": ("", ""),
 }
 
@@ -224,3 +252,33 @@ def price_variants(variants: dict[str, float]) -> Seq:
 
 def place(kind: str, name: str | None = None) -> str:
     return PLACES_WO[kind].format(nom=name or "")
+
+
+@dataclass(frozen=True)
+class Name:
+    """Nom propre (variété, source) : chiffres lus en wolof à l'oral (55-437 -> …)."""
+
+    text: str
+
+    def show(self) -> str:
+        return self.text
+
+    def say(self) -> str:
+        spoken = re.sub(r"\d+", lambda m: f" {number_words(int(m.group()))} ", self.text)
+        return " ".join(spoken.replace("-", " ").split())
+
+
+def period(start, end) -> Seq:
+    """Décade : « 21 ba 31 Ut 2026 »."""
+    return Seq((Qty(start.day, exact=True), " ba ", Qty(end.day, exact=True), " ",
+                MONTHS_WO[end.month - 1], " ", year(end.year)))
+
+
+def join_list(items: list) -> Seq:
+    """[a, b, c] -> « a, b ak c »."""
+    parts: list = []
+    for i, item in enumerate(items):
+        if i:
+            parts.append(" ak " if i == len(items) - 1 else ", ")
+        parts.append(item)
+    return Seq(tuple(parts))

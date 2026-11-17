@@ -10,7 +10,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
-from .knowledge import KnowledgeBase
+from .knowledge import TOPICS, KnowledgeBase
 from .lexicon import INTENT_KEYWORDS, PRODUCTS, normalize
 
 # Alias de lieux : orthographes courantes -> nom dans les données.
@@ -30,9 +30,16 @@ class Query:
     region: str | None = None  # région (DAPSA ou WFP)
     department: str | None = None  # département DAPSA
     year: int | None = None
+    locality: str | None = None  # localité citée par l'ANACIM (pluies)
+    cycle: str | None = None  # court | long (variétés)
+    drought: bool = False  # variété tolérante à la sécheresse
+    topic: str | None = None  # semis | recolte | ravageurs | ... (conseils)
+    text: str = ""  # question normalisée (recherche de passages)
 
     @property
     def is_complete(self) -> bool:
+        if self.intent in ("pluie", "conseil"):  # pas besoin de produit
+            return True
         return self.intent is not None and self.product is not None
 
 
@@ -57,9 +64,22 @@ def parse(texts: list[str], kb: KnowledgeBase) -> Query:
             q.product = product.key
             break
 
-    for intent in ("prix", "rendement", "superficie", "production"):
+    q.text = text
+    for intent in ("pluie", "variete", "conseil", "prix", "rendement", "superficie",
+                   "production"):
         if any(_contains(text, k) for k in INTENT_KEYWORDS[intent]):
             q.intent = intent
+            break
+
+    # Précisions pour les conseils.
+    if re.search(r"cycle court|precoce|hatif|rapide|\bgaaw", text):
+        q.cycle = "court"
+    elif re.search(r"cycle long|tardi", text):
+        q.cycle = "long"
+    q.drought = bool(re.search(r"secheresse|manque de pluie|peu de pluie|deficit", text))
+    for topic, pattern in TOPICS.items():
+        if re.search(pattern, text):
+            q.topic = topic
             break
 
     years = re.findall(r"\b(19[6-9]\d|20[0-4]\d)\b", text)
@@ -72,6 +92,7 @@ def parse(texts: list[str], kb: KnowledgeBase) -> Query:
     q.market = _find_place(text, kb.markets)
     q.department = _find_place(text, kb.departments)
     q.region = _find_place(text, kb.regions) or _find_place(text, kb.price_regions)
+    q.locality = _find_place(text, kb.localities)
 
     # Intention par défaut : un marché cité -> prix ; sinon production.
     if q.intent is None and q.product:

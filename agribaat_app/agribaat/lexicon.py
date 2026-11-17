@@ -59,6 +59,16 @@ PRODUCT_BY_KEY: dict[str, Product] = {p.key: p for p in PRODUCTS}
 INTENT_KEYWORDS: dict[str, tuple[str, ...]] = {
     # Wolof (À VALIDER) : njëg = prix, jar = coûter, jënd = acheter, jaay = vendre,
     # marse = marché ; benn ektaar = un hectare ; bey = cultiver ; góob/jur = récolter/produire.
+    # Conseils (wolof À VALIDER) : taw = pluie, xeet = sorte/variété, jiwu = semence,
+    # digal = conseiller, ji = semer.
+    "pluie": ("pluie", "pluies", "plu", "pleut", "pleuvoir", "pluviometrie",
+              "precipitation", "precipitations", "meteo", "taw"),
+    "variete": ("variete", "varietes", "semence", "semences", "cycle court", "cycle long",
+                "precoce", "precoces", "xeet", "xeeti", "jiwu"),
+    "conseil": ("conseil", "conseils", "recommandation", "recommandations", "que faire",
+                "quand semer", "semer", "semis", "recolter", "ravageur", "ravageurs",
+                "traitement", "chenille", "chenilles", "oiseaux", "criquet", "criquets",
+                "maladie", "maladies", "digal", "ndigal"),
     "prix": ("prix", "coute", "couter", "tarif", "cher", "vend", "vendre",
              "acheter", "marche", "njeg", "njegu", "jend", "jaay", "jar", "marse",
              "seer", "yomb"),

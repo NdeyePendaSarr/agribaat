@@ -144,3 +144,69 @@ def test_parse_wolof_keywords(kb, question, intent, product):
 def test_unknown_product_has_wolof_help(kb):
     ans = answer(parse(["Quel temps fait-il ?"], kb), kb)
     assert ans.wolof is not None and "dugub" in ans.wolof.text
+
+
+# ------------------------------------------------------------------ conseils
+needs_advice = pytest.mark.skipif(not (config.PROCESSED_DIR / "pluies.csv").exists(),
+                                  reason="lancer d'abord python prepare_data.py")
+
+
+@needs_data
+@needs_advice
+@pytest.mark.parametrize("question, intent, product", [
+    ("Quelle variété de mil à cycle court ?", "variete", "mil"),
+    ("xeeti gerte yu gaaw", "variete", "arachide"),
+    ("Il a plu combien à Mbour ?", "pluie", None),
+    ("taw bi ci Ziguinchor", "pluie", None),
+    ("Quand récolter l'arachide ?", "conseil", "arachide"),
+    ("conseils pour les semis de mil", "conseil", "mil"),
+])
+def test_parse_advice_questions(kb, question, intent, product):
+    q = parse([question], kb)
+    assert (q.intent, q.product) == (intent, product)
+    assert q.is_complete
+
+
+@needs_data
+@needs_advice
+def test_short_cycle_varieties_respect_the_filter(kb):
+    rows = kb.variety_list("arachide", cycle="court", limit=None)
+    assert len(rows) >= 3 and (rows["cycle_max"] <= 95).all()
+    dry = kb.variety_list("arachide", drought=True, limit=None)
+    assert not dry["caracteristiques"].str.contains("sensible à la sécheresse").any()
+
+
+@needs_data
+@needs_advice
+@pytest.mark.parametrize("question, source_word", [
+    ("Quelle variété de mil à cycle court ?", "Catalogue"),
+    ("Il a plu combien à Mbour ?", "ANACIM"),
+    ("pluie dans la région de Kaolack", "ANACIM"),
+    ("Quand récolter l'arachide ?", "ANACIM"),
+    ("nouvelles variétés de blé homologuées", "ISRA"),
+])
+def test_advice_answers_are_sourced_and_spoken_without_digits(kb, question, source_word):
+    ans = answer(parse([question], kb), kb)
+    assert ans.found and source_word in ans.source
+    assert ans.wolof is not None and ans.wolof.text
+    assert not any(ch.isdigit() for ch in ans.wolof.speech)
+    fr = sorted(n.replace(" ", "") for n in _digits_in(ans.text))
+    if ans.source.startswith(("Catalogue", "ANACIM")) and "Recommandations" not in ans.text:
+        wo = sorted(n.replace(" ", "") for n in _digits_in(ans.wolof.text))
+        assert set(wo) <= set(fr) | {"1"}, (ans.text, ans.wolof.text)
+
+
+@needs_data
+@needs_advice
+def test_rain_values_are_decadal(kb):
+    """Aucun cumul saisonnier ne doit se glisser dans les relevés décadaires."""
+    assert kb.rain["pluie_mm"].max() <= 450
+    assert kb.rain["decade_debut"].dt.month.isin([6, 7, 8, 9, 10]).all()
+
+
+@needs_data
+@needs_advice
+def test_search_refuses_unrelated_questions(kb):
+    assert kb.search("Quel temps fait-il à Paris ?") is None
+    passage = kb.search("oiseaux granivores dans la vallée")
+    assert passage is not None and "ANACIM" in passage.source

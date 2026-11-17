@@ -5,10 +5,11 @@ Règle : chaque chiffre vient d'une table. Si la donnée manque, on le dit.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 
 from . import wolof as wo
-from .knowledge import KnowledgeBase, PriceFact, StatFact
+from .knowledge import KnowledgeBase, PriceFact, StatFact, decade_end
 from .lexicon import MONTHS_FR, PRODUCT_BY_KEY
 from .nlu import Query
 
@@ -147,9 +148,165 @@ def _stat_wolof(fact: StatFact) -> wo.WolofText:
                            valeur=wo.Qty(fact.value, fact.unit))
 
 
+# ---------------------------------------------------------------- conseils
+CATALOGUE = "Catalogue ouest-africain des espèces et variétés végétales"
+CROPS_WITH_VARIETIES = "mil, sorgho, arachide et niébé"
+TOPIC_FR = {"semis": "les semis", "recolte": "la récolte", "ravageurs": "les ravageurs",
+            "previsions": "la météo", "elevage": "l'élevage", "eau": "l'eau"}
+
+
+def fmt_period(start, end) -> str:
+    """« du 21 au 31 août 2026 »."""
+    first = "1er" if start.day == 1 else str(start.day)
+    return f"du {first} au {end.day} {MONTHS_FR[end.month - 1]} {end.year}"
+
+
+def _range(lo: float, hi: float) -> str:
+    return f"{lo:g}" if lo == hi else f"{lo:g} à {hi:g}"
+
+
+def _variety_answer(q: Query, kb: KnowledgeBase) -> Answer:
+    if q.product is None:
+        found = _search_answer(q, kb)  # ex. « nouvelles variétés de blé » : extrait cité
+        if found is not None:
+            return found
+        return Answer(f"Précisez la culture : je connais les variétés de "
+                      f"{CROPS_WITH_VARIETIES}.", None, False,
+                      wo.render("variete_sans_produit"))
+    label = PRODUCT_BY_KEY[q.product].label
+    precision = {"court": " à cycle court", "long": " à cycle long"}.get(q.cycle, "")
+    precision += " tolérantes à la sécheresse" if q.drought else ""
+    precision_wo = wo.CYCLE_WO.get(q.cycle, "") + (wo.DROUGHT_WO if q.drought else "")
+    product_wo = wo.PRODUCTS_WO[q.product]
+    rows = kb.variety_list(q.product, cycle=q.cycle, drought=q.drought)
+    if rows.empty:
+        return Answer(f"Je n'ai pas de variété {de(label)}{precision} dans le catalogue "
+                      f"(cultures couvertes : {CROPS_WITH_VARIETIES}).", None, False,
+                      wo.render("pas_de_variete", produit=product_wo, precision=precision_wo))
+    items_fr, items_wo = [], []
+    for r in rows.itertuples():
+        kg = r.rendement_max * 1000
+        items_fr.append(f"{r.variete} ({_range(r.cycle_min, r.cycle_max)} jours, "
+                        f"jusqu'à {fmt_number(kg)} kg/ha)")
+        cycle = (wo.Seq(("fan ", wo.Qty(r.cycle_min, exact=True)))
+                 if r.cycle_min == r.cycle_max else
+                 wo.Seq(("fan ", wo.Qty(r.cycle_min, exact=True), " ba ",
+                         wo.Qty(r.cycle_max, exact=True))))
+        items_wo.append(wo.Seq((wo.Name(r.variete), " (", cycle, ", ba ",
+                                wo.Qty(kg, "kg"), " ci ektaar bi)")))
+    text = (f"D'après le {CATALOGUE}, voici des variétés {de(label)} inscrites au Sénégal"
+            f"{precision} : " + ", ".join(items_fr) + ".")
+    return Answer(text, f"{CATALOGUE} (CEDEAO)", True,
+                  wo.render("varietes", produit=product_wo, precision=precision_wo,
+                            liste=wo.join_list(items_wo)))
+
+
+def _rain_answer(q: Query, kb: KnowledgeBase) -> Answer:
+    target = q.locality or q.region or q.market
+    fact = kb.rainfall(target)
+    if fact is None:
+        where = place(target) if target else "le Sénégal"
+        return Answer(f"Je n'ai pas de relevé de pluie pour {where}.", None, False,
+                      wo.render("pas_de_pluie", lieu=place(target) if target else "Senegaal"))
+    when = fmt_period(fact.start, fact.end)
+    period_wo = wo.period(fact.start, fact.end)
+    if len(fact.values) == 1:
+        loc, mm = fact.values[0]
+        text = f"Selon l'ANACIM, il est tombé {fmt_number(mm)} mm à {place(loc)} {when.replace('du', 'pendant la décade du', 1)}."
+        out = wo.render("pluie_lieu", periode=period_wo, lieu=place(loc), mm=wo.Qty(mm, "mm"))
+    else:
+        (lo_loc, lo), (hi_loc, hi) = fact.values[0], fact.values[-1]
+        zone = f"dans la région de {place(fact.place)}" if fact.kind == "region" else "au Sénégal"
+        zone_wo = (wo.place("region", place(fact.place)) if fact.kind == "region"
+                   else wo.place("pays"))
+        text = (f"Selon l'ANACIM, pendant la décade {when}, {zone}, les relevés vont de "
+                f"{fmt_number(lo)} mm ({place(lo_loc)}) à {fmt_number(hi)} mm ({place(hi_loc)}).")
+        out = wo.render("pluie_zone", periode=period_wo, zone=zone_wo,
+                        mm_min=wo.Qty(lo, "mm"), lieu_min=place(lo_loc),
+                        mm_max=wo.Qty(hi, "mm"), lieu_max=place(hi_loc))
+    text += (" Ce sont les derniers chiffres disponibles : les bulletins couvrent la saison "
+             "des pluies (juin à octobre).")
+    out += wo.render("pluie_ancienne")
+    return Answer(text, f"ANACIM, bulletin agrométéorologique décadaire ({when})", True, out)
+
+
+def _topic_of(text: str) -> str:
+    from .knowledge import TOPICS
+    from .lexicon import normalize
+
+    norm = normalize(text)
+    return next((t for t, pattern in TOPICS.items() if re.search(pattern, norm)), "autre")
+
+
+def _advice_answer(q: Query, kb: KnowledgeBase) -> Answer:
+    words = PRODUCT_BY_KEY[q.product].fr if q.product else ()
+    fact = kb.advice_for(words, q.topic)
+    if fact is None:
+        return Answer("Je n'ai pas de recommandation disponible.", None, False,
+                      wo.render("pas_de_stat", produit="digal yi"))
+    when = fmt_period(fact.start, fact.end)
+    asked = " et ".join(x for x in (
+        f"{TOPIC_FR[q.topic]}" if q.topic else "",
+        f"le {PRODUCT_BY_KEY[q.product].label}" if q.product else "") if x)
+    prefix, prefix_wo = "", wo.WolofText("", "")
+    if asked and not fact.matched:
+        prefix = f"Je n'ai pas de recommandation sur {asked}. Voici celles du dernier bulletin. "
+        sujet = THEMES_OR_PRODUCT_WO(q)
+        prefix_wo = wo.render("conseils_sans_sujet", sujet=sujet)
+    if len(set(fact.dates)) > 1:  # plusieurs bulletins : chaque conseil garde sa date
+        items = " ; ".join(f"{i}) {item} ({fmt_period(d, decade_end(d))})"
+                           for i, (item, d) in enumerate(zip(fact.items, fact.dates), 1))
+        text = prefix + f"Recommandations de l'ANACIM : {items}."
+    else:
+        items = " ; ".join(f"{i}) {item}" for i, item in enumerate(fact.items, 1))
+        text = prefix + f"Recommandations de l'ANACIM (décade {when}) : {items}."
+    themes = []
+    for item in fact.items:
+        theme = wo.THEMES_WO[_topic_of(item)]
+        if theme not in themes:
+            themes.append(theme)
+    if len(set(fact.dates)) > 1:
+        out = prefix_wo + wo.render("conseils_plusieurs", n=wo.Qty(len(fact.items)),
+                                    themes=wo.join_list(themes))
+    else:
+        out = prefix_wo + wo.render("conseils", periode=wo.period(fact.start, fact.end),
+                                    n=wo.Qty(len(fact.items)), themes=wo.join_list(themes))
+    return Answer(text, f"ANACIM, bulletin agrométéorologique décadaire ({when})", True, out)
+
+
+def THEMES_OR_PRODUCT_WO(q: Query) -> str:  # noqa: N802 — petite aide de formulation
+    parts = []
+    if q.topic:
+        parts.append(wo.THEMES_WO[q.topic])
+    if q.product:
+        parts.append(wo.PRODUCTS_WO[q.product])
+    return " ak ".join(parts) or "lii"
+
+
+def _search_answer(q: Query, kb: KnowledgeBase) -> Answer | None:
+    passage = kb.search(q.text) if q.text else None
+    if passage is None:
+        return None
+    words = passage.text.split()
+    excerpt = " ".join(words[:70]) + (" …" if len(words) > 70 else "")
+    text = (f"Je n'ai pas de réponse chiffrée, mais voici un extrait de « {passage.source} » : "
+            f"« {excerpt} »")
+    return Answer(text, f"{passage.source} (extrait)", True,
+                  wo.render("extrait", source=wo.Name(passage.source)))
+
+
 def answer(q: Query, kb: KnowledgeBase) -> Answer:
     """Répond à une requête analysée (français + wolof, mêmes chiffres)."""
+    if q.intent == "variete":
+        return _variety_answer(q, kb)
+    if q.intent == "pluie":
+        return _rain_answer(q, kb)
+    if q.intent == "conseil":
+        return _advice_answer(q, kb)
     if q.product is None:
+        found = _search_answer(q, kb)  # question ouverte : extrait cité, si pertinent
+        if found is not None:
+            return found
         return Answer("Je n'ai pas reconnu le produit. " + HELP_TEXT, None, False,
                       wo.render("produit_inconnu") + wo.render("aide"))
     label = PRODUCT_BY_KEY[q.product].label

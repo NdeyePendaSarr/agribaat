@@ -1,0 +1,32 @@
+culture,variete,obtenteur,cycle_min,cycle_max,rendement_min,rendement_max,pluie_min,pluie_max,vocation,caracteristiques,source
+mil,Souna 3,IRAT/ISRA,75,95,1.2,2.5,300,800,,Tolérante à la mineuse de l'épi au charbon et à la verse ; sensible au mildiou et aux foreurs des tiges,i0062f01.txt:961
+mil,IBV 8001,"ICRISAT, ISRA (1980)",75,95,2,2.5,300,800,,Résistante au charbon ; peu sensible à la photopériode,i0062f01.txt:364
+mil,IBV 8004,"ICRISAT, ISRA (1980)",75,95,2,2.5,300,800,,Bonne stabilité de rendement ; sensible au charbon au mildiou et aux foreurs de tiges,i0062f01.txt:386
+mil,IBV 8402,"ICRISAT, ISRA (1980)",90,95,2.5,2.5,,,,,i0062f01.txt:401
+mil,IBV 8003,"ICRISAT, ISRA (1987)",85,90,,,,,,,i0062f01.txt:380
+mil,ITMV 8304,"ICRISAT, INRAN (1993)",80,85,2,2.5,300,400,,Tolérante aux charbons et au mildiou ; peu sensible à la photopériode ; sensible à la verse,i0062f01.txt:671
+mil,Sanio,ISRA (population locale),100,110,,,,,,,i0062f01.txt:866
+sorgho,IRAT 204 (BK 16),"IRAT, ISRA",90,95,3.5,3.5,,,,Résistante à la moisissure des grains au striga et à la verse ; tolérante à la sécheresse ; exigeante en engrais,i0062f01.txt:1724
+arachide,28-206,"IRHO, ISRA (1928)",120,120,2,3,700,1000,huilerie,Tolérante à la sécheresse ; sensible à la rosette ; dormance prolongée ; bonnes fanes pour le bétail,i0062f03.txt:88
+arachide,47-10 (Kalossabani),ISRA (1987),90,90,1.5,1.7,400,800,"huilerie, confiserie",Résistante à la rosette ; sensible à la sécheresse ; non dormante,i0062f03.txt:108
+arachide,55-437,ISRA (1955),90,90,2,2,,,"huilerie, confiserie",Tolérante à la sécheresse ; sensible à la cercosporiose et aux pucerons ; faible dormance ; bonnes fanes,i0062f03.txt:123
+arachide,55-21,ISRA (1996),80,80,1,1,400,700,huilerie,Sélectionnée pour la résistance à la sécheresse ; bonne production de fanes,i0062f03.txt:138
+arachide,55-33,ISRA (1996),80,80,1.2,1.2,,,huilerie,Très précoce ; résistante à la sécheresse,i0062f03.txt:146
+arachide,57-313,"IRHO, ISRA (1957)",125,125,3,3,,,huilerie,Sensible à la sécheresse ; dormance très marquée ; bonnes fanes,i0062f03.txt:276
+arachide,69-101,ISRA (1969),125,125,2,4,,,huilerie,Résistante à la rosette et à la cercosporiose ; sensible à la sécheresse ; bonnes fanes,i0062f03.txt:286
+arachide,73-27,ISRA (1973),120,125,2,2,,,confiserie,Sensible à la rosette aux pucerons et à la sécheresse ; bonne production de fanes,i0062f03.txt:299
+arachide,73-28 (Samoko),ISRA (1973),90,95,2,2,700,1000,"huilerie, confiserie",Tolérante à la sécheresse ; sensible à la rosette et aux pucerons ; bonnes fanes,i0062f03.txt:311
+arachide,73-33,ISRA (1973),105,110,2.5,2.5,,,"huilerie, confiserie",Tolérante à la sécheresse ; sensible à la rosette ; bonne production de fanes,i0062f03.txt:374
+arachide,73-9-11,ISRA (1996),90,90,1.5,1.5,,,huilerie,Précoce ; sélectionnée pour la sécheresse,i0062f03.txt:389
+arachide,78-936,ISRA (1992),75,80,1.5,3,,,confiserie,Bon comportement sous irrigation ; faible production de fanes,i0062f03.txt:397
+arachide,Fleur 11 (Allah Son),ISRA (1993),90,95,2,2,400,700,"huilerie, confiserie",Tolérante à la sécheresse ; non dormante ; sensible à la cercosporiose à la rouille et aux pucerons,i0062f03.txt:477
+arachide,GC8-35,ISRA (1988),80,80,1.5,1.5,400,700,huilerie,Très précoce ; sélectionnée pour la sécheresse,i0062f03.txt:530
+arachide,GH 119-20 (Niakhali Tiga),ISRA (1960),110,120,2,2.5,800,1200,confiserie,Peu dormante ; sensible à la rosette à la cercosporiose et à l'aflatoxine,i0062f03.txt:539
+arachide,H 75-0,ISRA,120,125,1.5,3,,,confiserie,Bon comportement sous irrigation ; bonne production de fanes,i0062f03.txt:552
+arachide,Hâtive de Séfa (HS),ISRA,90,90,1.5,1.5,,,confiserie,Tolérante à la sécheresse ; sensible à la cercosporiose et aux pucerons ; faible dormance,i0062f03.txt:561
+arachide,ICGV 97-065,ISRA (2001),130,130,1.5,3,,,confiserie,Bon comportement sous irrigation ; coque très résistante,i0062f03.txt:640
+arachide,PC 79-79,ISRA (1996),120,120,1.5,1.5,700,1000,huilerie,Résistante à la cercosporiose ; cultivée en pluvial,i0062f03.txt:696
+arachide,V 1-19,ISRA (1996),90,90,1.6,1.6,,,huilerie,Précoce ; sélectionnée pour la sécheresse,i0062f03.txt:776
+niebe,58-146,ISRA,70,70,1.2,2,,,,,i0062f03.txt:918
+niebe,Mougne,ISRA (1969),65,70,2,2,,,,Résistante au chancre bactérien ; tolérante à la sécheresse ; bonne variété fourragère,i0062f03.txt:1145
+niebe,TN 88-63,INRAN (1963),75,75,3,3,400,800,,Tolérante au striga et à la sécheresse ; résistante à la pourriture des gousses ; sensible aux pucerons thrips et bruches,i0062f03.txt:1293
