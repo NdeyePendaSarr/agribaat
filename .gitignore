@@ -1,0 +1,23 @@
+# Environnements Python (le .venv vient d'une machine Linux ; .venv_win est celui de Windows)
+.venv/
+.venv_win/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Données brutes : ~50 Go (audio ASR/TTS, archives, PDF). À partager hors Git
+# (disque, Drive). Les tables traitées agribaat_app/data/processed/ restent versionnées.
+data_agribaat/
+
+# Fichiers générés
+agribaat_app/outputs/
+*.log
+*.avant_refonte
+
+# Outils locaux
+.claude/
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini

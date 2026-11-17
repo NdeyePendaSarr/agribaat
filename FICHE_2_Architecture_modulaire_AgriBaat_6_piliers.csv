@@ -1,0 +1,7 @@
+﻿Pilier,Module,Objectif,Datasets,Responsable
+Pilier 1,ASR - Reconnaissance vocale,Transformer la parole wolof/pulaar/sereer en texte,"ALFFA Wolof ASR (DS-01), KALLAAMA Speech (DS-02), Google FLEURS wolof (DS-04), Mozilla Common Voice (DS-05)","Mouhameth Diop (wolof+pulaar), Seydina Wade (sereer)"
+Pilier 2,TTS - Synthèse vocale,Générer une réponse orale en wolof à partir du texte,"GalsenAI Wolof TTS Baamtu (DS-03), Lexique XSAMPA wolof (KALLAAMA)",Ndeye Penda Sarr
+Pilier 3,NLP/LLM - Compréhension et génération,Comprendre la question agricole et générer une réponse pertinente en wolof/français,"Traduction wolof-français GalsenAI (DS-06), Corpus texte KALLAAMA, WolofProcessing (DS-07)",Seydina Wade
+Pilier 4,RAG - Base de connaissances agricoles,Indexer et rechercher l'information agricole sénégalaise pour alimenter le LLM,"FAOSTAT (DS-08), AGRIDATA/ANSD (DS-09), DAPSA (DS-10), ISRA (DS-13), Prix alimentaires WFP (DS-12)",Seydina Wade (collecte) + Captain (pipeline)
+Pilier 5,Backend & API,"Orchestrer ASR→LLM→TTS, servir l'API, gérer les requêtes",Tous les modèles produits par les piliers 1-4,Captain (Owner)
+Pilier 6,Frontend & UX vocale,"Interface web/mobile pour enregistrer la voix, afficher et lire les réponses",Prix alimentaires (DS-12) pour l'affichage marchés,Ndeye Penda Sarr

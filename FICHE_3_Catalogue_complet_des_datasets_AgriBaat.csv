@@ -1,0 +1,14 @@
+﻿ID,Dataset,Description,Source,Accès,Volume,Licence,Usage dans AgriBaat
+DS-01,ALFFA Wolof ASR,"Corpus ASR wolof (format Kaldi), transcriptions validées, LM trigram",GitHub GETALP,Accessible (git clone),~15-20h audio,Non déclarée (académique),ASR wolof - benchmark baseline WER 24.5%
+DS-02,KALLAAMA Speech Dataset,"125h parole spontanée : wolof 55h, pulaar 32h, sereer 38h. Radio agricole. 35h vérifiées expert",OpenSLR 151 / Zenodo,Accessible (12.4 Go),125h (35h checked),CC-BY-4.0,ASR wolof/pulaar/sereer + vocabulaire agricole + G2P + corpus texte
+DS-03,GalsenAI Wolof TTS (Baamtu),40 010 paires audio/texte wolof avec genre,Hugging Face galsenai/wolof_tts,Importable directement dans OctOpus,40 010 échantillons,À vérifier,TTS wolof - entraînement voix synthétique
+DS-04,Google FLEURS (wolof),"Corpus multilingue de parole, config wo_SN",Hugging Face google/fleurs,Importable (config wo_SN),~10h estimé,CC-BY-4.0,ASR wolof - évaluation complémentaire
+DS-05,Mozilla Common Voice (wolof),Corpus communautaire de parole validée,commonvoice.mozilla.org,Inscription gratuite requise,Volume à vérifier,CC-0,ASR wolof - données complémentaires
+DS-06,GalsenAI Traduction wolof-français,Paires de traduction wolof↔français,Hugging Face galsenai/,Importable directement,Volume à vérifier,À vérifier,NLP bilingue - fine-tuning LLM
+DS-07,WolofProcessing / corpus texte,Corpus texte wolof pour modèle de langue,GitHub + KALLAAMA (1.14M mots),Accessible,1.14M mots (KALLAAMA),Varies,Tokenizer wolof + modèle de langue
+DS-08,FAOSTAT Sénégal,"Production, superficies, rendements agricoles par culture et année",API FAO / faostat.fao.org,Accessible sans inscription,Séries temporelles,Open,Base de connaissances agricoles (RAG)
+DS-09,AGRIDATA / ANSD,Données agricoles nationales (portail CKAN),agridata.ansd.sn,Semi-accessible (site à explorer),À inventorier,Open data Sénégal,Base de connaissances agricoles (RAG)
+DS-10,DAPSA - Enquêtes agricoles,"Rapports EAA, statistiques de production nationale",dapsa.gouv.sn (PDF),Téléchargeable (extraction PDF requise),Rapports annuels,Public,Base de connaissances agricoles (RAG)
+DS-11,ANACIM - Données météo/pluviométrie,"Pluviométrie, températures par station",anacim.sn + agridata.ansd.sn,Semi-accessible,À inventorier,Public,"Conseils agricoles contextuels (saisons, semis)"
+DS-12,Prix alimentaires Sénégal (WFP/BM),Prix mensuels par produit et marché,Banque mondiale / HDX / FAO FPMA,Accessible (téléchargement direct),Séries mensuelles,Open,Module marchés + conseils vente
+DS-13,ISRA - Publications techniques,"Fiches techniques cultures, variétés, itinéraires",isra.sn (PDF),Téléchargeable (extraction PDF requise),Fiches par culture,Public,Base de connaissances agricoles (RAG)

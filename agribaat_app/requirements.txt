@@ -1,0 +1,14 @@
+# Données et interface
+pandas>=2.0
+openpyxl>=3.1
+gradio>=4.44,<6
+# Modèles pré-entraînés (CPU suffit)
+torch>=2.1
+torchaudio>=2.1
+transformers>=4.44
+sentencepiece>=0.2
+huggingface_hub>=0.23  # empreinte vocale (téléchargée une fois)
+soundfile>=0.12
+numpy>=1.24
+# Tests
+pytest>=8.0

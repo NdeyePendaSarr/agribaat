@@ -1,0 +1,14 @@
+﻿Rubrique,Détail
+Nom du projet,AgriBaat - Assistant Vocal Agricole Intelligent pour le Sénégal
+Équipe,"SMART AGRO (PAS Challenge 2026, thème Agriculture)"
+Captain,Owner - Backend + ML/IA
+Membre 2,Ndeye Penda Sarr - Frontend + ML/IA (TTS wolof)
+Membre 3,Mouhameth Diop - ML/IA (ASR wolof + pulaar)
+Membre 4,Seydina Wade - ML/IA (NLP/LLM + Base de connaissances + sereer)
+Deadline building,22 novembre 2026
+Budget équipe,"299,34 $ / 300 $ (allowance challenge)"
+Problème résolu,"Les producteurs agricoles sénégalais n'ont pas accès à l'information agricole dans leurs langues locales (wolof, pulaar, sereer). Ils utilisent principalement la voix, pas le texte."
+Solution,"Un assistant vocal intelligent qui comprend la parole en wolof/pulaar/sereer (ASR), répond aux questions agricoles via un LLM connecté à une base de connaissances (RAG), et restitue la réponse oralement (TTS)."
+Utilisateurs cibles,"Producteurs agricoles sénégalais, conseillers agricoles, coopératives"
+Langues supportées,"Wolof (prioritaire), Pulaar (phase 2), Sereer (phase 3), Français (interface)"
+Stack technique,ASR (reconnaissance vocale) → NLP/LLM (compréhension + réponse) → TTS (synthèse vocale) + RAG (base de connaissances agricoles)

@@ -1,0 +1,105 @@
+﻿catégorie;clé;français;wolof proposé;correct ? (oui/non);correction;commentaire
+1. Produits;mil;mil;dugub;;;nom utilisé dans les réponses
+1. Produits;sorgho;sorgho;basi;;;nom utilisé dans les réponses
+1. Produits;mais;maïs;mbóq;;;nom utilisé dans les réponses
+1. Produits;riz;riz;ceeb;;;nom utilisé dans les réponses
+1. Produits;arachide;arachide;gerte;;;nom utilisé dans les réponses
+1. Produits;niebe;niébé;ñebbe;;;nom utilisé dans les réponses
+1. Produits;oignon;oignon;soble;;;nom utilisé dans les réponses
+1. Produits;manioc;manioc;ñambi;;;nom utilisé dans les réponses
+1. Produits;fonio;fonio;findi;;;nom utilisé dans les réponses
+2. Variantes;Maize (local);Maize (local);bu fii;;;
+2. Variantes;Maize (imported);Maize (imported);bu ñu indi;;;
+2. Variantes;Rice (local);Rice (local);bu fii;;;
+2. Variantes;Rice (imported);Rice (imported);bu ñu indi;;;
+2. Variantes;Groundnuts (shelled);Groundnuts (shelled);bu ñu fóq;;;
+2. Variantes;Groundnuts (unshelled);Groundnuts (unshelled);ak mbaxam;;;
+2. Variantes;Onions (dry);Onions (dry);bu fii;;;
+2. Variantes;Onions (imported);Onions (imported);bu ñu indi;;;
+3. Lieux;pays;au Sénégal;ci Senegaal;;;
+3. Lieux;region;dans la région de {nom};ci diiwaanu {nom};;;
+3. Lieux;departement;dans le département de {nom};ci depàrtmaŋu {nom};;;
+3. Lieux;marche;au marché de {nom};ci marse {nom};;;
+4. Mois;janvier;janvier;Samwiyee;;;
+4. Mois;février;février;Fewriyee;;;
+4. Mois;mars;mars;Mars;;;
+4. Mois;avril;avril;Awril;;;
+4. Mois;mai;mai;Mee;;;
+4. Mois;juin;juin;Suwe;;;
+4. Mois;juillet;juillet;Sulet;;;
+4. Mois;août;août;Ut;;;
+4. Mois;septembre;septembre;Sattumbar;;;
+4. Mois;octobre;octobre;Oktoobar;;;
+4. Mois;novembre;novembre;Nowàmbar;;;
+4. Mois;décembre;décembre;Desàmbar;;;
+5. Unités;fcfa;FCFA (à l'oral);sefa;;;
+5. Unités;t;tonnes;tonn;;;
+5. Unités;ha;hectares;ektaar;;;
+5. Unités;kg/ha;kilos (rendement);kilo;;;
+5. Unités;pct;pour cent (à l'oral);ci téeméer;;;
+6. Phrases modèles;prix_marche;En {mois}, le kilo de {produit} coûtait {prix} {lieu}.;Ci {mois}, kilo {produit} dafa jaroon {prix} {lieu}.;;;les {…} sont remplacés automatiquement
+6. Phrases modèles;prix_moyen;En {mois}, le kilo de {produit} coûtait environ {prix} {lieu}. Mesuré sur {n} marchés.;Ci {mois}, kilo {produit} dafa jaroon lu tollu ci {prix} {lieu}. Ñu natt ko ci {n} marse.;;;les {…} sont remplacés automatiquement
+6. Phrases modèles;extremes;Le moins cher : {lieu_min} ({prix_min}). Le plus cher : {lieu_max} ({prix_max}).;Fi mu gën a yomb mooy {lieu_min}: {prix_min}. Fi mu gën a seer mooy {lieu_max}: {prix_max}.;;;les {…} sont remplacés automatiquement
+6. Phrases modèles;hausse;Le prix a augmenté de {pct} par rapport à l'an dernier.;Njëg gi yokku na {pct} ci li mu jaroon at mi weesu.;;;les {…} sont remplacés automatiquement
+6. Phrases modèles;baisse;Le prix a baissé de {pct} par rapport à l'an dernier.;Njëg gi wàññiku na {pct} ci li mu jaroon at mi weesu.;;;les {…} sont remplacés automatiquement
+6. Phrases modèles;ancien;Attention : c'est le dernier prix relevé sur ce marché.;Xamal ne lii mooy njëg mi mujj mi ñu natt ci marse bii.;;;les {…} sont remplacés automatiquement
+6. Phrases modèles;annee_sans_prix;Je n'ai pas de prix en {annee}. Voici le dernier prix que je connais.;Amuma njëg ci at {annee}. Njëg mi mujj mi ma xam a ngi nii.;;;les {…} sont remplacés automatiquement
+6. Phrases modèles;pas_de_prix;Je n'ai pas le prix du {produit} {lieu}.;Amuma njëgu {produit} {lieu}.;;;les {…} sont remplacés automatiquement
+6. Phrases modèles;production;En {annee}, la production de {produit} {lieu} était d'environ {valeur}.;Ci at {annee}, góobu {produit} {lieu} tollu na ci {valeur}.;;;les {…} sont remplacés automatiquement
+6. Phrases modèles;superficie;En {annee}, on a cultivé environ {valeur} de {produit} {lieu}.;Ci at {annee}, ñu bey {produit} {lieu} ci lu tollu ci {valeur}.;;;les {…} sont remplacés automatiquement
+6. Phrases modèles;rendement;En {annee}, un hectare de {produit} {lieu} a produit environ {valeur}.;Ci at {annee}, benn ektaar {produit} {lieu} jur na lu tollu ci {valeur}.;;;les {…} sont remplacés automatiquement
+6. Phrases modèles;annee_sans_stat;Je n'ai pas de chiffre pour {annee}. Le plus proche est {annee_dispo}.;Amuma lim ci at {annee}. Li gën a jege mooy at {annee_dispo}.;;;les {…} sont remplacés automatiquement
+6. Phrases modèles;pas_de_stat;Je n'ai pas d'information sur le {produit}.;Amuma xibaar ci {produit}.;;;les {…} sont remplacés automatiquement
+6. Phrases modèles;produit_inconnu;Je n'ai pas compris le produit dont vous parlez.;Xammeewuma ndab li nga wax.;;;les {…} sont remplacés automatiquement
+6. Phrases modèles;aide;Je peux vous donner le prix d'un produit au marché, la production, les surfaces cultivées et le rendement. Exemple : « Combien coûte le kilo de mil à Kaolack ? »;Man naa la wax njëgu ndab ci marse, walla góob, tool yi ñu bey ak li benn ektaar di jur. Misaal: « Ñaata la kilo dugub di jar ci Kaolack? »;;;les {…} sont remplacés automatiquement
+7. Nombres (voix);0;0;tus;;;
+7. Nombres (voix);1;1;benn;;;
+7. Nombres (voix);7;7;juróom ñaar;;;
+7. Nombres (voix);10;10;fukk;;;
+7. Nombres (voix);15;15;fukk ak juróom;;;
+7. Nombres (voix);20;20;ñaar fukk;;;
+7. Nombres (voix);25;25;ñaar fukk ak juróom;;;
+7. Nombres (voix);99;99;juróom ñeent fukk ak juróom ñeent;;;
+7. Nombres (voix);100;100;téeméer;;;
+7. Nombres (voix);150;150;téeméer ak juróom fukk;;;
+7. Nombres (voix);300;300;ñetti téeméer;;;
+7. Nombres (voix);344;344;ñetti téeméer ak ñeent fukk ak ñeent;;;
+7. Nombres (voix);500;500;juróomi téeméer;;;
+7. Nombres (voix);1000;1 000;junni;;;
+7. Nombres (voix);1725;1 725;junni ak juróom ñaari téeméer ak ñaar fukk ak juróom;;;
+7. Nombres (voix);2026;2 026;ñaari junni ak ñaar fukk ak juróom benn;;;
+7. Nombres (voix);15000;15 000;fukk ak juróomi junni;;;
+7. Nombres (voix);62000;62 000;juróom benn fukk ak ñaari junni;;;
+7. Nombres (voix);140000;140 000;téeméer ak ñeent fukki junni;;;
+7. Nombres (voix);1700000;1 700 000;benn milyoŋ ak juróom ñaari téeméeri junni;;;
+8. Réponses complètes;Quel est le prix du mil à Kaolack ?;Au marché de Kaolack, le kilo de mil coûtait 300 FCFA en octobre 2026. C'est 10 % de plus qu'un an plus tôt.;Ci Oktoobar 2026, kilo dugub dafa jaroon 300 FCFA ci marse Kaolack. Njëg gi yokku na 10 % ci li mu jaroon at mi weesu.;;;texte affiché
+8. Réponses complètes;Quel est le prix du mil à Kaolack ?;(texte lu par la voix);Ci Oktoobar ñaari junni ak ñaar fukk ak juróom benn, kilo dugub dafa jaroon ñetti téeméer sefa ci marse Kaolack. Njëg gi yokku na fukk ci téeméer ci li mu jaroon at mi weesu.;;;texte prononcé
+8. Réponses complètes;Combien coûte le riz ?;En octobre 2026, le kilo de riz coûtait en moyenne 333 FCFA (importé) et 396 FCFA (local) au Sénégal (31 marchés suivis).;Ci Oktoobar 2026, kilo ceeb dafa jaroon lu tollu ci 333 FCFA (bu ñu indi) ak 396 FCFA (bu fii) ci Senegaal. Ñu natt ko ci 31 marse.;;;texte affiché
+8. Réponses complètes;Combien coûte le riz ?;(texte lu par la voix);Ci Oktoobar ñaari junni ak ñaar fukk ak juróom benn, kilo ceeb dafa jaroon lu tollu ci ñetti téeméer ak ñett fukk ak ñett sefa, bu ñu indi, ak ñetti téeméer ak juróom ñeent fukk ak juróom benn sefa, bu fii, ci Senegaal. Ñu natt ko ci ñett fukk ak benn marse.;;;texte prononcé
+8. Réponses complètes;Prix de l'arachide à Touba;Au marché de Touba, le kilo d'arachide coûtait 310 FCFA (en coque) et 525 FCFA (décortiquée) en mars 2026.;Ci Mars 2026, kilo gerte dafa jaroon 310 FCFA (ak mbaxam) ak 525 FCFA (bu ñu fóq) ci marse Touba.;;;texte affiché
+8. Réponses complètes;Prix de l'arachide à Touba;(texte lu par la voix);Ci Mars ñaari junni ak ñaar fukk ak juróom benn, kilo gerte dafa jaroon ñetti téeméer ak fukk sefa, ak mbaxam, ak juróomi téeméer ak ñaar fukk ak juróom sefa, bu ñu fóq, ci marse Touba.;;;texte prononcé
+8. Réponses complètes;Prix du mil en 2030;"Je n'ai pas de relevé en 2030. Voici le dernier prix connu. En octobre 2026, le kilo de mil coûtait en moyenne 344 FCFA au Sénégal (30 marchés suivis). Le moins cher : Ndrame Escale (260 FCFA) ; le plus cher : Kédougou (500 FCFA). C'est 2 % de plus qu'un an plus tôt.";Amuma njëg ci at 2030. Njëg mi mujj mi ma xam a ngi nii. Ci Oktoobar 2026, kilo dugub dafa jaroon lu tollu ci 344 FCFA ci Senegaal. Ñu natt ko ci 30 marse. Fi mu gën a yomb mooy Ndrame Escale: 260 FCFA. Fi mu gën a seer mooy Kédougou: 500 FCFA. Njëg gi yokku na 2 % ci li mu jaroon at mi weesu.;;;texte affiché
+8. Réponses complètes;Prix du mil en 2030;(texte lu par la voix);Amuma njëg ci at ñaari junni ak ñett fukk. Njëg mi mujj mi ma xam a ngi nii. Ci Oktoobar ñaari junni ak ñaar fukk ak juróom benn, kilo dugub dafa jaroon lu tollu ci ñetti téeméer ak ñeent fukk ak ñeent sefa ci Senegaal. Ñu natt ko ci ñett fukk marse. Fi mu gën a yomb mooy Ndrame Escale: ñaari téeméer ak juróom benn fukk sefa. Fi mu gën a seer mooy Kédougou: juróomi téeméer sefa. Njëg gi yokku na ñaar ci téeméer ci li mu jaroon at mi weesu.;;;texte prononcé
+8. Réponses complètes;Quelle a été la production d'arachide en 2024 ?;En 2024, la production d'arachide au Sénégal était d'environ 1 681 953 tonnes.;Ci at 2024, góobu gerte ci Senegaal tollu na ci 1 681 953 tonn.;;;texte affiché
+8. Réponses complètes;Quelle a été la production d'arachide en 2024 ?;(texte lu par la voix);Ci at ñaari junni ak ñaar fukk ak ñeent, góobu gerte ci Senegaal tollu na ci benn milyoŋ ak juróom ñaari téeméeri junni tonn.;;;texte prononcé
+8. Réponses complètes;rendement du mil à Birkilane;En 2022, le rendement de mil dans le département de Birkilane était d'environ 1 725 kg par hectare.;Ci at 2022, benn ektaar dugub ci depàrtmaŋu Birkilane jur na lu tollu ci 1 725 kilo.;;;texte affiché
+8. Réponses complètes;rendement du mil à Birkilane;(texte lu par la voix);Ci at ñaari junni ak ñaar fukk ak ñaar, benn ektaar dugub ci depàrtmaŋu Birkilane jur na lu tollu ci junni ak juróom ñaari téeméer ak ñaar fukk ak juróom kilo.;;;texte prononcé
+8. Réponses complètes;superficie de riz à Saint Louis;En 2022, la superficie cultivée de riz dans la région de Saint-Louis était d'environ 61 701 hectares.;Ci at 2022, ñu bey ceeb ci diiwaanu Saint-Louis ci lu tollu ci 61 701 ektaar.;;;texte affiché
+8. Réponses complètes;superficie de riz à Saint Louis;(texte lu par la voix);Ci at ñaari junni ak ñaar fukk ak ñaar, ñu bey ceeb ci diiwaanu Saint-Louis ci lu tollu ci juróom benn fukk ak ñaari junni ektaar.;;;texte prononcé
+8. Réponses complètes;production de mil à Kaolack en 2025;Je n'ai pas de chiffre pour 2025. La donnée la plus proche disponible est celle de 2022. En 2022, la production de mil dans la région de Kaolack était d'environ 141 272 tonnes.;Amuma lim ci at 2025. Li gën a jege mooy at 2022. Ci at 2022, góobu dugub ci diiwaanu Kaolack tollu na ci 141 272 tonn.;;;texte affiché
+8. Réponses complètes;production de mil à Kaolack en 2025;(texte lu par la voix);Amuma lim ci at ñaari junni ak ñaar fukk ak juróom. Li gën a jege mooy at ñaari junni ak ñaar fukk ak ñaar. Ci at ñaari junni ak ñaar fukk ak ñaar, góobu dugub ci diiwaanu Kaolack tollu na ci téeméer ak ñeent fukki junni tonn.;;;texte prononcé
+8. Réponses complètes;Quel temps fait-il ?;Je n'ai pas reconnu le produit. Je peux vous donner le prix d'un produit sur un marché, ou la production, la superficie et le rendement d'une culture. Par exemple : « Quel est le prix du mil à Kaolack ? »;Xammeewuma ndab li nga wax. Man naa la wax njëgu ndab ci marse, walla góob, tool yi ñu bey ak li benn ektaar di jur. Misaal: « Ñaata la kilo dugub di jar ci Kaolack? »;;;texte affiché
+8. Réponses complètes;Quel temps fait-il ?;(texte lu par la voix);Xammeewuma ndab li nga wax. Man naa la wax njëgu ndab ci marse, walla góob, tool yi ñu bey ak li benn ektaar di jur. Misaal: Ñaata la kilo dugub di jar ci Kaolack?;;;texte prononcé
+9. Mots-clés compris;prix;prix;njeg, njegu, jend, jaay, jar, marse, seer, yomb;;;"mots qui déclenchent cette intention (sans accents) ; en ajouter ?"
+9. Mots-clés compris;rendement;rendement;benn ektaar;;;"mots qui déclenchent cette intention (sans accents) ; en ajouter ?"
+9. Mots-clés compris;superficie;superficie;ektaar, tool, bey;;;"mots qui déclenchent cette intention (sans accents) ; en ajouter ?"
+9. Mots-clés compris;production;production;goob, jur, tonn;;;"mots qui déclenchent cette intention (sans accents) ; en ajouter ?"
+9. Mots-clés compris;mil;mil;dugub;;;"orthographes reconnues pour ce produit ; en ajouter ?"
+9. Mots-clés compris;sorgho;sorgho;basi;;;"orthographes reconnues pour ce produit ; en ajouter ?"
+9. Mots-clés compris;mais;maïs;mboq, mbooq;;;"orthographes reconnues pour ce produit ; en ajouter ?"
+9. Mots-clés compris;riz;riz;ceeb;;;"orthographes reconnues pour ce produit ; en ajouter ?"
+9. Mots-clés compris;arachide;arachide;gerte;;;"orthographes reconnues pour ce produit ; en ajouter ?"
+9. Mots-clés compris;niebe;niébé;nebbe, ñebbe;;;"orthographes reconnues pour ce produit ; en ajouter ?"
+9. Mots-clés compris;oignon;oignon;soble;;;"orthographes reconnues pour ce produit ; en ajouter ?"
+9. Mots-clés compris;manioc;manioc;ñambi, nambi;;;"orthographes reconnues pour ce produit ; en ajouter ?"
+9. Mots-clés compris;fonio;fonio;findi;;;"orthographes reconnues pour ce produit ; en ajouter ?"
