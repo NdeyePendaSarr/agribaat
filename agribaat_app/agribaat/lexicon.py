@@ -57,8 +57,8 @@ PRODUCTS: tuple[Product, ...] = (
 
 PRODUCT_BY_KEY: dict[str, Product] = {p.key: p for p in PRODUCTS}
 
-# Noms des produits en pulaar et en sereer (BROUILLONS, À VALIDER par Mouhameth et
-# Seydina). Mêmes noms que dans pulaar.py / sereer.py, plus des variantes d'orthographe.
+# Noms des produits en pulaar et en sereer (relus par Mouhameth et Seydina le
+# 18/11/2026). Mêmes noms que dans pulaar.py / sereer.py, plus des variantes d'orthographe.
 OTHER_PRODUCT_KEYWORDS: dict[str, tuple[str, ...]] = {
     "mil": ("gawri", "maac"),
     "mais": ("makka",),

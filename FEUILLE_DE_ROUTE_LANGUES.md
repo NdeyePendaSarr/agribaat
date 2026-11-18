@@ -9,14 +9,15 @@ enregistrements de radio agricole **KALLAAMA** (OpenSLR 151) déjà collectés.
 |---|---|---|---|
 | Données KALLAAMA collectées | ≈ 55 h | ≈ 32 h | ≈ 38 h |
 | Reconnaissance vocale | ✅ en production | 🟡 modèles publics, à améliorer | ❌ aucun modèle utilisable |
-| Phrases de réponse | ✅ (à faire valider) | 🟡 brouillon (`agribaat/pulaar.py`) à relire | 🟠 brouillon très incertain (`agribaat/sereer.py`) à réécrire |
+| Phrases de réponse | ✅ (à faire valider) | ✅ relues par Mouhameth (18/11) | ✅ relues par Seydina (18/11) |
 | Voix de synthèse | ✅ | 🟡 Meta MMS « peul » à faire juger | ❌ aucune (réponses écrites) |
 | Dans l'app | Assistant complet | Assistant (voix + texte) | Assistant (texte seulement) |
 
 **Mise à jour du 18 novembre :** pulaar et sereer sont branchés dans l'Assistant. Fiches
 de relecture : `python validation_langues.py pulaar` et `python validation_langues.py
-sereer` (fichiers `validation_pulaar.csv`, `validation_sereer.csv`). Les étapes 2 à 5
-de la phase 2 et 3 de la phase 3 se résument désormais à corriger ces fiches.
+sereer` (fichiers `validation_pulaar.csv`, `validation_sereer.csv`). Fiches relues et
+approuvées le 18 novembre : restent l'entraînement de la reconnaissance vocale
+(pulaar, sereer) et la voix sereer.
 
 ## 2. Résultats des tests (15 extraits de radio par modèle)
 

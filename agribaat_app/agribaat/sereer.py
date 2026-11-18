@@ -3,9 +3,8 @@
 Pas encore de voix de synthèse sereer : les réponses sont seulement écrites, les
 nombres restent donc en chiffres (`number_words` renvoie les chiffres).
 
-⚠️ BROUILLON TRÈS INCERTAIN, À RÉÉCRIRE PAR UN LOCUTEUR SEREER (Seydina).
-Les phrases ci-dessous ne servent qu'à faire tourner l'application : elles doivent
-être remplacées avant d'être montrées. Lancez `python validation_langues.py sereer`
+✅ Relu et approuvé par Seydina Wade (locuteur sereer) le 18/11/2026.
+Pour toute modification ultérieure, refaire relire : lancez `python validation_langues.py sereer`
 pour générer la fiche de relecture (avec la phrase française de référence).
 """
 

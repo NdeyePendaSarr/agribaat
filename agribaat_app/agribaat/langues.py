@@ -1,4 +1,7 @@
-"""Langues de l'Assistant : wolof (validé en priorité), pulaar et sereer (brouillons).
+"""Langues de l'Assistant : wolof, pulaar et sereer.
+
+Phrases pulaar et sereer relues et approuvées par Mouhameth Diop (pulaar) et
+Seydina Wade (sereer) le 18/11/2026.
 
 Chaque langue a un module de phrases (wolof.py, pulaar.py, sereer.py) et, quand ils
 existent, des modèles de reconnaissance vocale et de voix de synthèse.
@@ -25,8 +28,8 @@ class Langue:
 
 LANGUES: dict[str, Langue] = {
     "wo": Langue("wo", "Wolof", wolof, "wolof", "wolof", draft=False),
-    "pul": Langue("pul", "Pulaar", pulaar, "labo", "labo", draft=True, labo_key="pulaar"),
-    "srr": Langue("srr", "Sereer", sereer, None, None, draft=True, labo_key="sereer"),
+    "pul": Langue("pul", "Pulaar", pulaar, "labo", "labo", draft=False, labo_key="pulaar"),
+    "srr": Langue("srr", "Sereer", sereer, None, None, draft=False, labo_key="sereer"),
 }
 
 

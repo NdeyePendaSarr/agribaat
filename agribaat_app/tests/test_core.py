@@ -326,7 +326,7 @@ def test_interface_tabs_render_with_real_data(monkeypatch):
     assert all("\n" in app._example_label(q, l, t) for q, l, t in app.EXAMPLE_CARDS)
     for lang in ("Pulaar", "Sereer"):
         card = app.on_text("coggu gawri e Kawlak", lang, [])[0]
-        assert f"{lang} :" in card and "brouillon" in card and "300" in card
+        assert f"{lang} :" in card and "brouillon" not in card and "300" in card
 
 
 # ---------------------------------------------------------------- pulaar et sereer

@@ -45,7 +45,7 @@ YEARS_FAO = (int(kb.national["year"].min()), int(kb.national["year"].max()))
 
 # Langues du sélecteur -> code interne (voir agribaat/langues.py).
 LANG_CODES = {"Wolof": "wo", "Pulaar": "pul", "Sereer": "srr", "Français": "fr"}
-LANG_CHOICES = [("Wolof · prioritaire", "Wolof"), ("Pulaar · brouillon", "Pulaar"),
+LANG_CHOICES = [("Wolof · prioritaire", "Wolof"), ("Pulaar", "Pulaar"),
                 ("Sereer · écrit", "Sereer"), ("Français", "Français")]
 
 # Questions types illustrées : (question, langue, titre court).
@@ -433,8 +433,8 @@ def on_text(text: str, lang: str, history):
 
 MIC_HEAD = {
     "Wolof": ("Maa ngi lay déglu…", "Appuyez sur le cercle rouge et posez votre question en wolof"),
-    "Pulaar": ("Pulaar · brouillon", "Appuyez sur le cercle rouge et posez votre question en "
-               "pulaar (reconnaissance vocale expérimentale)"),
+    "Pulaar": ("Question en pulaar", "Appuyez sur le cercle rouge et posez votre question en "
+               "pulaar"),
     "Sereer": ("Sereer · à l'écrit", "Pas encore de reconnaissance vocale sereer : tapez la "
                "question ci-dessous, la réponse s'affiche en sereer"),
     "Français": ("Maa ngi lay déglu…", "Parlez en wolof, ou tapez votre question en français "
@@ -663,7 +663,7 @@ def on_rain(decade: str):
 LAB_STATUS = {
     "pulaar": (
         "**Pulaar — expérimental.** Le pulaar est aussi disponible dans l'**Assistant** "
-        "(langue « Pulaar · brouillon »). Reconnaissance vocale : `Wav2vec2-fula` "
+        "(langue « Pulaar »). Reconnaissance vocale : `Wav2vec2-fula` "
         "(erreur ≈ 80 % sur la radio KALLAAMA, souvent des différences d'orthographe ; "
         "≈ 5 s par phrase). Voix de synthèse : Meta MMS (peul).\n\n"
         "Ici, le Labo montre seulement ce que le modèle entend et fait lire une phrase "
@@ -673,7 +673,7 @@ LAB_STATUS = {
         "voix de synthèse sereer n'est utilisable aujourd'hui. Il faudra entraîner le "
         "nôtre sur les 38 h d'enregistrements KALLAAMA déjà collectées "
         "(voir FEUILLE_DE_ROUTE_LANGUES.md). En attendant, l'**Assistant** répond en sereer "
-        "**à l'écrit** (langue « Sereer · écrit », phrases en brouillon)."),
+        "**à l'écrit** (langue « Sereer · écrit »)."),
 }
 
 
@@ -732,12 +732,11 @@ ABOUT_HTML = (
     "recommandations) → <b>phrase wolof construite directement</b> à partir des mêmes "
     "chiffres (pas de traduction automatique) → <b>synthèse vocale</b> (SpeechT5 wolof), "
     "nombres dits en lettres.<br><br><b>Pulaar</b> : même chaîne avec Wav2vec2-fula et la "
-    "voix Meta MMS ; <b>sereer</b> : réponses écrites. Phrases pulaar et sereer en "
-    "brouillon, en cours de relecture.</div>"
+    "voix Meta MMS ; <b>sereer</b> : réponses écrites. Phrases pulaar et sereer relues "
+    "par des locuteurs natifs.</div>"
     "<h3>Axes d'amélioration</h3><ul>"
     "<li>Validation du wolof par des locuteurs natifs (fiche <code>validation_wolof.csv</code>)."
-    "</li><li>Pulaar et sereer : relecture des phrases (<code>validation_pulaar.csv</code>, "
-    "<code>validation_sereer.csv</code>), entraînement de la reconnaissance vocale sur "
+    "</li><li>Pulaar et sereer : entraînement de la reconnaissance vocale sur "
     "KALLAAMA, voix sereer (<code>FEUILLE_DE_ROUTE_LANGUES.md</code>).</li>"
     "<li>Fiches d'itinéraire technique (semis, engrais) pour des conseils plus concrets.</li>"
     "</ul><p><i>Équipe SMART AGRO — PAS Challenge 2026.</i></p></div>")

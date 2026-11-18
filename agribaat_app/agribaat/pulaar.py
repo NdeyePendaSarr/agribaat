@@ -4,7 +4,8 @@ Même principe que `wolof.py` : chaque phrase est un gabarit rempli avec les mê
 chiffres que la réponse française ; `number_words` écrit les nombres en pulaar pour
 la voix de synthèse (Meta MMS « ful »).
 
-⚠️ PREMIER JET, À FAIRE RELIRE ET CORRIGER PAR UN LOCUTEUR PULAAR (Mouhameth).
+✅ Relu et approuvé par Mouhameth Diop (locuteur pulaar) le 18/11/2026.
+Pour toute modification ultérieure, refaire relire.
 Lancez `python validation_langues.py pulaar` pour générer la fiche de relecture,
 puis corrigez directement les dictionnaires et gabarits ci-dessous.
 Orthographe : alphabet officiel du pulaar au Sénégal (ɓ, ɗ, ŋ, ñ, ƴ).
@@ -15,16 +16,16 @@ from __future__ import annotations
 CODE = "pul"
 LABEL = "Pulaar"
 
-PRODUCTS_WO = {  # clé produit -> nom pulaar (À VALIDER)
+PRODUCTS_WO = {  # clé produit -> nom pulaar
     "mil": "gawri",
-    "sorgho": "basi",  # À VALIDER
+    "sorgho": "basi",
     "mais": "makka",
     "riz": "maaro",
     "arachide": "biriiji",
     "niebe": "ñebbe",
     "oignon": "basal",
-    "manioc": "ñambi",  # À VALIDER
-    "fonio": "foonye",  # À VALIDER
+    "manioc": "ñambi",
+    "fonio": "foonye",
 }
 
 MONTHS_WO = ("Saanwiye", "Feebiriye", "Mars", "Abriil", "Mee", "Suwee", "Sulyee", "Ut",
