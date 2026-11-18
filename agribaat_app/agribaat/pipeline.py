@@ -28,6 +28,7 @@ class Result:
     audio: tuple[int, np.ndarray] | None = None
     source: str | None = None
     found: bool = False
+    highlight: object | None = None  # chiffre clé (answers.Highlight)
     timings: dict[str, float] = field(default_factory=dict)
     warnings: list[str] = field(default_factory=list)
 
@@ -86,6 +87,7 @@ class Assistant:
         ans = answer(query, self.kb)
         res.timings["reponse"] = round(time.perf_counter() - start, 3)
         res.answer_fr, res.source, res.found = ans.text, ans.source, ans.found
+        res.highlight = ans.highlight
 
         if ans.wolof is not None:  # réponse wolof construite à partir des données
             res.answer_wo, res.speech_wo = ans.wolof.text, ans.wolof.speech

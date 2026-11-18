@@ -307,3 +307,20 @@ def test_labo_reports_missing_sereer_models_clearly():
         labo.transcribe("sereer", 16000, np.zeros(16000, dtype=np.float32))
     with pytest.raises(models.ModelUnavailable, match="Sereer"):
         labo.synthesize("sereer", "phrase")
+
+
+@needs_data
+@needs_advice
+def test_interface_tabs_render_with_real_data(monkeypatch):
+    """Chaque onglet produit son contenu sans erreur (Assistant, Production, Conseils)."""
+    monkeypatch.setenv("AGRIBAAT_WARMUP", "0")
+    import importlib
+
+    app = importlib.import_module("app")
+    card = app.on_text("Quel est le prix du mil à Kaolack ?", "Français", [])[0]
+    assert "Chiffre vérifié" in card and "300" in card and "Kaolack" in card
+    kpis, series, bars = app.on_stats("arachide", "production")
+    assert "Record" in kpis and len(series) > 10 and 'class="fill"' in bars
+    assert "vtable" in app.variety_table("arachide", "court", False)
+    assert "hbar" in app.rain_by_region(app.DECADES[0][1])[0]
+    assert all("\n" in app._example_label(q, l, t) for q, l, t in app.EXAMPLE_CARDS)

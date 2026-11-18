@@ -27,6 +27,60 @@ class Answer:
     source: str | None  # source des chiffres
     found: bool  # False si aucune donnée
     wolof: wo.WolofText | None = None  # même réponse en wolof (écran + oral)
+    highlight: Highlight | None = None  # chiffre clé, pour la carte « chiffre vérifié »
+
+
+@dataclass
+class Highlight:
+    """Chiffre clé d'une réponse (mêmes données que la phrase, rien d'autre)."""
+
+    label: str  # « Prix du mil · marché de Kaolack »
+    value: str  # « 300 »
+    unit: str  # « FCFA/kg »
+    sub: str = ""  # « Relevé d'octobre 2026 · 30 marchés »
+    delta: float | None = None  # variation sur un an, en %
+    icon: str = "🌾"
+
+
+ICONS = {"mil": "🌾", "sorgho": "🌾", "mais": "🌽", "riz": "🍚", "arachide": "🥜",
+         "niebe": "🫘", "oignon": "🧅", "manioc": "🍠", "fonio": "🌾"}
+
+
+def _price_highlight(fact: PriceFact, q: Query) -> Highlight:
+    label = PRODUCT_BY_KEY[fact.product].label
+    if fact.market:
+        where = f"marché de {place(fact.market)}"
+    else:
+        where = f"moyenne, région de {place(q.region)}" if q.region else "moyenne nationale"
+    if fact.variants:  # plusieurs variantes : on n'en fait pas la moyenne
+        values = sorted(fact.variants.values())
+        value = f"{fmt_number(values[0])}–{fmt_number(values[-1])}"
+        sub = " · ".join(f"{VARIANT_FR.get(n, n)} {fmt_number(v)}"
+                         for n, v in sorted(fact.variants.items(), key=lambda kv: kv[1]))
+    else:
+        value, sub = fmt_number(fact.price), ""
+    if not fact.market:
+        sub = (sub + " · " if sub else "") + f"{fact.n_markets} marchés suivis"
+    delta = None
+    if fact.price_year_before and not fact.variants:
+        delta = (fact.price - fact.price_year_before) / fact.price_year_before * 100
+    return Highlight(f"Prix du {label} · {where}", value, "FCFA/kg",
+                     f"Relevé {de(fmt_month(fact.date))}" + (f" · {sub}" if sub else ""),
+                     delta, ICONS.get(fact.product, "🌾"))
+
+
+def _stat_highlight(fact: StatFact, kb: KnowledgeBase) -> Highlight:
+    label = PRODUCT_BY_KEY[fact.product].label
+    unit = {"t": "tonnes", "ha": "hectares", "kg/ha": "kg/ha"}[fact.unit]
+    title = {"production": "Production", "superficie": "Superficie",
+             "rendement": "Rendement"}[fact.indicator]
+    delta = None
+    if fact.scope == "Sénégal":
+        prev = kb.stat(fact.product, fact.indicator, year=fact.year - 1)
+        if prev is not None and not prev.requested_year and prev.value:
+            delta = (fact.value - prev.value) / prev.value * 100
+    return Highlight(f"{title} {de(label)} · {fact.scope}", fmt_number(fact.value), unit,
+                     f"Campagne {fact.year}", delta, ICONS.get(fact.product, "🌾"))
 
 
 def fmt_number(value: float, decimals: int = 0) -> str:
@@ -196,9 +250,15 @@ def _variety_answer(q: Query, kb: KnowledgeBase) -> Answer:
                                 wo.Qty(kg, "kg"), " ci ektaar bi)")))
     text = (f"D'après le {CATALOGUE}, voici des variétés {de(label)} inscrites au Sénégal"
             f"{precision} : " + ", ".join(items_fr) + ".")
+    best = rows.iloc[0]
+    hl = Highlight(f"Variété {de(label)}{precision}", str(best["variete"]),
+                   f"· {_range(best['cycle_min'], best['cycle_max'])} jours",
+                   f"Jusqu'à {fmt_number(best['rendement_max'] * 1000)} kg/ha"
+                   + (f" · {len(rows) - 1} autre(s) ci-dessous" if len(rows) > 1 else ""),
+                   None, "🌱")
     return Answer(text, f"{CATALOGUE} (CEDEAO)", True,
                   wo.render("varietes", produit=product_wo, precision=precision_wo,
-                            liste=wo.join_list(items_wo)))
+                            liste=wo.join_list(items_wo)), hl)
 
 
 def _rain_answer(q: Query, kb: KnowledgeBase) -> Answer:
@@ -227,7 +287,15 @@ def _rain_answer(q: Query, kb: KnowledgeBase) -> Answer:
     text += (" Ce sont les derniers chiffres disponibles : les bulletins couvrent la saison "
              "des pluies (juin à octobre).")
     out += wo.render("pluie_ancienne")
-    return Answer(text, f"ANACIM, bulletin agrométéorologique décadaire ({when})", True, out)
+    if len(fact.values) == 1:
+        hl = Highlight(f"Pluie · {place(fact.values[0][0])}", fmt_number(fact.values[0][1]),
+                       "mm", f"Décade {when}", None, "🌧️")
+    else:
+        hl = Highlight(f"Pluie · {zone.replace('dans la ', '').replace('au ', '')}",
+                       f"{fmt_number(lo)}–{fmt_number(hi)}", "mm",
+                       f"Décade {when} · {len(fact.values)} relevés", None, "🌧️")
+    return Answer(text, f"ANACIM, bulletin agrométéorologique décadaire ({when})", True,
+                  out, hl)
 
 
 def _topic_of(text: str) -> str:
@@ -331,7 +399,8 @@ def answer(q: Query, kb: KnowledgeBase) -> Answer:
         latest = kb.prices["date"].max()
         return Answer(prefix + _price_answer(fact, q, latest=latest),
                       "PAM / WFP (prix de détail)", True,
-                      prefix_wo + _price_wolof(fact, q, latest=latest))
+                      prefix_wo + _price_wolof(fact, q, latest=latest),
+                      _price_highlight(fact, q))
 
     # Statistiques : si un nom est à la fois région et département, on prend la région.
     department = q.department if q.department and q.department != q.region else None
@@ -340,4 +409,5 @@ def answer(q: Query, kb: KnowledgeBase) -> Answer:
     if fact is None:
         return Answer(f"Je n'ai pas cette information pour le {label}.", None, False,
                       wo.render("pas_de_stat", produit=product_wo))
-    return Answer(_stat_answer(fact), fact.source, True, _stat_wolof(fact))
+    return Answer(_stat_answer(fact), fact.source, True, _stat_wolof(fact),
+                  _stat_highlight(fact, kb))

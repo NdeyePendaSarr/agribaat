@@ -43,16 +43,37 @@ LAST_DATE = kb.prices["date"].max()
 N_MARKETS = kb.prices["market"].nunique()
 YEARS_FAO = (int(kb.national["year"].min()), int(kb.national["year"].max()))
 
-EXAMPLES = [
-    ("Quel est le prix du mil à Kaolack ?", "Français"),
-    ("Combien coûte le riz ?", "Français"),
-    ("Quelle a été la production d'arachide en 2024 ?", "Français"),
-    ("Rendement du mil dans la région de Kaffrine", "Français"),
-    ("Quelle variété de mil à cycle court ?", "Français"),
-    ("Il a plu combien à Mbour ?", "Français"),
-    ("Quand récolter l'arachide ?", "Français"),
-    ("njëg dugub ci Kaolack", "Wolof"),
+# Questions types illustrées : (question, langue, titre court).
+EXAMPLE_CARDS = [
+    ("Quel est le prix du mil à Kaolack ?", "Français", "Prix du mil à Kaolack"),
+    ("Combien coûte le riz ?", "Français", "Combien coûte le riz ?"),
+    ("Quelle a été la production d'arachide en 2024 ?", "Français", "Production d'arachide 2024"),
+    ("Quelle variété de mil à cycle court ?", "Français", "Variété de mil à cycle court"),
+    ("Il a plu combien à Mbour ?", "Français", "Pluie à Mbour"),
+    ("Quand récolter l'arachide ?", "Français", "Quand récolter l'arachide ?"),
+    ("Rendement du mil dans la région de Kaffrine", "Français", "Rendement du mil à Kaffrine"),
+    ("njëg dugub ci Kaolack", "Wolof", "« njëg dugub ci Kaolack »"),
 ]
+EXAMPLES = [(q, lang) for q, lang, _ in EXAMPLE_CARDS]
+
+
+def _example_label(question: str, lang: str, title: str) -> str:
+    """« 🌾 Prix du mil à Kaolack » + ligne source · chiffre, tirés des vraies données."""
+    from agribaat.answers import answer
+    from agribaat.nlu import parse
+
+    ans = answer(parse([question], kb), kb)
+    hl = ans.highlight
+    source = (ans.source or "").split("(")[0].split(",")[0].strip()
+    source = {"Catalogue ouest-africain des espèces et variétés végétales": "Catalogue CEDEAO"
+              }.get(source, source)
+    if hl is not None:
+        icon, detail = hl.icon, f"{hl.value} {hl.unit}"
+    else:
+        icon, detail = ("🗣️" if lang == "Wolof" else "🌦️"), "conseils datés"
+    if lang == "Wolof":
+        detail = "question en wolof"
+    return f"{icon}  {title}\n{source} · {detail}" if source else f"{icon}  {title}\n{detail}"
 
 # Préparation en arrière-plan : modèles vocaux + réponses vocales des questions types.
 WARMUP = (warmup.start(assistant, [(t, "wo" if l == "Wolof" else "fr") for t, l in EXAMPLES])
@@ -125,6 +146,142 @@ html, body {overflow-x: hidden;}
   .card .wo {font-size: 1.15rem;}
   #ask-voice button {min-height: 52px;}  /* gros bouton micro, facile à toucher */
 }
+
+/* ===================== Refonte visuelle (maquette PAS Challenge) ===================== */
+:root {--ab-green: #15803d; --ab-green-d: #14532d; --ab-mint: #ecfdf5; --ab-line: #d1fae5;
+       --ab-amber: #b45309; --ab-red: #dc2626;}
+#hero {position: relative;}
+#hero .event {position: absolute; top: 20px; right: 22px; background: rgba(0,0,0,.22);
+              border: 1px solid rgba(255,255,255,.3); color: #fef3c7; font-size: .8rem;
+              font-weight: 600; padding: 4px 12px; border-radius: 999px;}
+#hero .event::before {content: "●"; color: #4ade80; margin-right: 6px;}
+@media (max-width: 640px) {#hero .event {position: static; display: inline-block;
+                                          margin-bottom: 8px;}}
+
+/* Bandeau d'état + choix de langue */
+#status-row {align-items: stretch; gap: 10px;}
+#status-row .mode {height: 100%; display: flex; align-items: center; margin: 0;}
+#lang-toggle {padding: 0 !important; background: transparent !important; border: none !important;}
+#lang-toggle .wrap {gap: 6px; flex-wrap: wrap; justify-content: flex-end;}
+#lang-toggle label {border-radius: 10px !important; font-weight: 600; padding: 8px 12px !important;
+                    border: 1px solid var(--border-color-primary) !important;}
+#lang-toggle label.selected {background: var(--ab-green) !important; color: #fff !important;
+                             border-color: var(--ab-green) !important;}
+#lang-toggle input {display: none;}
+
+/* Carte micro : grand cercle rouge */
+#mic-card {border: 1px solid var(--ab-line); border-radius: 18px; background:
+           linear-gradient(180deg, #f0fdf4 0%, var(--block-background-fill) 60%);
+           padding: 18px 16px 8px; text-align: center;}
+#mic-card .mic-title {font-size: 1.25rem; font-weight: 700; margin: 4px 0 2px;}
+#mic-card .mic-sub {font-size: .9rem; color: var(--body-text-color-subdued);}
+#mic {border: none !important; background: transparent !important; box-shadow: none !important;}
+#mic .controls {flex-direction: column; align-items: center; gap: 10px;}
+#mic .record-button, #mic .stop-button, #mic .stop-button-paused {
+    width: 124px !important; height: 124px !important; border-radius: 50% !important;
+    margin: 14px auto 6px !important; padding: 0 !important; font-size: 0 !important;
+    align-items: center; justify-content: center;  /* affichage géré par Gradio */
+    background: radial-gradient(circle at 35% 30%, #f87171, #b91c1c 70%) !important;
+    border: 4px solid #fde68a !important; color: #fff !important;
+    box-shadow: 0 0 0 12px rgba(220,38,38,.12), 0 0 0 24px rgba(220,38,38,.06);
+    transition: transform .15s ease;}
+#mic .record-button:hover {transform: scale(1.04);}
+#mic .record-button::before {content: "🎙️"; font-size: 44px; line-height: 1;
+    background: none !important; width: auto !important; height: auto !important;
+    margin: 0 !important; border-radius: 0 !important;}  /* remplace le point vert Gradio */
+#mic .stop-button::before, #mic .stop-button-paused::before {
+    content: "■"; font-size: 40px; color: #fff; line-height: 1;}
+#mic .stop-button {animation: ab-pulse 1.4s ease-in-out infinite;}
+#mic .record-icon, #mic .pinger, #mic .dot, #mic .hidden {display: none !important;}
+@keyframes ab-pulse {0%, 100% {box-shadow: 0 0 0 10px rgba(220,38,38,.18), 0 0 0 22px rgba(220,38,38,.08);}
+                     50% {box-shadow: 0 0 0 18px rgba(220,38,38,.25), 0 0 0 34px rgba(220,38,38,.10);}}
+#mic-card .hint {display: block; margin: 4px 0 6px;}
+
+/* Carte réponse « chiffre vérifié » */
+.answer {border: 1px solid var(--ab-line); border-radius: 18px; padding: 16px 18px;
+         background: var(--block-background-fill);}
+.ans-head {display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px;
+           margin-bottom: 12px;}
+.achip {font-size: .74rem; font-weight: 700; letter-spacing: .03em; border-radius: 6px;
+        padding: 4px 9px; text-transform: uppercase;}
+.achip.ok {background: var(--ab-green-d); color: #fff;}
+.achip.miss {background: #fee2e2; color: #991b1b;}
+.achip.src {background: #fef3c7; color: #92400e; text-transform: none; font-weight: 600;
+           border: 1px solid #fde68a;}
+.kpi-box {display: flex; align-items: center; justify-content: space-between; gap: 12px;
+          border: 1px solid var(--border-color-primary); border-radius: 14px; padding: 12px 14px;
+          margin-bottom: 12px;}
+.kpi-box .k {font-size: .74rem; text-transform: uppercase; letter-spacing: .05em;
+             color: var(--body-text-color-subdued); font-weight: 600;}
+.kpi-box .big {font-size: 2rem; font-weight: 800; color: var(--ab-green-d); line-height: 1.15;
+               margin: 2px 0;}
+.kpi-box .big small {font-size: 1.05rem; font-weight: 700;}
+.kpi-box .s {font-size: .82rem; color: var(--body-text-color-subdued);}
+.kpi-box .ico {font-size: 1.9rem; background: var(--ab-mint); border: 1px solid var(--ab-line);
+               border-radius: 12px; width: 56px; height: 56px; display: flex;
+               align-items: center; justify-content: center; flex: 0 0 auto;}
+.pill {font-size: .78rem; font-weight: 700; border-radius: 999px; padding: 2px 8px;
+       vertical-align: middle; margin-left: 6px;}
+.pill.up {background: #dcfce7; color: #166534;} .pill.down {background: #fee2e2; color: #991b1b;}
+.wo-quote {font-size: 1.12rem; font-weight: 700; line-height: 1.45; margin-bottom: 6px;}
+.fr-line {font-size: .92rem; color: var(--body-text-color-subdued); line-height: 1.5;}
+
+/* Questions types illustrées */
+.ex-title {font-size: .8rem; font-weight: 800; letter-spacing: .05em; text-transform: uppercase;
+           margin: 14px 0 6px;}
+.ex-card {white-space: pre-line !important; text-align: left !important; display: block !important;
+          line-height: 1.35 !important; min-height: 74px; border-radius: 14px !important;
+          border: 1px solid var(--border-color-primary) !important; font-size: .82rem !important;
+          color: var(--ab-green) !important; background: var(--block-background-fill) !important;
+          padding: 10px 12px !important; font-weight: 500 !important;}
+.ex-card::first-line {color: var(--body-text-color); font-weight: 700; font-size: .95rem;}
+.ex-card:hover {border-color: var(--ab-green) !important; background: var(--ab-mint) !important;}
+
+/* Barres horizontales (production par région, pluie par région) */
+.hbars {border: 1px solid var(--ab-line); border-radius: 16px; padding: 14px 16px;
+        background: var(--block-background-fill);}
+.hbars h4 {margin: 0 0 10px; font-size: .95rem;}
+.hbar {display: grid; grid-template-columns: 110px 1fr 86px; align-items: center; gap: 10px;
+       margin: 6px 0; font-size: .86rem;}
+.hbar .n {font-weight: 600; text-align: right; overflow: hidden; text-overflow: ellipsis;
+          white-space: nowrap;}
+.hbar .track {display: block; background: var(--background-fill-secondary); border-radius: 999px;
+              height: 12px; overflow: hidden;}
+.hbar .fill {display: block; height: 100%; border-radius: 999px;
+             background: linear-gradient(90deg, #15803d, #34d399);}
+.hbar .v {font-weight: 700; font-variant-numeric: tabular-nums;}
+.hbars .note {font-size: .78rem; color: var(--body-text-color-subdued); margin-top: 8px;}
+
+/* Tableau des variétés */
+.vtable {width: 100%; border-collapse: separate; border-spacing: 0; font-size: .86rem;
+         border: 1px solid var(--border-color-primary); border-radius: 14px; overflow: hidden;}
+.vtable th {background: var(--background-fill-secondary); text-align: left; font-size: .72rem;
+            text-transform: uppercase; letter-spacing: .05em; padding: 10px 12px;}
+.vtable td {padding: 12px; border-top: 1px solid var(--border-color-primary); vertical-align: top;}
+.vtable th, .vtable td {border-left: none !important; border-right: none !important;
+                        border-bottom: none !important;}
+.vtable thead th {border-top: none !important;}
+.vtable td.name {font-weight: 800; color: var(--ab-green-d); white-space: nowrap;}
+.vtable td.num {white-space: nowrap; font-variant-numeric: tabular-nums;}
+.tag {display: inline-block; font-size: .72rem; font-weight: 700; border-radius: 999px;
+      padding: 2px 9px; margin: 1px 2px 1px 0;}
+.tag.huilerie {background: #fef3c7; color: #92400e;}
+.tag.confiserie {background: #dbeafe; color: #1e40af;}
+.vscroll {overflow-x: auto;}
+.src-note {font-size: .8rem; color: var(--body-text-color-subdued); margin-top: 6px;}
+
+/* À propos */
+.about h3 {margin: 6px 0 10px;}
+.about .pipe {border: 1px solid var(--ab-line); background: var(--ab-mint); border-radius: 14px;
+              padding: 14px 16px; margin: 16px 0;}
+.about .pipe b {color: var(--ab-green-d);}
+.about ul {margin: 6px 0 0 18px;}
+.about li {margin: 3px 0;}
+@media (max-width: 640px) {
+  .kpi-box .big {font-size: 1.6rem;}
+  .hbar {grid-template-columns: 84px 1fr 70px;}
+  #mic .record-button, #mic .stop-button {width: 104px !important; height: 104px !important;}
+}
 """
 
 
@@ -132,7 +289,7 @@ html, body {overflow-x: hidden;}
 def hero_html() -> str:
     chips = [f"{N_MARKETS} marchés suivis", f"Dernier relevé : {fmt_month(LAST_DATE)}",
              f"Statistiques {YEARS_FAO[0]}–{YEARS_FAO[1]}", "Sources : PAM · FAOSTAT · DAPSA"]
-    return ('<div id="hero"><h1>🌾 AgriBaat</h1>'
+    return ('<div id="hero"><span class="event">PAS Challenge 2026</span><h1>🌾 AgriBaat</h1>'
             '<p class="tag">Assistant agricole vocal en wolof — prix des marchés, '
             'production et rendements, chiffres sourcés</p><div class="chips">'
             + "".join(f'<span class="chip">{c}</span>' for c in chips) + "</div></div>")
@@ -156,28 +313,49 @@ def mode_html() -> str:
 
 
 # ---------------------------------------------------------------- assistant
-EMPTY_CARD = ('<div class="card"><div class="lbl">Réponse</div>'
-              '<div class="empty">Posez une question à voix haute ou par écrit : '
-              "la réponse s'affichera ici.</div></div>")
+EMPTY_CARD = ('<div class="answer"><div class="ans-head"><span class="achip ok">📊 Réponse '
+              'sourcée</span></div><div class="fr-line">Posez une question à voix haute '
+              "(cercle rouge) ou cliquez une question type : la réponse, son chiffre clé et "
+              "sa source s'afficheront ici.</div></div>")
+
+
+def _num(value: float) -> str:
+    return f"{value:+.1f}".replace(".", ",")
 
 
 def answer_card(res: Result, spoken: bool = False) -> str:
+    """Carte réponse : chiffre clé vérifié + source + wolof + français."""
     esc = html.escape
-    parts = ['<div class="card">']
+    parts = ['<div class="answer"><div class="ans-head">']
+    if res.found:
+        parts.append('<span class="achip ok">📊 Chiffre vérifié</span>' if res.highlight
+                     else '<span class="achip ok">📚 Réponse sourcée</span>')
+    else:
+        parts.append('<span class="achip miss">Aucune donnée trouvée</span>')
+    if res.source:
+        parts.append(f'<span class="achip src">Source : {esc(res.source)}</span>')
+    parts.append("</div>")
     if spoken:  # question vocale : on montre ce que l'app a entendu
         heard = esc(res.question_wo) if res.question_wo else "<i>(rien de compréhensible)</i>"
         parts.append(f'<div class="heard">🎙️ Entendu : « {heard} »</div>')
+    hl = res.highlight
+    if hl is not None:
+        pill = ""
+        if hl.delta is not None and abs(hl.delta) >= 0.1:
+            cls = "up" if hl.delta > 0 else "down"
+            pill = (f'<span class="pill {cls}">{"▲" if hl.delta > 0 else "▼"} '
+                    f'{_num(hl.delta)} % sur un an</span>')
+        parts.append(
+            f'<div class="kpi-box"><div><div class="k">{esc(hl.label)}</div>'
+            f'<div class="big">{esc(hl.value)} <small>{esc(hl.unit)}</small>{pill}</div>'
+            f'<div class="s">{esc(hl.sub)}</div></div>'
+            f'<div class="ico">{hl.icon}</div></div>')
     if res.answer_wo:
-        parts.append(f'<div class="lbl">Wolof</div><div class="wo">{esc(res.answer_wo)}</div>')
-    parts.append(f'<div class="lbl">Français</div><div class="fr">{esc(res.answer_fr)}</div>')
-    badges = []
-    if res.source:
-        badges.append(f'<span class="badge src">📊 {esc(res.source)}</span>')
-    elif not res.found:
-        badges.append('<span class="badge miss">Aucune donnée trouvée</span>')
+        parts.append(f'<div class="wo-quote">🗣️ Wolof : « {esc(res.answer_wo)} »</div>')
+    parts.append(f'<div class="fr-line"><b>Français :</b> {esc(res.answer_fr)}</div>')
     if "total" in res.timings:
-        badges.append(f'<span class="badge">⏱ {res.timings["total"]} s</span>')
-    parts.append(f'<div class="badges">{"".join(badges)}</div>')
+        parts.append(f'<div class="badges"><span class="badge">⏱ {res.timings["total"]} s'
+                     "</span></div>")
     if res.warnings and VOICE_READY:  # en mode texte, le bandeau suffit
         parts.append('<div class="warn">' + "<br>".join(esc(w) for w in res.warnings) + "</div>")
     parts.append("</div>")
@@ -312,20 +490,38 @@ def on_price_market(product: str, region: str, market: str):
 def national_series(product: str, indicator: str) -> pd.DataFrame:
     df = kb.national[(kb.national["product"] == product)
                      & (kb.national["indicator"] == indicator)]
-    return df[["year", "value"]].sort_values("year")
+    out = df[["year", "value"]].sort_values("year")
+    # années en dates : l'axe affiche « 1960 » et non « 1,960 »
+    return out.assign(year=pd.to_datetime(out["year"].astype(str), format="%Y"))
 
 
-def regional_bars(product: str, indicator: str) -> tuple[pd.DataFrame, str]:
+def hbars_html(title: str, rows: list[tuple[str, float]], unit: str, note: str = "") -> str:
+    """Barres horizontales (nom, valeur) : longueur proportionnelle, valeur en clair."""
+    if not rows:
+        return f'<div class="hbars"><h4>{html.escape(title)}</h4><div class="note">Pas de ' \
+               "données.</div></div>"
+    top = max(v for _, v in rows) or 1
+    lines = "".join(
+        f'<div class="hbar"><span class="n" title="{html.escape(n)}">{html.escape(n)}</span>'
+        f'<span class="track"><span class="fill" style="width:{max(v / top * 100, 2):.1f}%">'
+        f'</span></span><span class="v">{fmt_number(v)} {unit}</span></div>'
+        for n, v in rows)
+    note_html = f'<div class="note">{html.escape(note)}</div>' if note else ""
+    return f'<div class="hbars"><h4>{html.escape(title)}</h4>{lines}{note_html}</div>'
+
+
+def regional_bars(product: str, indicator: str) -> str:
     df = kb.regional[(kb.regional["product"] == product)
                      & (kb.regional["indicator"] == indicator)
                      & (kb.regional["department"] == "Total")
                      & (kb.regional["region"] != "Senegal")]
     if df.empty:
-        return pd.DataFrame(columns=["region", "value"]), "Pas de données régionales DAPSA."
+        return hbars_html("Par région (DAPSA)", [], UNITS[indicator])
     year = int(df["year"].max())
     cur = df[df["year"] == year].sort_values("value", ascending=False)
-    out = pd.DataFrame({"region": cur["region"].map(place), "value": cur["value"].round(0)})
-    return out, f"Par région, campagne {year} (DAPSA)"
+    rows = [(place(r), float(v)) for r, v in zip(cur["region"], cur["value"])]
+    return hbars_html(f"Par région, campagne {year} (DAPSA)", rows, UNITS[indicator],
+                      "Source : DAPSA, enquête agricole annuelle.")
 
 
 def stat_kpis(product: str, indicator: str) -> str:
@@ -343,16 +539,15 @@ def stat_kpis(product: str, indicator: str) -> str:
     series = national_series(product, indicator)
     if len(series):
         best = series.loc[series["value"].idxmax()]
-        cards.append(("Record", f"{fmt_number(best['value'])} {unit}", f"en {int(best['year'])}"))
+        cards.append(("Record", f"{fmt_number(best['value'])} {unit}", f"en {pd.Timestamp(best['year']).year}"))
     return '<div class="kpis">' + "".join(
         f'<div class="kpi"><div class="k">{k}</div><div class="v">{v}</div>'
         f'<div class="s">{s}</div></div>' for k, v, s in cards) + "</div>"
 
 
 def on_stats(product: str, indicator: str):
-    bars, title = regional_bars(product, indicator)
     return (stat_kpis(product, indicator), national_series(product, indicator),
-            gr.BarPlot(value=bars, title=title))
+            regional_bars(product, indicator))
 
 
 # ---------------------------------------------------------------- conseils
@@ -372,26 +567,39 @@ def _span(lo, hi, unit: str = "") -> str:
     return (f"{lo:g}" if lo == hi else f"{lo:g}–{hi:g}") + unit
 
 
-def variety_table(crop: str, cycle: str, drought: bool) -> pd.DataFrame:
+def variety_table(crop: str, cycle: str, drought: bool) -> str:
+    """Catalogue des variétés en tableau HTML (nom en gras, usages en badges)."""
     df = kb.variety_list(crop, cycle=None if cycle == "tous" else cycle, drought=drought,
                          limit=None)
-    return pd.DataFrame({
-        "Variété": df["variete"],
-        "Cycle (jours)": [_span(a, b) for a, b in zip(df["cycle_min"], df["cycle_max"])],
-        "Rendement potentiel (kg/ha)": [_span(a * 1000, b * 1000)
-                                        for a, b in zip(df["rendement_min"], df["rendement_max"])],
-        "Pluie adaptée (mm/an)": [_span(a, b) for a, b in zip(df["pluie_min"], df["pluie_max"])],
-        "Points forts et faiblesses": df["caracteristiques"].fillna(""),
-        "Usage": df["vocation"].fillna(""),
-    })
+    if df.empty:
+        return '<div class="src-note">Aucune variété ne correspond à ces critères.</div>'
+    esc = html.escape
+    rows = []
+    for r in df.itertuples():
+        tags = "".join(f'<span class="tag {esc(t.strip())}">{esc(t.strip().capitalize())}</span>'
+                       for t in str(r.vocation or "").split(",") if t.strip() and t != "nan")
+        traits = str(r.caracteristiques) if isinstance(r.caracteristiques, str) else "—"
+        rows.append(
+            f'<tr><td class="name">{esc(r.variete)}</td>'
+            f'<td class="num">{_span(r.cycle_min, r.cycle_max)} j</td>'
+            f'<td class="num">{_span(r.rendement_min * 1000, r.rendement_max * 1000)}</td>'
+            f'<td class="num">{_span(r.pluie_min, r.pluie_max)}</td>'
+            f"<td>{esc(traits)}</td><td>{tags or '—'}</td></tr>")
+    return ('<div class="vscroll"><table class="vtable"><thead><tr><th>Variété</th>'
+            "<th>Cycle</th><th>Rdt (kg/ha)</th><th>Pluie (mm/an)</th>"
+            "<th>Points forts et faiblesses</th><th>Usage</th></tr></thead><tbody>"
+            + "".join(rows) + "</tbody></table></div>")
 
 
-def rain_by_region(decade: str) -> tuple[pd.DataFrame, pd.DataFrame, str]:
+def rain_by_region(decade: str) -> tuple[str, pd.DataFrame, str]:
     day = pd.Timestamp(decade)
     cur = kb.rain[kb.rain["decade_debut"] == day]
-    bars = (cur.dropna(subset=["region"]).groupby("region", as_index=False)["pluie_mm"].max()
-            .assign(region=lambda d: d["region"].map(place))
-            .sort_values("pluie_mm", ascending=False))
+    by_region = (cur.dropna(subset=["region"]).groupby("region", as_index=False)["pluie_mm"]
+                 .max().sort_values("pluie_mm", ascending=False))
+    bars = hbars_html(f"Pluie par région — décade {fmt_period(day, decade_end(day))}",
+                      [(place(r), float(v)) for r, v in zip(by_region["region"],
+                                                            by_region["pluie_mm"])],
+                      "mm", "Relevé le plus élevé de chaque région (bulletin ANACIM).")
     table = pd.DataFrame({"Localité": cur["localite"].map(place),
                           "Région": cur["region"].fillna("").map(place),
                           "Pluie (mm)": cur["pluie_mm"].round(1)}
@@ -404,9 +612,7 @@ def rain_by_region(decade: str) -> tuple[pd.DataFrame, pd.DataFrame, str]:
 
 
 def on_rain(decade: str):
-    bars, table, md = rain_by_region(decade)
-    top = float(bars["pluie_mm"].max()) if not bars.empty else 100.0
-    return gr.BarPlot(value=bars, y_lim=[0, round(top * 1.1)]), table, md  # axe à partir de 0
+    return rain_by_region(decade)
 
 
 # ---------------------------------------------------------------- labo langues
@@ -453,6 +659,41 @@ def on_lab_speak(lang: str, text: str):
         return None
 
 
+# ---------------------------------------------------------------- à propos
+_SOURCES = [
+    ("Prix de détail par marché", "PAM / WFP (HDX)",
+     f"{kb.prices['date'].min().year} – {kb.prices['date'].max().year}"),
+    ("Production, superficie, rendement nationaux", "FAOSTAT",
+     f"{YEARS_FAO[0]} – {YEARS_FAO[1]}"),
+    ("Production par région et département", "DAPSA, enquête agricole annuelle",
+     f"{int(kb.regional['year'].min())} – {int(kb.regional['year'].max())}"),
+    ("Variétés inscrites au Sénégal", "Catalogue ouest-africain des variétés (CEDEAO)", "—"),
+    ("Pluies et recommandations décadaires", "ANACIM, bulletins agrométéorologiques",
+     (f"{kb.rain['decade_debut'].min().year} – {kb.rain['decade_debut'].max().year}"
+      if not kb.rain.empty else "—")),
+]
+ABOUT_HTML = (
+    '<div class="about"><h3>Sources des données officielles</h3>'
+    '<div class="vscroll"><table class="vtable"><thead><tr><th>Donnée</th><th>Source</th>'
+    "<th>Période</th></tr></thead><tbody>"
+    + "".join(f"<tr><td>{d}</td><td><b>{s}</b></td><td class='num'>{p}</td></tr>"
+              for d, s, p in _SOURCES)
+    + "</tbody></table></div>"
+    '<div class="pipe"><h3>Comment ça marche : aucun chiffre inventé</h3>'
+    "Voix wolof → <b>reconnaissance vocale</b> (Wolof-HuBERT) → <b>compréhension</b> "
+    "(mots-clés français et wolof, tolérante aux erreurs de transcription) → "
+    "<b>réponse tirée des tables officielles</b> (prix, statistiques, variétés, pluies, "
+    "recommandations) → <b>phrase wolof construite directement</b> à partir des mêmes "
+    "chiffres (pas de traduction automatique) → <b>synthèse vocale</b> (SpeechT5 wolof), "
+    "nombres dits en lettres.</div>"
+    "<h3>Axes d'amélioration</h3><ul>"
+    "<li>Validation du wolof par des locuteurs natifs (fiche <code>validation_wolof.csv</code>)."
+    "</li><li>Pulaar puis sereer : données KALLAAMA collectées, modèles existants testés "
+    "(onglet Labo langues, <code>FEUILLE_DE_ROUTE_LANGUES.md</code>).</li>"
+    "<li>Fiches d'itinéraire technique (semis, engrais) pour des conseils plus concrets.</li>"
+    "</ul><p><i>Équipe SMART AGRO — PAS Challenge 2026.</i></p></div>")
+
+
 # ---------------------------------------------------------------- interface
 THEME = gr.themes.Soft(primary_hue="green", secondary_hue="amber",
                        font=[gr.themes.GoogleFont("Inter"), "sans-serif"])
@@ -462,7 +703,12 @@ with gr.Blocks(title="AgriBaat", css=CSS, theme=THEME) as demo:
     history = gr.State([])
 
     with gr.Tab("🎙️ Assistant"):
-        mode_banner = gr.HTML(mode_html())
+        with gr.Row(elem_id="status-row", equal_height=True):
+            with gr.Column(scale=4, min_width=240):
+                mode_banner = gr.HTML(mode_html())
+            lang = gr.Radio([("Wolof · prioritaire", "Wolof"), ("Français", "Français")],
+                            value="Wolof", show_label=False, scale=2, min_width=240,
+                            elem_id="lang-toggle", container=False)
         demo.load(mode_html, None, mode_banner)  # état réel à chaque ouverture de la page
         if VOICE_READY and not WARMUP.finished:
             # Rafraîchit le bandeau pendant la préparation, puis s'arrête.
@@ -470,32 +716,43 @@ with gr.Blocks(title="AgriBaat", css=CSS, theme=THEME) as demo:
             timer.tick(lambda: (mode_html(), gr.Timer(active=not WARMUP.finished)),
                        None, [mode_banner, timer])
         with gr.Row(equal_height=False):
-            with gr.Column(scale=5):
-                with gr.Group():
-                    mic = gr.Audio(sources=["microphone", "upload"], type="numpy",
-                                   label="Posez votre question en wolof")
-                    gr.Markdown("<span class='hint'>1. « Enregistrer » · 2. posez la "
-                                "question · 3. « Arrêter » : elle part toute seule.</span>")
-                    btn_voice = gr.Button("🎙️ Renvoyer la question vocale", variant="primary",
-                                          elem_id="ask-voice", interactive=VOICE_READY)
-                with gr.Group():
-                    txt = gr.Textbox(placeholder="Ex. : Quel est le prix du mil à Kaolack ?",
-                                     label="Ou tapez votre question", lines=2)
-                    with gr.Row():
-                        lang = gr.Radio(["Français", "Wolof"], value="Français",
-                                        show_label=False, scale=3)
-                        btn_text = gr.Button("Envoyer", variant="secondary", scale=1)
-                examples = gr.Examples([list(e) for e in EXAMPLES], inputs=[txt, lang],
-                                       label="Questions types (cliquez pour poser)")
+            with gr.Column(scale=5, elem_id="mic-card"):
+                gr.HTML('<div class="mic-title">Maa ngi lay déglu…</div>'
+                        '<div class="mic-sub">Appuyez sur le cercle rouge et posez votre '
+                        "question en wolof</div>")
+                mic = gr.Audio(sources=["microphone", "upload"], type="numpy",
+                               show_label=False, elem_id="mic", interactive=VOICE_READY)
+                gr.HTML("<span class='hint'>1. Appuyez sur le cercle · 2. parlez · 3. appuyez "
+                        "sur ■ : la question part toute seule.</span>")
+                btn_voice = gr.Button("↻ Renvoyer la dernière question vocale", size="sm",
+                                      variant="secondary", elem_id="ask-voice",
+                                      interactive=VOICE_READY)
             with gr.Column(scale=6):
                 out_card = gr.HTML(EMPTY_CARD)
-                out_audio = gr.Audio(label="Réponse vocale (wolof)", autoplay=True,
+                out_audio = gr.Audio(label="🔊 Réponse vocale (wolof)", autoplay=True,
                                      visible=VOICE_READY)
-                with gr.Accordion("Ce que l'assistant a compris", open=False):
+                with gr.Accordion("🔍 Ce que l'assistant a compris", open=False):
                     out_details = gr.Markdown()
-                with gr.Accordion("Questions récentes", open=False):
+                with gr.Accordion("🕘 Questions récentes", open=False):
                     out_hist = gr.Markdown(_history_md([]), elem_classes="hist")
         outputs = [out_card, out_audio, out_details, history, out_hist]
+
+        gr.HTML('<div class="ex-title">⚡ Questions types — cliquez pour poser</div>')
+        example_buttons = []
+        for row_start in range(0, len(EXAMPLE_CARDS), 4):
+            with gr.Row(equal_height=True):
+                for question, ex_lang, title in EXAMPLE_CARDS[row_start:row_start + 4]:
+                    button = gr.Button(_example_label(question, ex_lang, title),
+                                       elem_classes="ex-card", min_width=150)
+                    example_buttons.append((button, question, ex_lang))
+        with gr.Accordion("⌨️ Ou tapez votre question (mode clavier)", open=False):
+            with gr.Row(equal_height=True):
+                txt = gr.Textbox(placeholder="Ex. : Quel est le prix du mil à Kaolack ?",
+                                 show_label=False, lines=1, scale=5)
+                btn_text = gr.Button("Envoyer", variant="primary", scale=1, min_width=90)
+            gr.HTML("<span class='hint'>La langue choisie en haut (wolof ou français) "
+                    "s'applique à la question tapée.</span>")
+
         btn_voice.click(on_voice, [mic, history], outputs)
         if VOICE_READY:
             # La question part dès qu'on arrête l'enregistrement ou qu'on importe un
@@ -504,8 +761,8 @@ with gr.Blocks(title="AgriBaat", css=CSS, theme=THEME) as demo:
             mic.upload(on_voice, [mic, history], outputs)
         btn_text.click(on_text, [txt, lang, history], outputs)
         txt.submit(on_text, [txt, lang, history], outputs)
-        # Un clic sur une question type la pose directement.
-        examples.load_input_event.then(on_text, [txt, lang, history], outputs)
+        for button, question, ex_lang in example_buttons:  # un clic pose la question
+            button.click(lambda h, q=question, l=ex_lang: on_text(q, l, h), history, outputs)
 
     with gr.Tab("📈 Prix des marchés"):
         with gr.Row():
@@ -530,9 +787,10 @@ with gr.Blocks(title="AgriBaat", css=CSS, theme=THEME) as demo:
         stat_cards = gr.HTML()
         with gr.Row(equal_height=False):
             nat_chart = gr.LinePlot(x="year", y="value", height=340, x_title=" ",
-                                    y_title=" ", title="Sénégal — FAOSTAT", scale=3)
-            reg_chart = gr.BarPlot(x="region", y="value", height=340, x_title=" ", y_title=" ",
-                                   sort="-y", scale=2)
+                                    y_title=" ", title=f"Sénégal — évolution FAOSTAT "
+                                    f"({YEARS_FAO[0]}–{YEARS_FAO[1]})", scale=3)
+            with gr.Column(scale=2, min_width=260):
+                reg_chart = gr.HTML()
         stat_inputs = [dd_sp, dd_ind]
         for comp in stat_inputs:
             comp.change(on_stats, stat_inputs, [stat_cards, nat_chart, reg_chart])
@@ -545,10 +803,10 @@ with gr.Blocks(title="AgriBaat", css=CSS, theme=THEME) as demo:
                     dd_vcrop = gr.Dropdown(VARIETY_CROPS, value="arachide", label="Culture")
                     dd_cycle = gr.Dropdown(CYCLES, value="tous", label="Cycle")
                     cb_drought = gr.Checkbox(label="Tolérante à la sécheresse")
-                v_table = gr.Dataframe(interactive=False, wrap=True, max_height=380,
-                                       column_widths=["14%", "10%", "13%", "11%", "40%", "12%"])
-                gr.Markdown(f"<span id='source'>Source : {CATALOGUE} (CEDEAO / CORAF). "
-                            "Rendement potentiel : en conditions favorables.</span>")
+                v_table = gr.HTML()
+                gr.HTML(f"<div class='src-note'>Source : {CATALOGUE} (CEDEAO / CORAF). "
+                        "Rendement potentiel : en conditions favorables. Pluie : zone "
+                        "pluviométrique adaptée (isohyètes).</div>")
                 v_inputs = [dd_vcrop, dd_cycle, cb_drought]
                 for comp in v_inputs:
                     comp.change(variety_table, v_inputs, v_table)
@@ -557,10 +815,8 @@ with gr.Blocks(title="AgriBaat", css=CSS, theme=THEME) as demo:
                 dd_decade = gr.Dropdown(DECADES, value=DECADES[0][1] if DECADES else None,
                                         label="Décade (bulletin agrométéorologique)")
                 with gr.Row(equal_height=False):
-                    rain_chart = gr.BarPlot(x="region", y="pluie_mm", height=320, x_title=" ",
-                                            y_title="mm (relevé max. de la région)",
-                                            title="Pluie de la décade par région", sort="-y",
-                                            scale=3)
+                    with gr.Column(scale=3, min_width=260):
+                        rain_chart = gr.HTML()
                     advice_md = gr.Markdown()
                 with gr.Accordion("Détail par localité", open=False):
                     rain_table = gr.Dataframe(interactive=False, max_height=320)
@@ -592,26 +848,7 @@ with gr.Blocks(title="AgriBaat", css=CSS, theme=THEME) as demo:
             lab_btn.click(on_lab_speak, [lab_lang, lab_text], lab_audio)
 
     with gr.Tab("ℹ️ À propos"):
-        gr.Markdown("""
-### Sources des données
-| Donnée | Source | Période |
-|---|---|---|
-| Prix de détail par marché | PAM / WFP (HDX) | 2000 – 2026 |
-| Production, superficie, rendement nationaux | FAOSTAT | 1961 – 2024 |
-| Production par région et département | DAPSA, enquête agricole annuelle | 2017 – 2022 |
-
-### Comment ça marche
-Voix wolof → **ASR** (wav2vec2 MMS wolof) → **traduction** (NLLB-200) →
-**réponse construite à partir des données** (aucun chiffre inventé) →
-**traduction** en wolof → **synthèse vocale** (SpeechT5 wolof).
-
-### Limites connues
-- Les réponses en wolof sont des traductions automatiques : à faire relire.
-- Les chiffres lus par la synthèse vocale peuvent être mal prononcés.
-- Questions couvertes : prix, production, superficie, rendement.
-
-*Équipe SMART AGRO — PAS Challenge 2026.*
-""")
+        gr.HTML(ABOUT_HTML)
 
 if __name__ == "__main__":
     demo.launch()
