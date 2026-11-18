@@ -6,6 +6,9 @@ Deux usages :
    Une fenêtre Chrome s'ouvre et déroule la démo. Pendant ce temps, enregistrer
    l'écran avec la Xbox Game Bar de Windows (Win + Alt + R pour démarrer et arrêter ;
    la vidéo arrive dans Vidéos\\Captures) ou avec OBS / l'enregistreur d'Ubuntu.
+   Ou, sans outil externe : python demo_auto.py --filmer : Chrome filme lui-même
+   l'onglet, son compris, et écrit outputs/demo_agribaat.webm (lisible dans Chrome,
+   le Lecteur multimédia de Windows ou VLC).
 2. Démo de secours hors ligne, sans rien enregistrer :
        python demo_auto.py --headless
    produit outputs/demo_secours.html : les écrans de la démo et les vraies réponses
@@ -36,6 +39,7 @@ import config
 APP_URL = "http://127.0.0.1:7860/?__theme=light"
 PORT = 9333
 OUT = config.APP_DIR / "outputs" / "demo_secours.html"
+VIDEO = config.APP_DIR / "outputs" / "demo_agribaat.webm"
 
 # (titre affiché, action, argument)
 SCENARIO = [
@@ -77,17 +81,22 @@ def find_chrome() -> str:
 class Browser:
     """Pilotage minimal de Chrome par le protocole DevTools."""
 
-    def __init__(self, headless: bool) -> None:
+    def __init__(self, headless: bool, film: bool = False) -> None:
         self.profile = tempfile.mkdtemp(prefix="agribaat_demo_")
         args = [find_chrome(), f"--remote-debugging-port={PORT}",
                 f"--user-data-dir={self.profile}", "--no-first-run",
                 "--no-default-browser-check", "--autoplay-policy=no-user-gesture-required",
-                "--window-size=1366,900", "--window-position=0,0", "--hide-crash-restore-bubble"]
+                "--window-size=1366,900", "--window-position=0,0", "--hide-crash-restore-bubble",
+                "--disable-features=Translate", "--lang=fr", "--test-type"]
         if headless:
             args += ["--headless=new", "--mute-audio"]
-        else:
-            args += ["--start-maximized"]
-        self.proc = subprocess.Popen(args + ["about:blank"], stdout=subprocess.DEVNULL,
+        else:  # fenêtre « application » : sans barre d'adresse ni onglets
+            args += ["--start-maximized", "--app=about:blank"]
+        if film:  # filme l'onglet lui-même (image + son), sans boîte de dialogue
+            args += ["--auto-accept-this-tab-capture",
+                     "--auto-select-tab-capture-source-by-title=AgriBaat"]
+        self.proc = subprocess.Popen(args + ([] if not headless else ["about:blank"]),
+                                     stdout=subprocess.DEVNULL,
                                      stderr=subprocess.DEVNULL)
         ws_url = None
         for _ in range(60):
@@ -118,6 +127,15 @@ class Browser:
     def js(self, code: str):
         res = self.call("Runtime.evaluate", expression=code, awaitPromise=True,
                         returnByValue=True)
+        return res.get("result", {}).get("value")
+
+    def js_gesture(self, code: str):
+        """Comme js(), mais compte comme un clic de l'utilisateur (requis pour filmer)."""
+        res = self.call("Runtime.evaluate", expression=code, awaitPromise=True,
+                        returnByValue=True, userGesture=True)
+        if "exceptionDetails" in res:
+            raise RuntimeError(res["exceptionDetails"].get("exception", {}).get(
+                "description", "erreur JavaScript"))
         return res.get("result", {}).get("value")
 
     def screenshot(self) -> bytes:
@@ -168,8 +186,47 @@ def audio_link(br: Browser) -> str | None:
     return br.js("(document.querySelector('#answer-audio a[download]') || {}).href || null")
 
 
-def run(headless: bool) -> None:
-    br = Browser(headless)
+START_REC_JS = """(async () => {
+  const stream = await navigator.mediaDevices.getDisplayMedia({
+    video: {frameRate: 25, width: 1920, height: 1080}, audio: true,
+    preferCurrentTab: true, selfBrowserSurface: 'include', systemAudio: 'include'});
+  const type = ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm']
+    .find(t => MediaRecorder.isTypeSupported(t));
+  window.__chunks = [];
+  const rec = new MediaRecorder(stream, {mimeType: type, videoBitsPerSecond: 3000000});
+  rec.ondataavailable = e => { if (e.data.size) window.__chunks.push(e.data); };
+  rec.start(1000);
+  window.__rec = rec; window.__stream = stream;
+  return type + ' / pistes son : ' + stream.getAudioTracks().length;
+})()"""
+
+STOP_REC_JS = """new Promise(done => {
+  window.__rec.onstop = () => {
+    window.__stream.getTracks().forEach(t => t.stop());
+    window.__blob = new Blob(window.__chunks, {type: 'video/webm'});
+    done(window.__blob.size);
+  };
+  window.__rec.stop();
+})"""
+
+SLICE_JS = """new Promise(done => {
+  const r = new FileReader();
+  r.onload = () => done(r.result.split(',')[1]);
+  r.readAsDataURL(window.__blob.slice(%d, %d));
+})"""
+
+
+def save_video(br: Browser) -> None:
+    size = br.js(STOP_REC_JS)
+    step = 4 * 1024 * 1024
+    with VIDEO.open("wb") as f:
+        for start in range(0, size, step):
+            f.write(base64.b64decode(br.js(SLICE_JS % (start, min(size, start + step)))))
+    print(f"Vidéo : {VIDEO} ({size / 1e6:.1f} Mo)")
+
+
+def run(headless: bool, film: bool = False) -> None:
+    br = Browser(headless, film)
     slides = []
     try:
         br.call("Page.enable")
@@ -177,6 +234,10 @@ def run(headless: bool) -> None:
         if not wait_for(br, "!!document.querySelector('.ex-card')", 60):
             sys.exit(f"L'app ne répond pas sur {APP_URL} : lancez d'abord python app.py")
         time.sleep(2)
+        if film:
+            VIDEO.parent.mkdir(parents=True, exist_ok=True)
+            print("● Enregistrement :", br.js_gesture(START_REC_JS))
+            time.sleep(1)
         for title, action, arg in SCENARIO:
             print("▶", title)
             br.js(CAPTION_JS.replace("__T__", json.dumps(title)))
@@ -214,6 +275,10 @@ def run(headless: bool) -> None:
                       "window.scrollBy(0, -90)")
                 time.sleep(1.5)
                 if action == "example":  # réponse vocale (fichier fourni par l'app)
+                    # Réponse identique à la précédente (même fichier audio) : l'app ne
+                    # la relance pas d'elle-même, on appuie sur lecture.
+                    br.js("(b => { if (b && b.getAttribute('aria-label') !== 'Pause') b.click(); })"
+                          "(document.querySelector('#answer-audio .play-pause-button'))")
                     link = audio_link(br)
                     if link:
                         audio = httpx.get(link, timeout=30).content
@@ -232,6 +297,8 @@ def run(headless: bool) -> None:
             "__T__", json.dumps("AgriBaat — équipe SMART AGRO · PAS Challenge 2026")))
         if not headless:
             time.sleep(4)
+        if film:
+            save_video(br)
     finally:
         br.close()
     build_html(slides)
@@ -308,4 +375,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--headless", action="store_true",
                         help="sans fenêtre : produit seulement outputs/demo_secours.html")
-    run(parser.parse_args().headless)
+    parser.add_argument("--filmer", action="store_true",
+                        help="filme la démo (son compris) dans outputs/demo_agribaat.webm")
+    args = parser.parse_args()
+    if args.headless and args.filmer:
+        sys.exit("--filmer a besoin d'une fenêtre visible (le son est coupé en --headless).")
+    run(args.headless, args.filmer)

@@ -17,6 +17,8 @@
    `python demo_auto.py` déroule tout le scénario seul dans une fenêtre Chrome (avec
    les réponses vocales) ; filmer l'écran pendant ce temps avec **Win + Alt + R** (Xbox
    Game Bar, vidéo dans `Vidéos\Captures`) ou l'enregistreur d'écran d'Ubuntu.
+   Encore plus simple : `python demo_auto.py --filmer` : Chrome filme lui-même l'onglet,
+   voix comprise, dans `outputs/demo_agribaat.webm` (environ 4 min, 20 Mo).
 5. Sans rien filmer : `python demo_auto.py --headless` produit
    `outputs/demo_secours.html`, les écrans de la démo avec les vraies réponses vocales,
    qui s'enchaînent tout seuls dans un navigateur, même sans internet.
