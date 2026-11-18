@@ -94,6 +94,9 @@ html, body {overflow-x: hidden;}
         background: var(--background-fill-secondary); color: var(--body-text-color);}
 .badge.src {background: #dcfce7; color: #14532d;}
 .badge.miss {background: #fee2e2; color: #7f1d1d;}
+.heard {font-size: .92rem; margin-bottom: 12px; padding: 8px 10px; border-radius: 8px;
+         background: var(--background-fill-secondary); color: var(--body-text-color);}
+.hint {font-size: .85rem; color: var(--body-text-color-subdued);}
 .warn {margin-top: 12px; font-size: .85rem; color: #92400e; background: #fffbeb;
        border-left: 3px solid #f59e0b; padding: 8px 10px; border-radius: 6px;}
 
@@ -158,9 +161,12 @@ EMPTY_CARD = ('<div class="card"><div class="lbl">Réponse</div>'
               "la réponse s'affichera ici.</div></div>")
 
 
-def answer_card(res: Result) -> str:
+def answer_card(res: Result, spoken: bool = False) -> str:
     esc = html.escape
     parts = ['<div class="card">']
+    if spoken:  # question vocale : on montre ce que l'app a entendu
+        heard = esc(res.question_wo) if res.question_wo else "<i>(rien de compréhensible)</i>"
+        parts.append(f'<div class="heard">🎙️ Entendu : « {heard} »</div>')
     if res.answer_wo:
         parts.append(f'<div class="lbl">Wolof</div><div class="wo">{esc(res.answer_wo)}</div>')
     parts.append(f'<div class="lbl">Français</div><div class="fr">{esc(res.answer_fr)}</div>')
@@ -195,23 +201,33 @@ def _history_md(history: list[tuple[str, str]]) -> str:
     return "\n".join(f"- **{html.escape(q)}** — {html.escape(a)}" for q, a in history[:6])
 
 
-def _render(res: Result, history: list):
+def _render(res: Result, history: list, spoken: bool = False):
     question = res.question_fr or res.question_wo
     if question:
         history = [(question, res.answer_fr)] + history[:9]
-    return answer_card(res), res.audio, _details(res), history, _history_md(history)
+    return answer_card(res, spoken), res.audio, _details(res), history, _history_md(history)
+
+
+NOTHING = (gr.skip(),) * 5  # laisse la réponse précédente affichée
 
 
 def on_voice(audio, history):
+    # Message doux (pas d'état « Erreur » sur les cases de réponse).
     if audio is None:
-        raise gr.Error("Enregistrez ou importez d'abord une question.")
+        gr.Warning("Cliquez d'abord sur « Arrêter » pour terminer l'enregistrement, "
+                   "ou importez un fichier audio.")
+        return NOTHING
     sr, data = audio
-    return _render(assistant.ask_audio(sr, data), history)
+    if len(data) < 0.5 * sr:
+        gr.Warning("Enregistrement trop court : parlez au moins une seconde.")
+        return NOTHING
+    return _render(assistant.ask_audio(sr, data), history, spoken=True)
 
 
 def on_text(text: str, lang: str, history):
     if not text or not text.strip():
-        raise gr.Error("Tapez une question.")
+        gr.Warning("Tapez d'abord une question.")
+        return NOTHING
     return _render(assistant.ask_text(text, "wo" if lang == "Wolof" else "fr"), history)
 
 
@@ -413,7 +429,9 @@ with gr.Blocks(title="AgriBaat", css=CSS, theme=THEME) as demo:
                 with gr.Group():
                     mic = gr.Audio(sources=["microphone", "upload"], type="numpy",
                                    label="Posez votre question en wolof")
-                    btn_voice = gr.Button("🎙️ Envoyer la question vocale", variant="primary",
+                    gr.Markdown("<span class='hint'>1. « Enregistrer » · 2. posez la "
+                                "question · 3. « Arrêter » : elle part toute seule.</span>")
+                    btn_voice = gr.Button("🎙️ Renvoyer la question vocale", variant="primary",
                                           elem_id="ask-voice", interactive=VOICE_READY)
                 with gr.Group():
                     txt = gr.Textbox(placeholder="Ex. : Quel est le prix du mil à Kaolack ?",
@@ -434,6 +452,11 @@ with gr.Blocks(title="AgriBaat", css=CSS, theme=THEME) as demo:
                     out_hist = gr.Markdown(_history_md([]), elem_classes="hist")
         outputs = [out_card, out_audio, out_details, history, out_hist]
         btn_voice.click(on_voice, [mic, history], outputs)
+        if VOICE_READY:
+            # La question part dès qu'on arrête l'enregistrement ou qu'on importe un
+            # fichier : plus besoin de penser à cliquer sur « Envoyer ».
+            mic.stop_recording(on_voice, [mic, history], outputs)
+            mic.upload(on_voice, [mic, history], outputs)
         btn_text.click(on_text, [txt, lang, history], outputs)
         txt.submit(on_text, [txt, lang, history], outputs)
         # Un clic sur une question type la pose directement.
