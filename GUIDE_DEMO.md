@@ -13,7 +13,13 @@
 3. **Répéter le scénario ci-dessous une fois en entier** : chaque réponse vocale est
    gardée en cache (`agribaat_app/outputs/cache`). Le jour J, ces questions répondent
    en 2 à 3 secondes, voix comprise.
-4. Enregistrer une **vidéo de secours** de cette répétition.
+4. Enregistrer une **vidéo de secours** de cette répétition. Le plus simple : app lancée,
+   `python demo_auto.py` déroule tout le scénario seul dans une fenêtre Chrome (avec
+   les réponses vocales) ; filmer l'écran pendant ce temps avec **Win + Alt + R** (Xbox
+   Game Bar, vidéo dans `Vidéos\Captures`) ou l'enregistreur d'écran d'Ubuntu.
+5. Sans rien filmer : `python demo_auto.py --headless` produit
+   `outputs/demo_secours.html`, les écrans de la démo avec les vraies réponses vocales,
+   qui s'enchaînent tout seuls dans un navigateur, même sans internet.
 
 ## 1 ter. Si l'app ne démarre plus (après un `git pull`)
 

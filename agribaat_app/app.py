@@ -788,7 +788,7 @@ with gr.Blocks(title="AgriBaat", css=CSS, theme=THEME, js=FORCE_LIGHT) as demo:
             with gr.Column(scale=6):
                 out_card = gr.HTML(EMPTY_CARD)
                 out_audio = gr.Audio(label="🔊 Réponse vocale", autoplay=True,
-                                     visible=VOICE_READY)
+                                     visible=VOICE_READY, elem_id="answer-audio")
                 with gr.Accordion("🔍 Ce que l'assistant a compris", open=False):
                     out_details = gr.Markdown()
                 with gr.Accordion("🕘 Questions récentes", open=False):
