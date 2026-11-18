@@ -12,7 +12,8 @@ le moteur de réponses et les tests fonctionnent sans eux.
 from __future__ import annotations
 
 import re
-from functools import lru_cache
+import threading
+from functools import lru_cache, wraps
 from pathlib import Path
 
 import numpy as np
@@ -20,6 +21,23 @@ import numpy as np
 import config
 
 TARGET_SR = 16_000  # fréquence attendue par l'ASR et produite par le TTS
+
+
+_LOAD_LOCK = threading.RLock()
+
+
+def _once(loader):
+    """Charge un modèle une seule fois, même si deux requêtes arrivent en même temps
+    (ex. préchargement au démarrage + première question) : sinon deux copies en mémoire."""
+    cached = lru_cache(maxsize=1)(loader)
+
+    @wraps(loader)
+    def wrapper():
+        with _LOAD_LOCK:
+            return cached()
+
+    wrapper.cache_clear = cached.cache_clear
+    return wrapper
 
 
 class ModelUnavailable(RuntimeError):
@@ -44,7 +62,7 @@ def to_mono_16k(sr: int, audio: np.ndarray) -> np.ndarray:
 
 
 # ------------------------------------------------------------------------ ASR
-@lru_cache(maxsize=1)
+@_once
 def _asr():
     try:
         # Auto* : accepte wav2vec2, MMS, HuBERT… tout modèle CTC.
@@ -80,7 +98,7 @@ def transcribe(audio_16k: np.ndarray) -> str:
 
 
 # ---------------------------------------------------------------- traduction
-@lru_cache(maxsize=1)
+@_once
 def _mt():
     try:
         from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
@@ -208,7 +226,7 @@ def _tts_encoder():
         return lambda text: torch.tensor([char_tok.encode(text)])
 
 
-@lru_cache(maxsize=1)
+@_once
 def _tts():
     try:
         import torch
@@ -225,31 +243,68 @@ def _tts():
         raise ModelUnavailable(f"TTS indisponible ({config.TTS_MODEL}) : {exc}") from exc
 
 
-def split_sentences(text: str, max_chars: int = 180) -> list[str]:
-    """Découpe en phrases courtes : SpeechT5 dégrade sur les textes longs."""
+def split_sentences(text: str, max_chars: int = 70) -> list[str]:
+    """Découpe en morceaux courts : phrases, puis virgules, puis espaces.
+
+    SpeechT5 gère mal les textes longs : au-delà d'environ 80 caractères il « oublie »
+    de s'arrêter (mesuré : 112 caractères -> 22 s d'audio en 168 s de calcul ; découpé
+    aux virgules -> 9,6 s d'audio en 25 s).
+    """
     chunks: list[str] = []
-    for sentence in re.split(r"(?<=[.!?;])\s+", text.strip()):
-        while len(sentence) > max_chars:
-            cut = sentence.rfind(" ", 0, max_chars)
-            cut = cut if cut > 0 else max_chars
-            chunks.append(sentence[:cut])
-            sentence = sentence[cut:].strip()
-        if sentence:
-            chunks.append(sentence)
+    for sentence in re.split(r"(?<=[.!?;:])\s+", text.strip()):
+        parts = re.split(r"(?<=,)\s+", sentence) if len(sentence) > max_chars else [sentence]
+        for part in parts:
+            while len(part) > max_chars:
+                cut = part.rfind(" ", 0, max_chars)
+                cut = cut if cut > 0 else max_chars
+                chunks.append(part[:cut])
+                part = part[cut:].strip()
+            if part:
+                chunks.append(part)
     return chunks
 
 
+# Plafond de durée générée (en multiple de la longueur du texte) : coupe les dérapages.
+MAX_LEN_RATIO = 12.0
+CACHE_DIR = config.APP_DIR / "outputs" / "cache"
+
+
+def _cache_path(text: str) -> Path:
+    import hashlib
+
+    key = hashlib.sha1(f"{config.TTS_MODEL}|{text}".encode("utf-8")).hexdigest()[:20]
+    return CACHE_DIR / f"{key}.wav"
+
+
 def synthesize(text: str) -> tuple[int, np.ndarray]:
-    """Texte wolof -> (16000, audio float32), phrase par phrase."""
+    """Texte wolof -> (16000, audio float32), morceau par morceau.
+
+    Les audios déjà produits sont gardés sur disque (outputs/cache) : une question déjà
+    posée, ou préparée au démarrage, est relue instantanément.
+    """
+    import soundfile as sf
+
+    cached = _cache_path(text)
+    if cached.exists():
+        audio, sr = sf.read(cached, dtype="float32")
+        return sr, audio
+
     import torch
 
     encode, model, vocoder, speaker = _tts()
     pieces: list[np.ndarray] = []
-    silence = np.zeros(int(0.25 * TARGET_SR), dtype=np.float32)
+    silence = np.zeros(int(0.2 * TARGET_SR), dtype=np.float32)
     for chunk in split_sentences(text):
         with torch.no_grad():
-            speech = model.generate_speech(encode(chunk), speaker, vocoder=vocoder)
+            speech = model.generate_speech(encode(chunk), speaker, vocoder=vocoder,
+                                           maxlenratio=MAX_LEN_RATIO)
         pieces += [speech.numpy().astype(np.float32), silence]
     if not pieces:
         raise ValueError("Texte vide : rien à synthétiser.")
-    return TARGET_SR, np.concatenate(pieces)
+    audio = np.concatenate(pieces)
+    try:
+        CACHE_DIR.mkdir(parents=True, exist_ok=True)
+        sf.write(cached, audio, TARGET_SR)
+    except OSError:  # cache facultatif
+        pass
+    return TARGET_SR, audio

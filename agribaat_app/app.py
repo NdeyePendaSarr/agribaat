@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import html
 import importlib.util
+import logging
 
 import gradio as gr
 import pandas as pd
@@ -13,7 +14,13 @@ from agribaat.answers import CATALOGUE, fmt_month, fmt_number, fmt_period, place
 from agribaat.knowledge import KnowledgeBase
 from agribaat.knowledge import decade_end
 from agribaat.lexicon import PRODUCT_BY_KEY, PRODUCTS
+from agribaat import warmup
 from agribaat.pipeline import Assistant, Result
+
+# Windows : quand le navigateur recharge la page, asyncio journalise une « erreur »
+# WinError 10054 (connexion fermée par le navigateur) sans conséquence. On la masque.
+logging.getLogger("asyncio").addFilter(
+    lambda record: not (record.exc_info and "10054" in str(record.exc_info[1])))
 
 kb = KnowledgeBase(config.PROCESSED_DIR)
 assistant = Assistant(kb)
@@ -46,6 +53,10 @@ EXAMPLES = [
     ("Quand récolter l'arachide ?", "Français"),
     ("njëg dugub ci Kaolack", "Wolof"),
 ]
+
+# Préparation en arrière-plan : modèles vocaux + réponses vocales des questions types.
+WARMUP = (warmup.start(assistant, [(t, "wo" if l == "Wolof" else "fr") for t, l in EXAMPLES])
+          if VOICE_READY else warmup.WarmupStatus(state="désactivé"))
 
 CSS = """
 .gradio-container {max-width: 1180px !important; margin: auto;}
@@ -105,8 +116,16 @@ def hero_html() -> str:
 
 def mode_html() -> str:
     if VOICE_READY:
-        return ('<div class="mode ok">🎙️ Mode vocal disponible : parlez en wolof, '
-                "la réponse est lue à voix haute.</div>")
+        s = WARMUP
+        if s.state in ("en attente", "chargement"):
+            return ('<div class="mode text">⏳ Chargement de la voix en cours (1 à 3 minutes). '
+                    "Les questions écrites fonctionnent déjà.</div>")
+        if s.state == "préparation":
+            return (f'<div class="mode text">⏳ Préparation des réponses vocales : '
+                    f"{s.done}/{s.total} questions types prêtes. Vous pouvez déjà poser "
+                    "vos questions (premières réponses vocales plus lentes).</div>")
+        return ('<div class="mode ok">🎙️ Mode vocal prêt : parlez en wolof, la réponse est '
+                "lue à voix haute. Les questions types répondent instantanément.</div>")
     return ('<div class="mode text">⌨️ Mode texte : les modèles vocaux ne sont pas installés '
             "(torch, transformers). Les questions écrites en français fonctionnent ; "
             "voir le README pour activer la voix.</div>")
@@ -361,7 +380,13 @@ with gr.Blocks(title="AgriBaat", css=CSS, theme=THEME) as demo:
     history = gr.State([])
 
     with gr.Tab("🎙️ Assistant"):
-        gr.HTML(mode_html())
+        mode_banner = gr.HTML(mode_html())
+        demo.load(mode_html, None, mode_banner)  # état réel à chaque ouverture de la page
+        if VOICE_READY and not WARMUP.finished:
+            # Rafraîchit le bandeau pendant la préparation, puis s'arrête.
+            timer = gr.Timer(5)
+            timer.tick(lambda: (mode_html(), gr.Timer(active=not WARMUP.finished)),
+                       None, [mode_banner, timer])
         with gr.Row(equal_height=False):
             with gr.Column(scale=5):
                 with gr.Group():

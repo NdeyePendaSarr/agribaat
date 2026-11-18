@@ -210,3 +210,49 @@ def test_search_refuses_unrelated_questions(kb):
     assert kb.search("Quel temps fait-il à Paris ?") is None
     passage = kb.search("oiseaux granivores dans la vallée")
     assert passage is not None and "ANACIM" in passage.source
+
+
+# ------------------------------------------------------------------ voix
+def test_split_sentences_cuts_long_sentences_at_commas():
+    text = ("Ci Oktoobar ñaari junni ak ñaar fukk ak juróom benn, kilo dugub dafa jaroon "
+            "ñetti téeméer sefa ci marse Kaolack. Lii mooy xibaar yi mujj.")
+    chunks = split_sentences(text)
+    assert all(len(c) <= 70 for c in chunks)
+    assert chunks[0].endswith(",") and len(chunks) == 3
+
+
+def test_warmup_reports_progress_and_survives_errors(monkeypatch):
+    from agribaat import models, warmup
+
+    monkeypatch.setattr(models, "_tts", lambda: None)
+    monkeypatch.setattr(models, "_asr", lambda: (_ for _ in ()).throw(
+        models.ModelUnavailable("ASR absent")))
+
+    class FakeAssistant:
+        def ask_text(self, text, lang):
+            class R:
+                warnings: list = []
+            return R()
+
+    status = warmup.WarmupStatus()
+    warmup.run(FakeAssistant(), [("a", "fr"), ("b", "wo")], status)
+    assert status.state == "prêt" and (status.done, status.total) == (2, 2)
+    assert "ASR absent" in status.errors
+
+    monkeypatch.setattr(models, "_tts", lambda: 1 / 0)
+    broken = warmup.WarmupStatus()
+    warmup.run(FakeAssistant(), [("a", "fr")], broken)
+    assert broken.state == "erreur" and broken.finished
+
+
+def test_tts_cache_returns_stored_audio(tmp_path, monkeypatch):
+    import numpy as np
+    import soundfile as sf
+
+    from agribaat import models
+
+    monkeypatch.setattr(models, "CACHE_DIR", tmp_path)
+    sf.write(models._cache_path("Mas naa jaay lii."), np.zeros(1600, dtype=np.float32), 16000)
+    monkeypatch.setattr(models, "_tts", lambda: (_ for _ in ()).throw(AssertionError))
+    sr, audio = models.synthesize("Mas naa jaay lii.")  # ne doit pas charger le modèle
+    assert sr == 16000 and len(audio) == 1600
