@@ -15,6 +15,24 @@
    en 2 à 3 secondes, voix comprise.
 4. Enregistrer une **vidéo de secours** de cette répétition.
 
+## 1 bis. Tester la voix avec nos propres voix (à faire au plus tôt)
+
+1. Chaque membre enregistre les 14 questions de
+   `agribaat_app/test_voix/questions_a_enregistrer.csv` (q01 à q14), par exemple en
+   **messages vocaux WhatsApp**, d'une voix normale, sans bruit de fond.
+2. Nommer les fichiers `q01`, `q02`… (n'importe quel format : .ogg, .opus, .mp3, .wav ;
+   **pas de .m4a** d'iPhone) et les mettre dans un dossier, un dossier par personne.
+3. Lancer :
+   ```bat
+   cd agribaat_app
+   ..\.venv_win\Scripts\python.exe tester_voix.py test_voix\bachir --attendu test_voix\questions_a_enregistrer.csv
+   ```
+4. Ouvrir `resultats_test_voix.csv` dans Excel : pour chaque question, ce que l'app a
+   entendu, ce qu'elle a compris et sa réponse. Envoyer ce fichier : les mots mal
+   entendus servent à améliorer la compréhension.
+
+Les enregistrements restent sur la machine (ils ne sont pas envoyés sur GitHub).
+
 ## 2. Le jour J
 
 1. Fermer tout ce qui consomme de la mémoire : Chrome (onglets lourds), Docker Desktop

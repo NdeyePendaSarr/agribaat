@@ -20,3 +20,12 @@ agribaat_app/outputs/
 .idea/
 Thumbs.db
 desktop.ini
+
+# Résultats locaux du kit de test vocal
+agribaat_app/resultats_test_voix.csv
+agribaat_app/test_voix/*.wav
+agribaat_app/test_voix/*.mp3
+agribaat_app/test_voix/*.ogg
+agribaat_app/test_voix/*.opus
+agribaat_app/test_voix/*.flac
+agribaat_app/test_voix/*.m4a

@@ -71,6 +71,7 @@ Les machines de 16 Go ou plus peuvent essayer les deux modèles plus gros, plus 
 | `agribaat/nlu.py` | Détection intention, produit, lieu, année |
 | `agribaat/answers.py` | Réponses en français et en wolof, chiffrées et sourcées |
 | `agribaat/wolof.py` | Vocabulaire, phrases modèles et nombres wolof (**à faire valider**) |
+| `tester_voix.py` | Kit de test vocal : dossier d'enregistrements -> ce que l'app entend et comprend |
 | `validation_wolof.py` | Génère `validation_wolof.csv`, la fiche de relecture pour un locuteur natif |
 | `agribaat/search.py` | Recherche de passages (secours, extraits cités ISRA / ANACIM) |
 | `data/curated/varietes.csv` | Variétés inscrites au Sénégal, saisies depuis le Catalogue ouest-africain |

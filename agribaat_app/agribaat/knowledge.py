@@ -230,8 +230,9 @@ class KnowledgeBase:
 
 # Thèmes des recommandations (texte normalisé, sans accents).
 TOPICS = {
-    "semis": r"\bsemis|\bsemer|resemis",
-    "recolte": r"recolte",
+    # wolof (À VALIDER) : ji gi / jiyee / jiwu = semis
+    "semis": r"\bsemis|\bsemer|resemis|\bji gi\b|jiyee|jiwu",
+    "recolte": r"recolte|recolter",
     "ravageurs": r"ravageur|oiseaux|criquet|sauteriau|chenille|maladie|phytosanit|traitement|chancre|mildiou",
     "previsions": r"prevision|information|meteo|climat",
     "elevage": r"elevage|betail|cheptel|paturage|forage|animaux|vaccin|fourrag",

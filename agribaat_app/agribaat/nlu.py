@@ -49,6 +49,21 @@ def _contains(text: str, keyword: str) -> bool:
     return re.search(rf"(?<![a-z]){re.escape(normalize(keyword))}(?![a-z])", text) is not None
 
 
+def _year_in_words(text: str) -> int | None:
+    """Année dite en wolof (« ñaari junni ak ñaar fukk ak ñeent » -> 2024), telle que
+    la transcription vocale l'écrit. Années 1990 à 2030."""
+    from .wolof import number_words
+
+    found = None
+    for year in range(1990, 2031):
+        words = normalize(number_words(year))
+        if re.search(rf"(?<![a-z]){re.escape(words)}(?![a-z])", text):
+            # la plus longue l'emporte (2024 contient « … ak ñaar fukk » de 2020)
+            if found is None or len(words) > len(normalize(number_words(found))):
+                found = year
+    return found
+
+
 def _edit_distance(a: str, b: str) -> int:
     prev = list(range(len(b) + 1))
     for i, ca in enumerate(a, 1):
@@ -95,7 +110,9 @@ def parse(texts: list[str], kb: KnowledgeBase) -> Query:
                 break
 
     q.text = text
-    for intent in ("pluie", "variete", "conseil", "prix", "rendement", "superficie",
+    # « variete » avant « pluie » : « variété résistante au manque de pluie » /
+    # « xeeti gerte yu mën a muñ ñàkk taw » parlent de variétés, pas de météo.
+    for intent in ("variete", "pluie", "conseil", "prix", "rendement", "superficie",
                    "production"):
         if any(_contains(text, k) for k in INTENT_KEYWORDS[intent]):
             q.intent = intent
@@ -106,14 +123,20 @@ def parse(texts: list[str], kb: KnowledgeBase) -> Query:
         q.cycle = "court"
     elif re.search(r"cycle long|tardi", text):
         q.cycle = "long"
-    q.drought = bool(re.search(r"secheresse|manque de pluie|peu de pluie|deficit", text))
+    q.drought = bool(re.search(
+        r"secheresse|manque de pluie|peu de pluie|deficit|nakk taw|nakkum taw", text))
     for topic, pattern in TOPICS.items():
         if re.search(pattern, text):
             q.topic = topic
             break
+    # « kañ » (quand ?) + góob / ji : question de calendrier -> conseil
+    # (« Kañ lañuy góob gerte ? » = « Quand récolte-t-on l'arachide ? »).
+    if re.search(r"\bkan\b", text) and re.search(r"\bgoob|\bji\b|jiyee", text):
+        q.intent = "conseil"
+        q.topic = "recolte" if re.search(r"\bgoob", text) else "semis"
 
     years = re.findall(r"\b(19[6-9]\d|20[0-4]\d)\b", text)
-    q.year = int(years[-1]) if years else None
+    q.year = int(years[-1]) if years else _year_in_words(text)
 
     # Lieux : alias d'abord, puis marchés, départements, régions.
     for alias, place in PLACE_ALIASES.items():

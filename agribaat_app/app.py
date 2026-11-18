@@ -59,7 +59,14 @@ WARMUP = (warmup.start(assistant, [(t, "wo" if l == "Wolof" else "fr") for t, l 
           if VOICE_READY else warmup.WarmupStatus(state="désactivé"))
 
 CSS = """
-.gradio-container {max-width: 1180px !important; margin: auto;}
+/* Le conteneur suit la largeur de l'écran : sans cela, sur un écran étroit (< 700 px),
+   la barre d'onglets l'élargissait et le contenu était coupé à droite. */
+.gradio-container {max-width: 1180px !important; margin: auto; width: 100% !important;
+                   min-width: 0 !important;}
+.gradio-container .row > *, .gradio-container .column, .gradio-container .block,
+.gradio-container .form {min-width: 0;}
+[role=tablist] {overflow-x: auto; flex-wrap: nowrap; scrollbar-width: thin;}
+[role=tablist] button {flex: 0 0 auto; white-space: nowrap;}
 footer {display: none !important;}
 html, body {overflow-x: hidden;}
 

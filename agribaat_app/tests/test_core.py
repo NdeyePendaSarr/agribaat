@@ -280,3 +280,18 @@ def test_parse_asr_style_question(kb):
     assert (q.intent, q.product, q.market) == ("prix", "mil", "Kaolack")
     assert parse(["njëg dugub ci Kawlax"], kb).market == "Kaolack"
     assert parse(["amul benn risque"], kb).market is None  # pas de faux lieu
+
+
+@needs_data
+def test_recording_list_questions_are_understood(kb):
+    """Les 14 questions du kit de test vocal sont comprises à l'écrit."""
+    import csv
+
+    path = config.APP_DIR / "test_voix" / "questions_a_enregistrer.csv"
+    rows = list(csv.reader(path.open(encoding="utf-8"), delimiter=";"))[1:]
+    queries = {name: parse([text], kb) for name, text in rows}
+    assert all(q.is_complete for q in queries.values())
+    assert queries["q06"].year == 2024  # année dite en toutes lettres
+    assert (queries["q10"].intent, queries["q10"].drought) == ("variete", True)
+    assert queries["q13"].topic == "semis"
+    assert (queries["q14"].intent, queries["q14"].topic) == ("conseil", "recolte")
