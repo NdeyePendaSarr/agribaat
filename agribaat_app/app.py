@@ -190,9 +190,12 @@ html, body {overflow-x: hidden;}
     background: none !important; width: auto !important; height: auto !important;
     margin: 0 !important; border-radius: 0 !important;}  /* remplace le point vert Gradio */
 #mic .stop-button::before, #mic .stop-button-paused::before {
-    content: "■"; font-size: 40px; color: #fff; line-height: 1;}
+    content: "■"; font-size: 40px; color: #fff; line-height: 1; animation: none !important;
+    background: none !important; width: auto !important; height: auto !important;
+    margin: 0 !important; border-radius: 0 !important;}
 #mic .stop-button {animation: ab-pulse 1.4s ease-in-out infinite;}
-#mic .record-icon, #mic .pinger, #mic .dot, #mic .hidden {display: none !important;}
+#mic .record-icon, #mic .pinger, #mic .dot, #mic .hidden,
+#mic .pause-button, #mic .resume-button {display: none !important;}
 @keyframes ab-pulse {0%, 100% {box-shadow: 0 0 0 10px rgba(220,38,38,.18), 0 0 0 22px rgba(220,38,38,.08);}
                      50% {box-shadow: 0 0 0 18px rgba(220,38,38,.25), 0 0 0 34px rgba(220,38,38,.10);}}
 #mic-card .hint {display: block; margin: 4px 0 6px;}
@@ -698,7 +701,19 @@ ABOUT_HTML = (
 THEME = gr.themes.Soft(primary_hue="green", secondary_hue="amber",
                        font=[gr.themes.GoogleFont("Inter"), "sans-serif"])
 
-with gr.Blocks(title="AgriBaat", css=CSS, theme=THEME) as demo:
+# Thème clair imposé, comme la maquette : sans cela, un système en mode sombre
+# (Ubuntu, Windows) affichait l'app en sombre et les cartes claires devenaient illisibles.
+FORCE_LIGHT = """
+() => {
+  const url = new URL(window.location);
+  if (url.searchParams.get("__theme") !== "light") {
+    url.searchParams.set("__theme", "light");
+    window.location.replace(url.href);
+  }
+}
+"""
+
+with gr.Blocks(title="AgriBaat", css=CSS, theme=THEME, js=FORCE_LIGHT) as demo:
     gr.HTML(hero_html())
     history = gr.State([])
 
