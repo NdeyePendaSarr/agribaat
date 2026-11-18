@@ -134,7 +134,7 @@ def _below_1000(n: int) -> str:
 
 
 def number_words(n: int) -> str:
-    """Entier -> pulaar. 344 -> 'teemedde tati e capanɗe nay e nay' (À VALIDER)."""
+    """Entier -> pulaar. 344 -> 'teemedde tati e capanɗe nay e nay'."""
     n = int(n)
     if n == 0:
         return "sifir"

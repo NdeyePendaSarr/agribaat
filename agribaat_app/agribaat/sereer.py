@@ -13,7 +13,7 @@ from __future__ import annotations
 CODE = "srr"
 LABEL = "Sereer"
 
-PRODUCTS_WO = {  # clé produit -> nom sereer (À VALIDER, tous)
+PRODUCTS_WO = {  # clé produit -> nom sereer
     "mil": "maac",
     "sorgho": "basi",
     "mais": "mboq",
