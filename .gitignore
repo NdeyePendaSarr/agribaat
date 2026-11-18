@@ -16,7 +16,6 @@ agribaat_app/outputs/
 *.avant_refonte
 
 # Outils locaux
-.claude/
 .vscode/
 .idea/
 Thumbs.db
