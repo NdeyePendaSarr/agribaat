@@ -101,6 +101,20 @@ html, body {overflow-x: hidden;}
 
 #ask-voice button {font-size: 1.05rem;}
 .hist {font-size: .9rem;}
+
+/* Téléphone : en-tête compact, cartes de chiffres sur deux colonnes, textes lisibles. */
+@media (max-width: 640px) {
+  #hero {padding: 18px 16px; border-radius: 14px;}
+  #hero h1 {font-size: 1.6rem;}
+  #hero .tag {font-size: .95rem; margin-bottom: 10px;}
+  #hero .chip {font-size: .78rem; padding: 3px 9px;}
+  .kpis {grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px;}
+  .kpi {padding: 10px 12px;}
+  .kpi .v {font-size: 1.2rem;}
+  .card {padding: 14px;}
+  .card .wo {font-size: 1.15rem;}
+  #ask-voice button {min-height: 52px;}  /* gros bouton micro, facile à toucher */
+}
 """
 
 

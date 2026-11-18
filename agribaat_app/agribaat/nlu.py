@@ -19,6 +19,7 @@ PLACE_ALIASES: dict[str, str] = {
     "thies": "Thies",
     "saint louis": "Saint-Louis",
     "ndar": "Saint-Louis",  # nom wolof de Saint-Louis (À VALIDER)
+    "kawlax": "Kaolack", "kawlaax": "Kaolack",  # nom wolof de Kaolack (À VALIDER)
 }
 
 
@@ -48,6 +49,29 @@ def _contains(text: str, keyword: str) -> bool:
     return re.search(rf"(?<![a-z]){re.escape(normalize(keyword))}(?![a-z])", text) is not None
 
 
+def _edit_distance(a: str, b: str) -> int:
+    prev = list(range(len(b) + 1))
+    for i, ca in enumerate(a, 1):
+        cur = [i]
+        for j, cb in enumerate(b, 1):
+            cur.append(min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (ca != cb)))
+        prev = cur
+    return prev[-1]
+
+
+def _close(keyword: str, words: list[str]) -> bool:
+    """Mot wolof reconnu à une lettre près (« gertei » -> « gerte »).
+
+    Réservé aux mots d'au moins 5 lettres : « basi » ou « ceeb » seraient confondus
+    avec des mots courts (« bas »…). Mesuré sur la radio KALLAAMA : 25/30 mots-clés
+    transcrits à l'identique, 26/30 à une lettre près.
+    """
+    if len(keyword) < 5 or " " in keyword:
+        return False
+    return any(abs(len(w) - len(keyword)) <= 1 and _edit_distance(keyword, w) <= 1
+               for w in words)
+
+
 def _find_place(text: str, index: dict[str, str]) -> str | None:
     """Renvoie le lieu le plus long cité dans le texte (évite 'Touba' vs 'Touba Toul')."""
     hits = [k for k in index if k and _contains(text, k)]
@@ -63,6 +87,12 @@ def parse(texts: list[str], kb: KnowledgeBase) -> Query:
         if any(_contains(text, k) for k in product.fr + product.wo):
             q.product = product.key
             break
+    if q.product is None:  # la transcription vocale déforme parfois un mot wolof
+        words = text.split()
+        for product in PRODUCTS:
+            if any(_close(normalize(k), words) for k in product.wo):
+                q.product = product.key
+                break
 
     q.text = text
     for intent in ("pluie", "variete", "conseil", "prix", "rendement", "superficie",
@@ -89,12 +119,37 @@ def parse(texts: list[str], kb: KnowledgeBase) -> Query:
     for alias, place in PLACE_ALIASES.items():
         if _contains(text, alias):
             text += f" {normalize(place)}"
+    indexes = (kb.markets, kb.departments, kb.regions, kb.price_regions, kb.localities)
+    if not any(_find_place(text, idx) for idx in indexes):
+        guess = _closest_place(text, indexes)  # « kalaak » (transcription) -> Kaolack
+        if guess:
+            text += f" {guess}"
     q.market = _find_place(text, kb.markets)
     q.department = _find_place(text, kb.departments)
     q.region = _find_place(text, kb.regions) or _find_place(text, kb.price_regions)
     q.locality = _find_place(text, kb.localities)
 
-    # Intention par défaut : un marché cité -> prix ; sinon production.
+    # Intention par défaut : marché cité, ou « kilo » sans hectare -> prix ; sinon production.
     if q.intent is None and q.product:
-        q.intent = "prix" if q.market else "production"
+        per_kilo = _contains(text, "kilo") and not re.search(r"ektaar|hectare", text)
+        q.intent = "prix" if q.market or per_kilo else "production"
     return q
+
+
+def _closest_place(text: str, indexes) -> str | None:
+    """Lieu le plus proche d'un mot de la question (tolérance : 1 lettre jusqu'à 6
+    lettres, 2 au-delà). Renvoie None en cas d'égalité ou si rien n'est assez proche."""
+    names = {name for idx in indexes for name in idx if len(name) >= 5 and " " not in name}
+    best, best_d, tie = None, 99, False
+    for word in {w for w in text.split() if len(w) >= 5}:
+        for name in names:
+            # même initiale, longueur proche : évite « risque » -> Rufisque, « niakhar » -> Diakhao
+            if name[0] != word[0] or abs(len(name) - len(word)) > 1:
+                continue
+            limit = 1 if len(name) <= 6 else 2
+            d = _edit_distance(word, name)
+            if d <= limit and d < best_d:
+                best, best_d, tie = name, d, False
+            elif d <= limit and d == best_d and name != best:
+                tie = True
+    return None if tie else best

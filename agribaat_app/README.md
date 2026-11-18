@@ -33,6 +33,16 @@ pytest                     :: tests du moteur de réponses
 L'étape 2 affiche un tableau OK / ERREUR. Si une ligne est en ERREUR, l'app
 démarre quand même en mode dégradé (réponse en français, sans audio).
 
+## Démo
+
+Voir **`../GUIDE_DEMO.md`** (préparation de la machine, scénario, plan B).
+
+- Au démarrage, l'app charge les modèles vocaux et prépare en arrière-plan les réponses
+  vocales des questions types ; le bandeau de l'Assistant indique l'avancement.
+  Désactivation : `set AGRIBAAT_WARMUP=0`.
+- Chaque réponse vocale est gardée dans `outputs/cache` : une question déjà posée
+  répond en 2 à 3 secondes, voix comprise.
+
 ## Matériel
 
 | Ressource | Besoin |
@@ -64,7 +74,8 @@ Les machines de 16 Go ou plus peuvent essayer les deux modèles plus gros, plus 
 | `validation_wolof.py` | Génère `validation_wolof.csv`, la fiche de relecture pour un locuteur natif |
 | `agribaat/search.py` | Recherche de passages (secours, extraits cités ISRA / ANACIM) |
 | `data/curated/varietes.csv` | Variétés inscrites au Sénégal, saisies depuis le Catalogue ouest-africain |
-| `agribaat/models.py` | ASR, traduction, TTS (chargés à la demande) |
+| `agribaat/models.py` | ASR, traduction, TTS (chargés à la demande, cache audio) |
+| `agribaat/warmup.py` | Préchargement des modèles et des réponses types au démarrage |
 | `agribaat/pipeline.py` | Enchaînement complet, mode dégradé, chronométrage |
 | `app.py` | Interface Gradio (assistant + graphique des prix) |
 

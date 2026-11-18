@@ -256,3 +256,27 @@ def test_tts_cache_returns_stored_audio(tmp_path, monkeypatch):
     monkeypatch.setattr(models, "_tts", lambda: (_ for _ in ()).throw(AssertionError))
     sr, audio = models.synthesize("Mas naa jaay lii.")  # ne doit pas charger le modèle
     assert sr == 16000 and len(audio) == 1600
+
+
+@needs_data
+@pytest.mark.parametrize("question, product", [
+    ("njëg gertei ci Kaolack", "arachide"),  # transcription vocale déformée
+    ("dugud bi ci Kaffrine", "mil"),
+    ("ñebe bi", "niebe"),
+])
+def test_parse_tolerates_one_letter_asr_errors(kb, question, product):
+    assert parse([question], kb).product == product
+
+
+@needs_data
+def test_fuzzy_matching_does_not_invent_products(kb):
+    assert parse(["prix bas à Kaolack"], kb).product is None  # « bas » ≠ « basi »
+
+
+@needs_data
+def test_parse_asr_style_question(kb):
+    """Transcription réelle de « Ñaata la kilo dugub di jar ci Kaolack ? »."""
+    q = parse(["ñaata la kilo dugub di jaar ci kalaak"], kb)
+    assert (q.intent, q.product, q.market) == ("prix", "mil", "Kaolack")
+    assert parse(["njëg dugub ci Kawlax"], kb).market == "Kaolack"
+    assert parse(["amul benn risque"], kb).market is None  # pas de faux lieu
