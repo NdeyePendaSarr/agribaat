@@ -14,7 +14,7 @@ from agribaat.answers import CATALOGUE, fmt_month, fmt_number, fmt_period, place
 from agribaat.knowledge import KnowledgeBase
 from agribaat.knowledge import decade_end
 from agribaat.lexicon import PRODUCT_BY_KEY, PRODUCTS
-from agribaat import labo, warmup
+from agribaat import labo, langues, warmup
 from agribaat.pipeline import Assistant, Result
 
 # Windows : quand le navigateur recharge la page, asyncio journalise une « erreur »
@@ -43,16 +43,21 @@ LAST_DATE = kb.prices["date"].max()
 N_MARKETS = kb.prices["market"].nunique()
 YEARS_FAO = (int(kb.national["year"].min()), int(kb.national["year"].max()))
 
+# Langues du sélecteur -> code interne (voir agribaat/langues.py).
+LANG_CODES = {"Wolof": "wo", "Pulaar": "pul", "Sereer": "srr", "Français": "fr"}
+LANG_CHOICES = [("Wolof · prioritaire", "Wolof"), ("Pulaar · brouillon", "Pulaar"),
+                ("Sereer · écrit", "Sereer"), ("Français", "Français")]
+
 # Questions types illustrées : (question, langue, titre court).
 EXAMPLE_CARDS = [
     ("Quel est le prix du mil à Kaolack ?", "Français", "Prix du mil à Kaolack"),
-    ("Combien coûte le riz ?", "Français", "Combien coûte le riz ?"),
     ("Quelle a été la production d'arachide en 2024 ?", "Français", "Production d'arachide 2024"),
     ("Quelle variété de mil à cycle court ?", "Français", "Variété de mil à cycle court"),
     ("Il a plu combien à Mbour ?", "Français", "Pluie à Mbour"),
     ("Quand récolter l'arachide ?", "Français", "Quand récolter l'arachide ?"),
-    ("Rendement du mil dans la région de Kaffrine", "Français", "Rendement du mil à Kaffrine"),
     ("njëg dugub ci Kaolack", "Wolof", "« njëg dugub ci Kaolack »"),
+    ("Hol no coggu kiloo gawri woni e Kawlak?", "Pulaar", "« coggu gawri e Kawlak »"),
+    ("njeg kilo maac no Kaolack", "Sereer", "« njeg kilo maac no Kaolack »"),
 ]
 EXAMPLES = [(q, lang) for q, lang, _ in EXAMPLE_CARDS]
 
@@ -70,13 +75,13 @@ def _example_label(question: str, lang: str, title: str) -> str:
     if hl is not None:
         icon, detail = hl.icon, f"{hl.value} {hl.unit}"
     else:
-        icon, detail = ("🗣️" if lang == "Wolof" else "🌦️"), "conseils datés"
-    if lang == "Wolof":
-        detail = "question en wolof"
+        icon, detail = ("🗣️" if lang != "Français" else "🌦️"), "conseils datés"
+    if lang != "Français":
+        detail = f"question en {lang.lower()}"
     return f"{icon}  {title}\n{source} · {detail}" if source else f"{icon}  {title}\n{detail}"
 
 # Préparation en arrière-plan : modèles vocaux + réponses vocales des questions types.
-WARMUP = (warmup.start(assistant, [(t, "wo" if l == "Wolof" else "fr") for t, l in EXAMPLES])
+WARMUP = (warmup.start(assistant, [(t, LANG_CODES[l]) for t, l in EXAMPLES])
           if VOICE_READY else warmup.WarmupStatus(state="désactivé"))
 
 CSS = """
@@ -227,6 +232,7 @@ html, body {overflow-x: hidden;}
        vertical-align: middle; margin-left: 6px;}
 .pill.up {background: #dcfce7; color: #166534;} .pill.down {background: #fee2e2; color: #991b1b;}
 .wo-quote {font-size: 1.12rem; font-weight: 700; line-height: 1.45; margin-bottom: 6px;}
+.draft {font-size: .85rem; color: #8a5a00; background: #fff6e0; border-radius: 8px; padding: 4px 10px; margin-bottom: 8px; display: inline-block;}
 .fr-line {font-size: .92rem; color: var(--body-text-color-subdued); line-height: 1.5;}
 
 /* Questions types illustrées */
@@ -293,7 +299,7 @@ def hero_html() -> str:
     chips = [f"{N_MARKETS} marchés suivis", f"Dernier relevé : {fmt_month(LAST_DATE)}",
              f"Statistiques {YEARS_FAO[0]}–{YEARS_FAO[1]}", "Sources : PAM · FAOSTAT · DAPSA"]
     return ('<div id="hero"><span class="event">PAS Challenge 2026</span><h1>🌾 AgriBaat</h1>'
-            '<p class="tag">Assistant agricole vocal en wolof — prix des marchés, '
+            '<p class="tag">Assistant agricole vocal en wolof, pulaar et sereer — prix des marchés, '
             'production et rendements, chiffres sourcés</p><div class="chips">'
             + "".join(f'<span class="chip">{c}</span>' for c in chips) + "</div></div>")
 
@@ -308,8 +314,9 @@ def mode_html() -> str:
             return (f'<div class="mode text">⏳ Préparation des réponses vocales : '
                     f"{s.done}/{s.total} questions types prêtes. Vous pouvez déjà poser "
                     "vos questions (premières réponses vocales plus lentes).</div>")
-        return ('<div class="mode ok">🎙️ Mode vocal prêt : parlez en wolof, la réponse est '
-                "lue à voix haute. Les questions types répondent instantanément.</div>")
+        return ('<div class="mode ok">🎙️ Mode vocal prêt : parlez en wolof ou en pulaar, la '
+                "réponse est lue à voix haute. Les questions types répondent instantanément."
+                "</div>")
     return ('<div class="mode text">⌨️ Mode texte : les modèles vocaux ne sont pas installés '
             "(torch, transformers). Les questions écrites en français fonctionnent ; "
             "voir le README pour activer la voix.</div>")
@@ -353,20 +360,25 @@ def answer_card(res: Result, spoken: bool = False) -> str:
             f'<div class="big">{esc(hl.value)} <small>{esc(hl.unit)}</small>{pill}</div>'
             f'<div class="s">{esc(hl.sub)}</div></div>'
             f'<div class="ico">{hl.icon}</div></div>')
+    langue = langues.get(res.lang)
     if res.answer_wo:
-        parts.append(f'<div class="wo-quote">🗣️ Wolof : « {esc(res.answer_wo)} »</div>')
+        parts.append(f'<div class="wo-quote">🗣️ {langue.label} : « {esc(res.answer_wo)} »</div>')
+        if langue.draft:
+            parts.append(f'<div class="draft">✍️ Phrase {langue.label.lower()} en brouillon, '
+                         "en cours de relecture par un locuteur natif.</div>")
     parts.append(f'<div class="fr-line"><b>Français :</b> {esc(res.answer_fr)}</div>')
     if "total" in res.timings:
         parts.append(f'<div class="badges"><span class="badge">⏱ {res.timings["total"]} s'
                      "</span></div>")
-    if res.warnings and VOICE_READY:  # en mode texte, le bandeau suffit
-        parts.append('<div class="warn">' + "<br>".join(esc(w) for w in res.warnings) + "</div>")
+    warnings = [w for w in res.warnings if "brouillon" not in w]  # déjà affiché au-dessus
+    if warnings and VOICE_READY:  # en mode texte, le bandeau suffit
+        parts.append('<div class="warn">' + "<br>".join(esc(w) for w in warnings) + "</div>")
     parts.append("</div>")
     return "".join(parts)
 
 
 def _details(res: Result) -> str:
-    lines = [f"**Question (wolof) :** {res.question_wo or '—'}",
+    lines = [f"**Question ({langues.get(res.lang).label.lower()}) :** {res.question_wo or '—'}",
              f"**Question (français) :** {res.question_fr or '—'}"]
     if res.speech_wo and res.speech_wo != res.answer_wo:
         lines.append(f"**Texte lu par la voix :** {res.speech_wo}")
@@ -393,8 +405,12 @@ def _render(res: Result, history: list, spoken: bool = False):
 NOTHING = ((gr.skip() if hasattr(gr, "skip") else gr.update()),) * 5
 
 
-def on_voice(audio, history):
+def on_voice(audio, lang, history):
     # Message doux (pas d'état « Erreur » sur les cases de réponse).
+    code = LANG_CODES.get(lang, "wo")
+    if code == "srr":
+        gr.Warning("Pas encore de reconnaissance vocale en sereer : tapez la question.")
+        return NOTHING
     if audio is None:
         gr.Warning("Cliquez d'abord sur « Arrêter » pour terminer l'enregistrement, "
                    "ou importez un fichier audio.")
@@ -403,14 +419,39 @@ def on_voice(audio, history):
     if len(data) < 0.5 * sr:
         gr.Warning("Enregistrement trop court : parlez au moins une seconde.")
         return NOTHING
-    return _render(assistant.ask_audio(sr, data), history, spoken=True)
+    # Français choisi : la question parlée reste en wolof (pas de reconnaissance du français).
+    return _render(assistant.ask_audio(sr, data, "pul" if code == "pul" else "wo"), history,
+                   spoken=True)
 
 
 def on_text(text: str, lang: str, history):
     if not text or not text.strip():
         gr.Warning("Tapez d'abord une question.")
         return NOTHING
-    return _render(assistant.ask_text(text, "wo" if lang == "Wolof" else "fr"), history)
+    return _render(assistant.ask_text(text, LANG_CODES.get(lang, "wo")), history)
+
+
+MIC_HEAD = {
+    "Wolof": ("Maa ngi lay déglu…", "Appuyez sur le cercle rouge et posez votre question en wolof"),
+    "Pulaar": ("Pulaar · brouillon", "Appuyez sur le cercle rouge et posez votre question en "
+               "pulaar (reconnaissance vocale expérimentale)"),
+    "Sereer": ("Sereer · à l'écrit", "Pas encore de reconnaissance vocale sereer : tapez la "
+               "question ci-dessous, la réponse s'affiche en sereer"),
+    "Français": ("Maa ngi lay déglu…", "Parlez en wolof, ou tapez votre question en français "
+                 "ci-dessous"),
+}
+
+
+def mic_head(lang: str) -> str:
+    title, sub = MIC_HEAD.get(lang, MIC_HEAD["Wolof"])
+    return f'<div class="mic-title">{title}</div><div class="mic-sub">{sub}</div>'
+
+
+def on_lang(lang: str):
+    """Change le titre du micro ; en sereer, ouvre directement la saisie au clavier."""
+    sereer = lang == "Sereer"
+    return (mic_head(lang), gr.Audio(interactive=VOICE_READY and not sereer),
+            gr.Accordion(open=True) if sereer else gr.Accordion())
 
 
 # ---------------------------------------------------------------- prix
@@ -621,16 +662,18 @@ def on_rain(decade: str):
 # ---------------------------------------------------------------- labo langues
 LAB_STATUS = {
     "pulaar": (
-        "**Pulaar — expérimental.** Reconnaissance vocale : `Wav2vec2-fula` "
+        "**Pulaar — expérimental.** Le pulaar est aussi disponible dans l'**Assistant** "
+        "(langue « Pulaar · brouillon »). Reconnaissance vocale : `Wav2vec2-fula` "
         "(erreur ≈ 80 % sur la radio KALLAAMA, souvent des différences d'orthographe ; "
         "≈ 5 s par phrase). Voix de synthèse : Meta MMS (peul).\n\n"
-        "Le Labo **ne répond pas encore aux questions** : il montre ce que le modèle "
-        "entend et fait lire une phrase. À juger par un locuteur pulaar."),
+        "Ici, le Labo montre seulement ce que le modèle entend et fait lire une phrase "
+        "libre. À juger par un locuteur pulaar."),
     "sereer": (
         "**Sereer — en préparation.** Aucun modèle public de reconnaissance vocale ni de "
         "voix de synthèse sereer n'est utilisable aujourd'hui. Il faudra entraîner le "
         "nôtre sur les 38 h d'enregistrements KALLAAMA déjà collectées "
-        "(voir FEUILLE_DE_ROUTE_LANGUES.md)."),
+        "(voir FEUILLE_DE_ROUTE_LANGUES.md). En attendant, l'**Assistant** répond en sereer "
+        "**à l'écrit** (langue « Sereer · écrit », phrases en brouillon)."),
 }
 
 
@@ -688,11 +731,14 @@ ABOUT_HTML = (
     "<b>réponse tirée des tables officielles</b> (prix, statistiques, variétés, pluies, "
     "recommandations) → <b>phrase wolof construite directement</b> à partir des mêmes "
     "chiffres (pas de traduction automatique) → <b>synthèse vocale</b> (SpeechT5 wolof), "
-    "nombres dits en lettres.</div>"
+    "nombres dits en lettres.<br><br><b>Pulaar</b> : même chaîne avec Wav2vec2-fula et la "
+    "voix Meta MMS ; <b>sereer</b> : réponses écrites. Phrases pulaar et sereer en "
+    "brouillon, en cours de relecture.</div>"
     "<h3>Axes d'amélioration</h3><ul>"
     "<li>Validation du wolof par des locuteurs natifs (fiche <code>validation_wolof.csv</code>)."
-    "</li><li>Pulaar puis sereer : données KALLAAMA collectées, modèles existants testés "
-    "(onglet Labo langues, <code>FEUILLE_DE_ROUTE_LANGUES.md</code>).</li>"
+    "</li><li>Pulaar et sereer : relecture des phrases (<code>validation_pulaar.csv</code>, "
+    "<code>validation_sereer.csv</code>), entraînement de la reconnaissance vocale sur "
+    "KALLAAMA, voix sereer (<code>FEUILLE_DE_ROUTE_LANGUES.md</code>).</li>"
     "<li>Fiches d'itinéraire technique (semis, engrais) pour des conseils plus concrets.</li>"
     "</ul><p><i>Équipe SMART AGRO — PAS Challenge 2026.</i></p></div>")
 
@@ -721,8 +767,8 @@ with gr.Blocks(title="AgriBaat", css=CSS, theme=THEME, js=FORCE_LIGHT) as demo:
         with gr.Row(elem_id="status-row", equal_height=True):
             with gr.Column(scale=4, min_width=240):
                 mode_banner = gr.HTML(mode_html())
-            lang = gr.Radio([("Wolof · prioritaire", "Wolof"), ("Français", "Français")],
-                            value="Wolof", show_label=False, scale=2, min_width=240,
+            lang = gr.Radio(LANG_CHOICES,
+                            value="Wolof", show_label=False, scale=3, min_width=300,
                             elem_id="lang-toggle", container=False)
         demo.load(mode_html, None, mode_banner)  # état réel à chaque ouverture de la page
         if VOICE_READY and not WARMUP.finished:
@@ -732,9 +778,7 @@ with gr.Blocks(title="AgriBaat", css=CSS, theme=THEME, js=FORCE_LIGHT) as demo:
                        None, [mode_banner, timer])
         with gr.Row(equal_height=False):
             with gr.Column(scale=5, elem_id="mic-card"):
-                gr.HTML('<div class="mic-title">Maa ngi lay déglu…</div>'
-                        '<div class="mic-sub">Appuyez sur le cercle rouge et posez votre '
-                        "question en wolof</div>")
+                mic_title = gr.HTML(mic_head("Wolof"))
                 mic = gr.Audio(sources=["microphone", "upload"], type="numpy",
                                show_label=False, elem_id="mic", interactive=VOICE_READY)
                 gr.HTML("<span class='hint'>1. Appuyez sur le cercle · 2. parlez · 3. appuyez "
@@ -744,7 +788,7 @@ with gr.Blocks(title="AgriBaat", css=CSS, theme=THEME, js=FORCE_LIGHT) as demo:
                                       interactive=VOICE_READY)
             with gr.Column(scale=6):
                 out_card = gr.HTML(EMPTY_CARD)
-                out_audio = gr.Audio(label="🔊 Réponse vocale (wolof)", autoplay=True,
+                out_audio = gr.Audio(label="🔊 Réponse vocale", autoplay=True,
                                      visible=VOICE_READY)
                 with gr.Accordion("🔍 Ce que l'assistant a compris", open=False):
                     out_details = gr.Markdown()
@@ -760,20 +804,21 @@ with gr.Blocks(title="AgriBaat", css=CSS, theme=THEME, js=FORCE_LIGHT) as demo:
                     button = gr.Button(_example_label(question, ex_lang, title),
                                        elem_classes="ex-card", min_width=150)
                     example_buttons.append((button, question, ex_lang))
-        with gr.Accordion("⌨️ Ou tapez votre question (mode clavier)", open=False):
+        with gr.Accordion("⌨️ Ou tapez votre question (mode clavier)", open=False) as kb_box:
             with gr.Row(equal_height=True):
                 txt = gr.Textbox(placeholder="Ex. : Quel est le prix du mil à Kaolack ?",
                                  show_label=False, lines=1, scale=5)
                 btn_text = gr.Button("Envoyer", variant="primary", scale=1, min_width=90)
-            gr.HTML("<span class='hint'>La langue choisie en haut (wolof ou français) "
-                    "s'applique à la question tapée.</span>")
+            gr.HTML("<span class='hint'>La langue choisie en haut s'applique à la question "
+                    "tapée.</span>")
 
-        btn_voice.click(on_voice, [mic, history], outputs)
+        lang.change(on_lang, lang, [mic_title, mic, kb_box])
+        btn_voice.click(on_voice, [mic, lang, history], outputs)
         if VOICE_READY:
             # La question part dès qu'on arrête l'enregistrement ou qu'on importe un
             # fichier : plus besoin de penser à cliquer sur « Envoyer ».
-            mic.stop_recording(on_voice, [mic, history], outputs)
-            mic.upload(on_voice, [mic, history], outputs)
+            mic.stop_recording(on_voice, [mic, lang, history], outputs)
+            mic.upload(on_voice, [mic, lang, history], outputs)
         btn_text.click(on_text, [txt, lang, history], outputs)
         txt.submit(on_text, [txt, lang, history], outputs)
         for button, question, ex_lang in example_buttons:  # un clic pose la question

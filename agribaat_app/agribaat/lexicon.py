@@ -14,7 +14,9 @@ from dataclasses import dataclass, field
 
 def normalize(text: str) -> str:
     """Minuscules, sans accents, ponctuation remplacée par des espaces."""
-    text = unicodedata.normalize("NFKD", text.lower())
+    # lettres pulaar / sereer sans décomposition Unicode : ɓ -> b, ɗ -> d, ƴ -> y
+    text = text.lower().translate(str.maketrans("ɓɗƴƙ’", "bdyk'"))
+    text = unicodedata.normalize("NFKD", text)
     text = "".join(c for c in text if not unicodedata.combining(c))
     text = re.sub(r"[^a-z0-9ñŋ' -]", " ", text)
     return re.sub(r"\s+", " ", text).strip()
@@ -55,6 +57,17 @@ PRODUCTS: tuple[Product, ...] = (
 
 PRODUCT_BY_KEY: dict[str, Product] = {p.key: p for p in PRODUCTS}
 
+# Noms des produits en pulaar et en sereer (BROUILLONS, À VALIDER par Mouhameth et
+# Seydina). Mêmes noms que dans pulaar.py / sereer.py, plus des variantes d'orthographe.
+OTHER_PRODUCT_KEYWORDS: dict[str, tuple[str, ...]] = {
+    "mil": ("gawri", "maac"),
+    "mais": ("makka",),
+    "riz": ("maaro", "maalo"),
+    "arachide": ("biriiji", "biriji"),
+    "oignon": ("basal",),
+    "fonio": ("foonye",),
+}
+
 # Mots-clés d'intention (déjà normalisés : sans accents, minuscules).
 INTENT_KEYWORDS: dict[str, tuple[str, ...]] = {
     # Wolof (À VALIDER) : njëg = prix, jar = coûter, jënd = acheter, jaay = vendre,
@@ -62,17 +75,24 @@ INTENT_KEYWORDS: dict[str, tuple[str, ...]] = {
     # Conseils (wolof À VALIDER) : taw = pluie, xeet = sorte/variété, jiwu = semence,
     # digal = conseiller, ji = semer.
     "pluie": ("pluie", "pluies", "plu", "pleut", "pleuvoir", "pluviometrie",
-              "precipitation", "precipitations", "meteo", "taw"),
+              "precipitation", "precipitations", "meteo", "taw",
+              "tobo", "ndob"),  # pulaar toɓo, sereer ndoɓ (À VALIDER)
     "variete": ("variete", "varietes", "semence", "semences", "cycle court", "cycle long",
-                "precoce", "precoces", "xeet", "xeeti", "jiwu"),
+                "precoce", "precoces", "xeet", "xeeti", "jiwu",
+                "noone"),  # pulaar (À VALIDER)
     "conseil": ("conseil", "conseils", "recommandation", "recommandations", "que faire",
                 "quand semer", "semer", "semis", "recolter", "ravageur", "ravageurs",
                 "traitement", "chenille", "chenilles", "oiseaux", "criquet", "criquets",
-                "maladie", "maladies", "digal", "ndigal", "jiyee", "denc", "dencee"),
+                "maladie", "maladies", "digal", "ndigal", "jiyee", "denc", "dencee",
+                "wasiyaaji", "wasiya", "aawde", "aawdi"),  # pulaar (À VALIDER)
     "prix": ("prix", "coute", "couter", "tarif", "cher", "vend", "vendre",
              "acheter", "marche", "njeg", "njegu", "jend", "jaay", "jar", "jaar", "jaroon", "marse",
-             "seer", "yomb"),
-    "rendement": ("rendement", "par hectare", "kg ha", "kg/ha", "benn ektaar"),
+             "seer", "yomb",
+             # pulaar (À VALIDER) : coggu = prix, luumo = marché, soodde = acheter,
+             # yeeyde = vendre, sattii = c'est cher, hoyii = c'est bon marché
+             "coggu", "luumo", "soodde", "yeeyde", "sattii", "hoyii"),
+    "rendement": ("rendement", "par hectare", "kg ha", "kg/ha", "benn ektaar",
+                  "ektaar gooto", "ektaar leng"),
     "superficie": ("superficie", "surface", "hectares", "cultive", "emblave", "ektaar",
                    "tool", "bey"),
     "production": ("production", "produit", "produire", "recolte", "tonnes",

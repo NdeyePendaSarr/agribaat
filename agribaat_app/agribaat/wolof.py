@@ -16,7 +16,10 @@ corrigez directement les dictionnaires et gabarits ci-dessous.
 
 from __future__ import annotations
 
+import contextlib
+import contextvars
 import re
+import sys
 from dataclasses import dataclass
 
 # ------------------------------------------------------------ vocabulaire
@@ -88,6 +91,11 @@ T = {
     "extrait": "Amuma tontu bu leer, waaye gis naa xibaar bii ci {source}. "
                "Ci farañse la bind.",
 }
+
+# Petits mots utilisés pour assembler les listes et les fiches variétés.
+WORDS = {"and": " ak ", "days": "fan ", "to": " ba ", "up_to": ", ba ",
+         "per_ha": " ci ektaar bi)", "advice": "digal yi", "senegal": "Senegaal",
+         "this": "lii"}
 
 CYCLE_WO = {"court": " yu gaaw", "long": " yu yàgg"}
 DROUGHT_WO = " yu mën a muñ ñàkk taw"
@@ -180,13 +188,13 @@ class Qty:
     exact: bool = False  # années : jamais arrondies
 
     def show(self) -> str:
-        label = UNITS_WO[self.unit][0]
+        label = L().UNITS_WO[self.unit][0]
         number = str(int(self.value)) if self.exact else _digits(self.value)
         return f"{number} {label}".strip()
 
     def say(self) -> str:
         number = int(self.value) if self.exact else spoken_round(self.value)
-        return f"{number_words(number)} {UNITS_WO[self.unit][1]}".strip()
+        return f"{L().number_words(number)} {L().UNITS_WO[self.unit][1]}".strip()
 
 
 def year(value: int) -> Qty:
@@ -220,10 +228,11 @@ def render(key: str, **values) -> WolofText:
     """Remplit le gabarit `key` deux fois : version écran et version orale."""
     show = {k: v.show() if hasattr(v, "show") else v for k, v in values.items()}
     say = {k: v.say() if hasattr(v, "say") else v for k, v in values.items()}
-    spoken = T[key].format(**say)
+    template = L().T[key]
+    spoken = template.format(**say)
     for mark, repl in (("(", ", "), (")", ","), ("«", ""), ("»", "")):  # non lus à voix haute
         spoken = spoken.replace(mark, repl)
-    return WolofText(_tidy(T[key].format(**show)), _tidy(spoken).replace(",.", ".")
+    return WolofText(_tidy(template.format(**show)), _tidy(spoken).replace(",.", ".")
                      .replace(",,", ","))
 
 
@@ -237,7 +246,7 @@ def _tidy(text: str) -> str:
 
 def month(ts) -> Seq:
     """Timestamp -> « Oktoobar 2026 » (écran) / « Oktoobar ñaari junni ak… » (oral)."""
-    return Seq((MONTHS_WO[ts.month - 1] + " ", year(ts.year)))
+    return Seq((L().MONTHS_WO[ts.month - 1] + " ", year(ts.year)))
 
 
 def price_variants(variants: dict[str, float]) -> Seq:
@@ -245,13 +254,13 @@ def price_variants(variants: dict[str, float]) -> Seq:
     parts: list = []
     for i, (name, value) in enumerate(sorted(variants.items(), key=lambda kv: kv[1])):
         if i:
-            parts.append(" ak ")
-        parts += [Qty(value, "fcfa"), f" ({VARIANTS_WO.get(name, name)})"]
+            parts.append(word("and"))
+        parts += [Qty(value, "fcfa"), f" ({L().VARIANTS_WO.get(name, name)})"]
     return Seq(tuple(parts))
 
 
 def place(kind: str, name: str | None = None) -> str:
-    return PLACES_WO[kind].format(nom=name or "")
+    return L().PLACES_WO[kind].format(nom=name or "")
 
 
 @dataclass(frozen=True)
@@ -264,14 +273,14 @@ class Name:
         return self.text
 
     def say(self) -> str:
-        spoken = re.sub(r"\d+", lambda m: f" {number_words(int(m.group()))} ", self.text)
+        spoken = re.sub(r"\d+", lambda m: f" {L().number_words(int(m.group()))} ", self.text)
         return " ".join(spoken.replace("-", " ").split())
 
 
 def period(start, end) -> Seq:
     """Décade : « 21 ba 31 Ut 2026 »."""
-    return Seq((Qty(start.day, exact=True), " ba ", Qty(end.day, exact=True), " ",
-                MONTHS_WO[end.month - 1], " ", year(end.year)))
+    return Seq((Qty(start.day, exact=True), word("to"), Qty(end.day, exact=True), " ",
+                L().MONTHS_WO[end.month - 1], " ", year(end.year)))
 
 
 def join_list(items: list) -> Seq:
@@ -279,6 +288,34 @@ def join_list(items: list) -> Seq:
     parts: list = []
     for i, item in enumerate(items):
         if i:
-            parts.append(" ak " if i == len(items) - 1 else ", ")
+            parts.append(word("and") if i == len(items) - 1 else ", ")
         parts.append(item)
     return Seq(tuple(parts))
+
+
+# ------------------------------------------------------------ autres langues
+# Les mêmes outils servent au pulaar et au sereer : chaque langue est un module
+# (pulaar.py, sereer.py) qui définit les mêmes noms que ce fichier (T, PRODUCTS_WO,
+# MONTHS_WO, VARIANTS_WO, PLACES_WO, CYCLE_WO, DROUGHT_WO, THEMES_WO, UNITS_WO,
+# WORDS, number_words). Les noms en « _WO » sont historiques : ils désignent la
+# langue locale active, pas forcément le wolof.
+_active: contextvars.ContextVar = contextvars.ContextVar("agribaat_langue", default=None)
+
+
+def L():  # noqa: N802 — « la langue active », utilisée par toutes les réponses
+    """Module de la langue locale active (wolof par défaut)."""
+    return _active.get() or sys.modules[__name__]
+
+
+@contextlib.contextmanager
+def using(module):
+    """Construit les réponses dans une autre langue le temps d'un bloc `with`."""
+    token = _active.set(module)
+    try:
+        yield module
+    finally:
+        _active.reset(token)
+
+
+def word(key: str) -> str:
+    return L().WORDS[key]

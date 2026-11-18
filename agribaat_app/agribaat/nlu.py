@@ -11,7 +11,7 @@ import re
 from dataclasses import dataclass
 
 from .knowledge import TOPICS, KnowledgeBase
-from .lexicon import INTENT_KEYWORDS, PRODUCTS, normalize
+from .lexicon import INTENT_KEYWORDS, OTHER_PRODUCT_KEYWORDS, PRODUCTS, normalize
 
 # Alias de lieux : orthographes courantes -> nom dans les données.
 PLACE_ALIASES: dict[str, str] = {
@@ -20,6 +20,7 @@ PLACE_ALIASES: dict[str, str] = {
     "saint louis": "Saint-Louis",
     "ndar": "Saint-Louis",  # nom wolof de Saint-Louis (À VALIDER)
     "kawlax": "Kaolack", "kawlaax": "Kaolack",  # nom wolof de Kaolack (À VALIDER)
+    "kawlak": "Kaolack",  # nom pulaar de Kaolack (À VALIDER)
 }
 
 
@@ -50,17 +51,20 @@ def _contains(text: str, keyword: str) -> bool:
 
 
 def _year_in_words(text: str) -> int | None:
-    """Année dite en wolof (« ñaari junni ak ñaar fukk ak ñeent » -> 2024), telle que
-    la transcription vocale l'écrit. Années 1990 à 2030."""
-    from .wolof import number_words
+    """Année dite en wolof (« ñaari junni ak ñaar fukk ak ñeent » -> 2024) ou en
+    pulaar, telle que la transcription vocale l'écrit. Années 1990 à 2030."""
+    from . import pulaar, wolof
 
-    found = None
-    for year in range(1990, 2031):
-        words = normalize(number_words(year))
-        if re.search(rf"(?<![a-z]){re.escape(words)}(?![a-z])", text):
+    found, found_len = None, 0
+    for number_words in (wolof.number_words, pulaar.number_words):
+        for year in range(1990, 2031):
+            words = normalize(number_words(year))
             # la plus longue l'emporte (2024 contient « … ak ñaar fukk » de 2020)
-            if found is None or len(words) > len(normalize(number_words(found))):
-                found = year
+            # « … (ak|e) mot » juste après : nombre plus long mal transcrit
+            # (« ujunaaje ɗiɗi e noogas » n'est pas 2000) -> ignoré.
+            if len(words) > found_len and re.search(
+                    rf"(?<![a-z]){re.escape(words)}(?![a-z])(?! (?:ak|e) [a-z])", text):
+                found, found_len = year, len(words)
     return found
 
 
@@ -99,13 +103,15 @@ def parse(texts: list[str], kb: KnowledgeBase) -> Query:
     q = Query()
 
     for product in PRODUCTS:
-        if any(_contains(text, k) for k in product.fr + product.wo):
+        local = product.wo + OTHER_PRODUCT_KEYWORDS.get(product.key, ())
+        if any(_contains(text, k) for k in product.fr + local):
             q.product = product.key
             break
     if q.product is None:  # la transcription vocale déforme parfois un mot wolof
         words = text.split()
         for product in PRODUCTS:
-            if any(_close(normalize(k), words) for k in product.wo):
+            local = product.wo + OTHER_PRODUCT_KEYWORDS.get(product.key, ())
+            if any(_close(normalize(k), words) for k in local):
                 q.product = product.key
                 break
 
@@ -119,12 +125,12 @@ def parse(texts: list[str], kb: KnowledgeBase) -> Query:
             break
 
     # Précisions pour les conseils.
-    if re.search(r"cycle court|precoce|hatif|rapide|\bgaaw", text):
+    if re.search(r"cycle court|precoce|hatif|rapide|\bgaaw|\byaaw", text):  # yaaw : pulaar
         q.cycle = "court"
-    elif re.search(r"cycle long|tardi", text):
+    elif re.search(r"cycle long|tardi|\bneeb", text):  # neeɓ : pulaar
         q.cycle = "long"
     q.drought = bool(re.search(
-        r"secheresse|manque de pluie|peu de pluie|deficit|nakk taw|nakkum taw", text))
+        r"secheresse|manque de pluie|peu de pluie|deficit|nakk taw|nakkum taw|nakku tobo", text))
     for topic, pattern in TOPICS.items():
         if re.search(pattern, text):
             q.topic = topic
@@ -134,6 +140,10 @@ def parse(texts: list[str], kb: KnowledgeBase) -> Query:
     if re.search(r"\bkan\b", text) and re.search(r"\bgoob|\bji\b|jiyee", text):
         q.intent = "conseil"
         q.topic = "recolte" if re.search(r"\bgoob", text) else "semis"
+    # Pulaar (À VALIDER) : « ndey » (quand ?) + aawde (semer) / soñde, taƴde (récolter).
+    if re.search(r"\bndey\b", text) and re.search(r"\baaw|\bsonde|\btayde", text):
+        q.intent = "conseil"
+        q.topic = "semis" if re.search(r"\baaw", text) else "recolte"
 
     years = re.findall(r"\b(19[6-9]\d|20[0-4]\d)\b", text)
     q.year = int(years[-1]) if years else _year_in_words(text)

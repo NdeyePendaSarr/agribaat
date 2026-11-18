@@ -1,0 +1,103 @@
+﻿catégorie;clé;français;sereer proposé;correct ? (oui/non);correction;commentaire
+1. Produits;mil;mil;maac;;;nom utilisé dans les réponses
+1. Produits;sorgho;sorgho;basi;;;nom utilisé dans les réponses
+1. Produits;mais;maïs;mboq;;;nom utilisé dans les réponses
+1. Produits;riz;riz;maalo;;;nom utilisé dans les réponses
+1. Produits;arachide;arachide;gerte;;;nom utilisé dans les réponses
+1. Produits;niebe;niébé;ñebbe;;;nom utilisé dans les réponses
+1. Produits;oignon;oignon;soble;;;nom utilisé dans les réponses
+1. Produits;manioc;manioc;ñambi;;;nom utilisé dans les réponses
+1. Produits;fonio;fonio;fonio;;;nom utilisé dans les réponses
+2. Variantes;Maize (local);Maize (local);fii;;;
+2. Variantes;Maize (imported);Maize (imported);a rookaa;;;
+2. Variantes;Rice (local);Rice (local);fii;;;
+2. Variantes;Rice (imported);Rice (imported);a rookaa;;;
+2. Variantes;Groundnuts (shelled);Groundnuts (shelled);a fooqaa;;;
+2. Variantes;Groundnuts (unshelled);Groundnuts (unshelled);na mbaxam;;;
+2. Variantes;Onions (dry);Onions (dry);fii;;;
+2. Variantes;Onions (imported);Onions (imported);a rookaa;;;
+3. Lieux;pays;au Sénégal;no Senegaal;;;
+3. Lieux;region;dans la région de {nom};no diiwaan {nom};;;
+3. Lieux;departement;dans le département de {nom};no depaartemaa {nom};;;
+3. Lieux;marche;au marché de {nom};no marse {nom};;;
+4. Mois;janvier;janvier;Saŋwiye;;;
+4. Mois;février;février;Fewriye;;;
+4. Mois;mars;mars;Mars;;;
+4. Mois;avril;avril;Awril;;;
+4. Mois;mai;mai;Me;;;
+4. Mois;juin;juin;Suwe;;;
+4. Mois;juillet;juillet;Sulet;;;
+4. Mois;août;août;Ut;;;
+4. Mois;septembre;septembre;Setaambar;;;
+4. Mois;octobre;octobre;Oktoobar;;;
+4. Mois;novembre;novembre;Nowaambar;;;
+4. Mois;décembre;décembre;Desaambar;;;
+2b. Conseils;cycle court;(variétés) à cycle court;a gaawe;;;
+2b. Conseils;cycle long;(variétés) à cycle long;a yaage;;;
+2b. Conseils;secheresse;(variétés) tolérantes à la sécheresse;a muɲ ndoɓ a tuuti;;;
+2b. Conseils;thème semis;semis;jiw;;;thème d'une recommandation ANACIM
+2b. Conseils;thème recolte;recolte;xoox;;;thème d'une recommandation ANACIM
+2b. Conseils;thème ravageurs;ravageurs;aar tool;;;thème d'une recommandation ANACIM
+2b. Conseils;thème previsions;previsions;ndoɓ;;;thème d'une recommandation ANACIM
+2b. Conseils;thème elevage;elevage;mbaal;;;thème d'une recommandation ANACIM
+2b. Conseils;thème eau;eau;mbeel;;;thème d'une recommandation ANACIM
+2b. Conseils;thème autre;autre;liggeey;;;thème d'une recommandation ANACIM
+2c. Petits mots;and;et;na;;;
+2c. Petits mots;days;(…) jours;fan;;;
+2c. Petits mots;to;de … à …;–;;;
+2c. Petits mots;up_to;jusqu'à;, haa;;;
+2c. Petits mots;per_ha;par hectare;/ ektaar);;;
+2c. Petits mots;advice;les conseils;digal;;;
+2c. Petits mots;senegal;Sénégal;Senegaal;;;
+2c. Petits mots;this;cela;ole;;;
+5. Unités;fcfa;FCFA (à l'oral);FCFA;;;
+5. Unités;t;tonnes;tonn;;;
+5. Unités;ha;hectares;ektaar;;;
+5. Unités;kg/ha;kilos (rendement);kilo;;;
+5. Unités;pct;pour cent (à l'oral);%;;;
+5. Unités;mm;millimètres (pluie);mm;;;
+5. Unités;kg;kilos;kg;;;
+6. Phrases modèles;prix_marche;En {mois}, le kilo de {produit} coûtait {prix} {lieu}.;No {mois}, kilo {produit} a jegoon {prix} {lieu}.;;;les {…} sont remplacés automatiquement
+6. Phrases modèles;prix_moyen;En {mois}, le kilo de {produit} coûtait environ {prix} {lieu}. Mesuré sur {n} marchés.;No {mois}, kilo {produit} a jegoon fo {prix} {lieu}. Marse {n} ɗa natu.;;;les {…} sont remplacés automatiquement
+6. Phrases modèles;extremes;Le moins cher : {lieu_min} ({prix_min}). Le plus cher : {lieu_max} ({prix_max}).;Fo a yombe ten: {lieu_min} ({prix_min}). Fo a seere ten: {lieu_max} ({prix_max}).;;;les {…} sont remplacés automatiquement
+6. Phrases modèles;hausse;Le prix a augmenté de {pct} par rapport à l'an dernier.;Njeg a yokoxna {pct} ndiig a pees.;;;les {…} sont remplacés automatiquement
+6. Phrases modèles;baisse;Le prix a baissé de {pct} par rapport à l'an dernier.;Njeg a waaɗna {pct} ndiig a pees.;;;les {…} sont remplacés automatiquement
+6. Phrases modèles;ancien;Attention : c'est le dernier prix relevé sur ce marché.;Njeg a mujel ɗa natu no marse oxe.;;;les {…} sont remplacés automatiquement
+6. Phrases modèles;annee_sans_prix;Je n'ai pas de prix en {annee}. Voici le dernier prix que je connais.;Mi ga'um njeg no ndiig {annee}. Njeg a mujel ten.;;;les {…} sont remplacés automatiquement
+6. Phrases modèles;pas_de_prix;Je n'ai pas le prix du {produit} {lieu}.;Mi ga'um njeg {produit} {lieu}.;;;les {…} sont remplacés automatiquement
+6. Phrases modèles;production;En {annee}, la production de {produit} {lieu} était d'environ {valeur}.;No ndiig {annee}, {produit} {lieu}: {valeur}.;;;les {…} sont remplacés automatiquement
+6. Phrases modèles;superficie;En {annee}, on a cultivé environ {valeur} de {produit} {lieu}.;No ndiig {annee}, {produit} {lieu} a beyaa no {valeur}.;;;les {…} sont remplacés automatiquement
+6. Phrases modèles;rendement;En {annee}, un hectare de {produit} {lieu} a produit environ {valeur}.;No ndiig {annee}, ektaar leng {produit} {lieu}: {valeur}.;;;les {…} sont remplacés automatiquement
+6. Phrases modèles;annee_sans_stat;Je n'ai pas de chiffre pour {annee}. Le plus proche est {annee_dispo}.;Mi ga'um lim no ndiig {annee}. Ndiig {annee_dispo} ten.;;;les {…} sont remplacés automatiquement
+6. Phrases modèles;pas_de_stat;Je n'ai pas d'information sur le {produit}.;Mi ga'um xibaar no {produit}.;;;les {…} sont remplacés automatiquement
+6. Phrases modèles;produit_inconnu;Je n'ai pas compris le produit dont vous parlez.;Mi faamum ndab ole.;;;les {…} sont remplacés automatiquement
+6. Phrases modèles;aide;Je peux vous donner le prix d'un produit au marché, la production, les surfaces cultivées et le rendement. Exemple : « Combien coûte le kilo de mil à Kaolack ? »;Mi waagu wax njeg ndab no marse, walla xoox, tool ak ektaar. Misaal: « Njeg kilo maac no Kaolack? »;;;les {…} sont remplacés automatiquement
+6. Phrases modèles;varietes;D'après le Catalogue ouest-africain, voici des variétés de {produit} inscrites au Sénégal{precision} : {liste}.;No Katalog Afrig, xeet {produit}{precision} no Senegaal: {liste}.;;;les {…} sont remplacés automatiquement
+6. Phrases modèles;pas_de_variete;Je n'ai pas de variété de {produit}{precision} dans le catalogue.;Mi ga'um xeet {produit}{precision} no Katalog.;;;les {…} sont remplacés automatiquement
+6. Phrases modèles;variete_sans_produit;Dites-moi quelle culture : mil, sorgho, arachide ou niébé.;Wax um ndab: maac, basi, gerte walla ñebbe.;;;les {…} sont remplacés automatiquement
+6. Phrases modèles;pluie_lieu;Pendant la décade ({periode}), il est tombé {mm} à {lieu}.;No fan 10 ({periode}), ndoɓ no {lieu}: {mm}.;;;les {…} sont remplacés automatiquement
+6. Phrases modèles;pluie_zone;Pendant la décade ({periode}), {zone}, la pluie la plus faible est {mm_min} à {lieu_min}, la plus forte {mm_max} à {lieu_max}.;No fan 10 ({periode}), {zone}: {mm_min} no {lieu_min}, {mm_max} no {lieu_max}.;;;les {…} sont remplacés automatiquement
+6. Phrases modèles;pluie_ancienne;Ce sont les dernières informations dont je dispose.;Xibaar ya mujel ten.;;;les {…} sont remplacés automatiquement
+6. Phrases modèles;pas_de_pluie;Je n'ai pas d'information sur la pluie à {lieu}.;Mi ga'um xibaar ndoɓ no {lieu}.;;;les {…} sont remplacés automatiquement
+6. Phrases modèles;conseils;Dans le bulletin ANACIM ({periode}), il y a {n} conseils : sur {themes}. Ils sont écrits en français.;No bulletin ANACIM ({periode}): digal {n}, no {themes}. Ɗa binda no farañse.;;;les {…} sont remplacés automatiquement
+6. Phrases modèles;conseils_plusieurs;Dans les derniers bulletins ANACIM, il y a {n} conseils : sur {themes}. Ils sont écrits en français.;No bulletin ANACIM ya mujel: digal {n}, no {themes}. Ɗa binda no farañse.;;;les {…} sont remplacés automatiquement
+6. Phrases modèles;conseils_sans_sujet;Je n'ai pas de conseil sur {sujet}. Voici les derniers.;Mi ga'um digal no {sujet}. Ya mujel ten.;;;les {…} sont remplacés automatiquement
+6. Phrases modèles;extrait;Je n'ai pas de réponse précise, mais j'ai trouvé cette information dans {source}. Elle est écrite en français.;Mi ga'um tontu, waaye xibaar oxe no {source}. Ɗa binda no farañse.;;;les {…} sont remplacés automatiquement
+8. Réponses complètes;Quel est le prix du mil à Kaolack ?;Au marché de Kaolack, le kilo de mil coûtait 300 FCFA en octobre 2026. C'est 10 % de plus qu'un an plus tôt.;No Oktoobar 2026, kilo maac a jegoon 300 FCFA no marse Kaolack. Njeg a yokoxna 10 % ndiig a pees.;;;texte affiché
+8. Réponses complètes;Combien coûte le riz ?;En octobre 2026, le kilo de riz coûtait en moyenne 333 FCFA (importé) et 396 FCFA (local) au Sénégal (31 marchés suivis).;No Oktoobar 2026, kilo maalo a jegoon fo 333 FCFA (a rookaa) na 396 FCFA (fii) no Senegaal. Marse 31 ɗa natu.;;;texte affiché
+8. Réponses complètes;Prix du mil en 2030;"Je n'ai pas de relevé en 2030. Voici le dernier prix connu. En octobre 2026, le kilo de mil coûtait en moyenne 344 FCFA au Sénégal (30 marchés suivis). Le moins cher : Ndrame Escale (260 FCFA) ; le plus cher : Kédougou (500 FCFA). C'est 2 % de plus qu'un an plus tôt.";Mi ga'um njeg no ndiig 2030. Njeg a mujel ten. No Oktoobar 2026, kilo maac a jegoon fo 344 FCFA no Senegaal. Marse 30 ɗa natu. Fo a yombe ten: Ndrame Escale (260 FCFA). Fo a seere ten: Kédougou (500 FCFA). Njeg a yokoxna 2 % ndiig a pees.;;;texte affiché
+8. Réponses complètes;Quelle a été la production d'arachide en 2024 ?;En 2024, la production d'arachide au Sénégal était d'environ 1 681 953 tonnes.;No ndiig 2024, gerte no Senegaal: 1 681 953 tonn.;;;texte affiché
+8. Réponses complètes;rendement du mil à Birkilane;En 2022, le rendement de mil dans le département de Birkilane était d'environ 1 725 kg par hectare.;No ndiig 2022, ektaar leng maac no depaartemaa Birkilane: 1 725 kilo.;;;texte affiché
+8. Réponses complètes;Quelle variété de mil à cycle court ?;D'après le Catalogue ouest-africain des espèces et variétés végétales, voici des variétés de mil inscrites au Sénégal à cycle court : ITMV 8304 (80 à 85 jours, jusqu'à 2 500 kg/ha), Souna 3 (75 à 95 jours, jusqu'à 2 500 kg/ha), IBV 8001 (75 à 95 jours, jusqu'à 2 500 kg/ha).;No Katalog Afrig, xeet maac a gaawe no Senegaal: ITMV 8304 (fan 80–85, haa 2 500 kg / ektaar), Souna 3 (fan 75–95, haa 2 500 kg / ektaar) na IBV 8001 (fan 75–95, haa 2 500 kg / ektaar).;;;texte affiché
+8. Réponses complètes;Il a plu combien à Mbour ?;Selon l'ANACIM, il est tombé 146 mm à Mbour pendant la décade du 11 au 20 août 2026. Ce sont les derniers chiffres disponibles : les bulletins couvrent la saison des pluies (juin à octobre).;No fan 10 (11–20 Ut 2026), ndoɓ no Mbour: 146 mm. Xibaar ya mujel ten.;;;texte affiché
+8. Réponses complètes;Quand récolter l'arachide ?;"Recommandations de l'ANACIM (décade du 21 au 30 septembre 2025) : 1) Surseoir aux opérations de récolte de l’arachide dans les localités Centre du pays jusqu’à la troisième décade du mois d’octobre pour éviter l’exposition des récoltes à l’humidité ; 2) Protéger les premières récoltes des pluies prévues pour éviter les cas de regermination sur l’arachide.";No bulletin ANACIM (21–30 Setaambar 2025): digal 2, no xoox. Ɗa binda no farañse.;;;texte affiché
+8b. Questions dans la langue;njeg kilo maac no Kaolack;compris : prix / mil / Kaolack;No Oktoobar 2026, kilo maac a jegoon 300 FCFA no marse Kaolack. Njeg a yokoxna 10 % ndiig a pees.;;;la question est-elle bien écrite ? l'app a-t-elle compris ?
+8b. Questions dans la langue;ndoɓ no Mbour;compris : pluie / - / Mbour;No fan 10 (11–20 Ut 2026), ndoɓ no Mbour: 146 mm. Xibaar ya mujel ten.;;;la question est-elle bien écrite ? l'app a-t-elle compris ?
+8b. Questions dans la langue;xeet gerte;compris : variete / arachide / -;No Katalog Afrig, xeet gerte no Senegaal: 69-101 (fan 125, haa 4 000 kg / ektaar), 28-206 (fan 120, haa 3 000 kg / ektaar) na 57-313 (fan 125, haa 3 000 kg / ektaar).;;;la question est-elle bien écrite ? l'app a-t-elle compris ?
+9. Mots-clés compris;mil;mil;gawri, maac;;;"pulaar et sereer mélangés ; ajouter les orthographes courantes"
+9. Mots-clés compris;mais;maïs;makka;;;"pulaar et sereer mélangés ; ajouter les orthographes courantes"
+9. Mots-clés compris;riz;riz;maaro, maalo;;;"pulaar et sereer mélangés ; ajouter les orthographes courantes"
+9. Mots-clés compris;arachide;arachide;biriiji, biriji;;;"pulaar et sereer mélangés ; ajouter les orthographes courantes"
+9. Mots-clés compris;oignon;oignon;basal;;;"pulaar et sereer mélangés ; ajouter les orthographes courantes"
+9. Mots-clés compris;fonio;fonio;foonye;;;"pulaar et sereer mélangés ; ajouter les orthographes courantes"
+9. Mots-clés compris;intentions;prix, pluie, variété, conseil…;voir agribaat/lexicon.py (mots marqués « pulaar »);;;à compléter

@@ -79,7 +79,13 @@ Les enregistrements restent sur la machine (ils ne sont pas envoyés sur GitHub)
 | 6 | Onglet **📈 Prix des marchés** | Graphique, marché le moins cher / le plus cher |
 | 7 | Onglet **🌦️ Conseils** | Catalogue filtrable, pluie par région |
 | 8 | Micro : dire « Ñaata la kilo dugub di jar ci Kaolack ? » | Chaîne vocale complète (prévoir 1 à 2 min si la phrase est nouvelle) |
-| 9 | Onglet **🧪 Labo langues** (menu « ⋯ ») : faire lire la phrase pulaar, puis la dire au micro | Le pulaar est déjà amorcé (phase 2) ; sereer « en préparation » |
+| 9 | Langue **Pulaar · brouillon**, question type « coggu gawri e Kawlak » (ou au micro) | Même réponse chiffrée **en pulaar, lue à voix haute** |
+| 10 | Langue **Sereer · écrit**, taper « ndoɓ no Mbour » | Réponse **écrite en sereer** (pas encore de voix sereer) |
+
+⚠️ Pulaar et sereer : ne montrer au jury **qu'après la relecture** de Mouhameth
+(`validation_pulaar.csv`) et de Seydina (`validation_sereer.csv`). Les phrases sereer
+sont un brouillon très incertain. Sans relecture, présenter seulement le wolof et dire
+que pulaar et sereer sont « branchés, en cours de validation ».
 
 ## 4. Messages clés pour le jury
 

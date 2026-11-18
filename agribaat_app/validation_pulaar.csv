@@ -1,0 +1,133 @@
+﻿catégorie;clé;français;pulaar proposé;correct ? (oui/non);correction;commentaire
+1. Produits;mil;mil;gawri;;;nom utilisé dans les réponses
+1. Produits;sorgho;sorgho;basi;;;nom utilisé dans les réponses
+1. Produits;mais;maïs;makka;;;nom utilisé dans les réponses
+1. Produits;riz;riz;maaro;;;nom utilisé dans les réponses
+1. Produits;arachide;arachide;biriiji;;;nom utilisé dans les réponses
+1. Produits;niebe;niébé;ñebbe;;;nom utilisé dans les réponses
+1. Produits;oignon;oignon;basal;;;nom utilisé dans les réponses
+1. Produits;manioc;manioc;ñambi;;;nom utilisé dans les réponses
+1. Produits;fonio;fonio;foonye;;;nom utilisé dans les réponses
+2. Variantes;Maize (local);Maize (local);ɗoo;;;
+2. Variantes;Maize (imported);Maize (imported);naatnaaɗo;;;
+2. Variantes;Rice (local);Rice (local);ɗoo;;;
+2. Variantes;Rice (imported);Rice (imported);naatnaaɗo;;;
+2. Variantes;Groundnuts (shelled);Groundnuts (shelled);ɓortaaɗo;;;
+2. Variantes;Groundnuts (unshelled);Groundnuts (unshelled);e ɓuuɓe mum;;;
+2. Variantes;Onions (dry);Onions (dry);ɗoo;;;
+2. Variantes;Onions (imported);Onions (imported);naatnaaɗo;;;
+3. Lieux;pays;au Sénégal;e Senegaal;;;
+3. Lieux;region;dans la région de {nom};e diiwaan {nom};;;
+3. Lieux;departement;dans le département de {nom};e depaartemaa {nom};;;
+3. Lieux;marche;au marché de {nom};e luumo {nom};;;
+4. Mois;janvier;janvier;Saanwiye;;;
+4. Mois;février;février;Feebiriye;;;
+4. Mois;mars;mars;Mars;;;
+4. Mois;avril;avril;Abriil;;;
+4. Mois;mai;mai;Mee;;;
+4. Mois;juin;juin;Suwee;;;
+4. Mois;juillet;juillet;Sulyee;;;
+4. Mois;août;août;Ut;;;
+4. Mois;septembre;septembre;Septaambar;;;
+4. Mois;octobre;octobre;Oktoobar;;;
+4. Mois;novembre;novembre;Nowaambar;;;
+4. Mois;décembre;décembre;Desaambar;;;
+2b. Conseils;cycle court;(variétés) à cycle court;yaawɗe;;;
+2b. Conseils;cycle long;(variétés) à cycle long;neeɓɗe;;;
+2b. Conseils;secheresse;(variétés) tolérantes à la sécheresse;muñooje ñakku toɓo;;;
+2b. Conseils;thème semis;semis;aawdi;;;thème d'une recommandation ANACIM
+2b. Conseils;thème recolte;recolte;soñde;;;thème d'une recommandation ANACIM
+2b. Conseils;thème ravageurs;ravageurs;reende ngesa;;;thème d'une recommandation ANACIM
+2b. Conseils;thème previsions;previsions;kabaruuji toɓo;;;thème d'une recommandation ANACIM
+2b. Conseils;thème elevage;elevage;jawdi;;;thème d'une recommandation ANACIM
+2b. Conseils;thème eau;eau;ndiyam;;;thème d'une recommandation ANACIM
+2b. Conseils;thème autre;autre;golle goɗɗe;;;thème d'une recommandation ANACIM
+2c. Petits mots;and;et;e;;;
+2c. Petits mots;days;(…) jours;balɗe;;;
+2c. Petits mots;to;de … à …;haa;;;
+2c. Petits mots;up_to;jusqu'à;, haa;;;
+2c. Petits mots;per_ha;par hectare;e ektaar);;;
+2c. Petits mots;advice;les conseils;wasiyaaji;;;
+2c. Petits mots;senegal;Sénégal;Senegaal;;;
+2c. Petits mots;this;cela;ɗum;;;
+5. Unités;fcfa;FCFA (à l'oral);sefa;;;
+5. Unités;t;tonnes;tonn;;;
+5. Unités;ha;hectares;ektaar;;;
+5. Unités;kg/ha;kilos (rendement);kiloo;;;
+5. Unités;pct;pour cent (à l'oral);e teemedere;;;
+5. Unités;mm;millimètres (pluie);milimeeter;;;
+5. Unités;kg;kilos;kiloo;;;
+6. Phrases modèles;prix_marche;En {mois}, le kilo de {produit} coûtait {prix} {lieu}.;E lewru {mois}, coggu kiloo {produit} ko {prix} {lieu}.;;;les {…} sont remplacés automatiquement
+6. Phrases modèles;prix_moyen;En {mois}, le kilo de {produit} coûtait environ {prix} {lieu}. Mesuré sur {n} marchés.;E lewru {mois}, coggu kiloo {produit} {lieu} ko hedde {prix}. Ɗum hiisaa ko e luumooji {n}.;;;les {…} sont remplacés automatiquement
+6. Phrases modèles;extremes;Le moins cher : {lieu_min} ({prix_min}). Le plus cher : {lieu_max} ({prix_max}).;Nokku ɗo ɓuri hoyde ko {lieu_min}: {prix_min}. Nokku ɗo ɓuri sattude ko {lieu_max}: {prix_max}.;;;les {…} sont remplacés automatiquement
+6. Phrases modèles;hausse;Le prix a augmenté de {pct} par rapport à l'an dernier.;Coggu ngu ɓeydiima {pct} e dow ko woni hitaande ɓennunde.;;;les {…} sont remplacés automatiquement
+6. Phrases modèles;baisse;Le prix a baissé de {pct} par rapport à l'an dernier.;Coggu ngu ustiima {pct} e dow ko woni hitaande ɓennunde.;;;les {…} sont remplacés automatiquement
+6. Phrases modèles;ancien;Attention : c'est le dernier prix relevé sur ce marché.;Anndu wonde ɗum ko coggu sakkitiingu njiyaa e luumo oo.;;;les {…} sont remplacés automatiquement
+6. Phrases modèles;annee_sans_prix;Je n'ai pas de prix en {annee}. Voici le dernier prix que je connais.;Mi alaa coggu hitaande {annee}. Ngol ko coggu sakkitiingu ngu mi anndi.;;;les {…} sont remplacés automatiquement
+6. Phrases modèles;pas_de_prix;Je n'ai pas le prix du {produit} {lieu}.;Mi alaa coggu {produit} {lieu}.;;;les {…} sont remplacés automatiquement
+6. Phrases modèles;production;En {annee}, la production de {produit} {lieu} était d'environ {valeur}.;E hitaande {annee}, ko heɓaa e {produit} {lieu} ko hedde {valeur}.;;;les {…} sont remplacés automatiquement
+6. Phrases modèles;superficie;En {annee}, on a cultivé environ {valeur} de {produit} {lieu}.;E hitaande {annee}, {produit} aawaama {lieu} e hedde {valeur}.;;;les {…} sont remplacés automatiquement
+6. Phrases modèles;rendement;En {annee}, un hectare de {produit} {lieu} a produit environ {valeur}.;E hitaande {annee}, ektaar gooto {produit} {lieu} rokkii hedde {valeur}.;;;les {…} sont remplacés automatiquement
+6. Phrases modèles;annee_sans_stat;Je n'ai pas de chiffre pour {annee}. Le plus proche est {annee_dispo}.;Mi alaa limoore hitaande {annee}. Ko ɓadii ko hitaande {annee_dispo}.;;;les {…} sont remplacés automatiquement
+6. Phrases modèles;pas_de_stat;Je n'ai pas d'information sur le {produit}.;Mi alaa humpito e {produit}.;;;les {…} sont remplacés automatiquement
+6. Phrases modèles;produit_inconnu;Je n'ai pas compris le produit dont vous parlez.;Mi faamaani ndema nde mbiyɗaa ndee.;;;les {…} sont remplacés automatiquement
+6. Phrases modèles;aide;Je peux vous donner le prix d'un produit au marché, la production, les surfaces cultivées et le rendement. Exemple : « Combien coûte le kilo de mil à Kaolack ? »;Mbaawmi haalande ma coggu ndema e luumooji, walla ko heɓaa, ngesa aawaaɗe e ko ektaar gooto rokkata. Misal: « Hol no coggu kiloo gawri woni e Kawlak? »;;;les {…} sont remplacés automatiquement
+6. Phrases modèles;varietes;D'après le Catalogue ouest-africain, voici des variétés de {produit} inscrites au Sénégal{precision} : {liste}.;E Katalog Afrik Hirnaange, noone {produit} ɗee ina njiyaa e Senegaal{precision}: {liste}.;;;les {…} sont remplacés automatiquement
+6. Phrases modèles;pas_de_variete;Je n'ai pas de variété de {produit}{precision} dans le catalogue.;Mi alaa noone {produit}{precision} e Katalog oo.;;;les {…} sont remplacés automatiquement
+6. Phrases modèles;variete_sans_produit;Dites-moi quelle culture : mil, sorgho, arachide ou niébé.;Wiy am ndema nde: gawri, basi, biriiji walla ñebbe.;;;les {…} sont remplacés automatiquement
+6. Phrases modèles;pluie_lieu;Pendant la décade ({periode}), il est tombé {mm} à {lieu}.;E balɗe sappo ɗe ({periode}), toɓo e {lieu} ko hedde {mm}.;;;les {…} sont remplacés automatiquement
+6. Phrases modèles;pluie_zone;Pendant la décade ({periode}), {zone}, la pluie la plus faible est {mm_min} à {lieu_min}, la plus forte {mm_max} à {lieu_max}.;E balɗe sappo ɗe ({periode}), {zone}, toɓo ɓurngo famɗude ko {mm_min} e {lieu_min}, ɓurngo heewde ko {mm_max} e {lieu_max}.;;;les {…} sont remplacés automatiquement
+6. Phrases modèles;pluie_ancienne;Ce sont les dernières informations dont je dispose.;Ɗum ko kabaruuji sakkitiiɗi ɗi njogiimi.;;;les {…} sont remplacés automatiquement
+6. Phrases modèles;pas_de_pluie;Je n'ai pas d'information sur la pluie à {lieu}.;Mi alaa kabaru toɓo e {lieu}.;;;les {…} sont remplacés automatiquement
+6. Phrases modèles;conseils;Dans le bulletin ANACIM ({periode}), il y a {n} conseils : sur {themes}. Ils sont écrits en français.;E bulletin ANACIM ({periode}), ena woodi wasiyaaji {n}: e {themes}. Ɗi mbinndaa ko e farayseere.;;;les {…} sont remplacés automatiquement
+6. Phrases modèles;conseils_plusieurs;Dans les derniers bulletins ANACIM, il y a {n} conseils : sur {themes}. Ils sont écrits en français.;E bulletin ANACIM sakkitiiɗi ɗi, ena woodi wasiyaaji {n}: e {themes}. Ɗi mbinndaa ko e farayseere.;;;les {…} sont remplacés automatiquement
+6. Phrases modèles;conseils_sans_sujet;Je n'ai pas de conseil sur {sujet}. Voici les derniers.;Mi alaa wasiyaaji e {sujet}. Ɗii ɗoo ko sakkitiiɗi.;;;les {…} sont remplacés automatiquement
+6. Phrases modèles;extrait;Je n'ai pas de réponse précise, mais j'ai trouvé cette information dans {source}. Elle est écrite en français.;Mi alaa jaabawol laaɓngol, kono mi yiyii ngol humpito e {source}. Ngol winndaa ko e farayseere.;;;les {…} sont remplacés automatiquement
+7. Nombres (voix);0;0;sifir;;;
+7. Nombres (voix);1;1;go'o;;;
+7. Nombres (voix);7;7;jeeɗiɗi;;;
+7. Nombres (voix);10;10;sappo;;;
+7. Nombres (voix);15;15;sappo e joy;;;
+7. Nombres (voix);20;20;noogaas;;;
+7. Nombres (voix);25;25;noogaas e joy;;;
+7. Nombres (voix);99;99;capanɗe jeenay e jeenay;;;
+7. Nombres (voix);100;100;teemedere;;;
+7. Nombres (voix);150;150;teemedere e capanɗe joy;;;
+7. Nombres (voix);300;300;teemedde tati;;;
+7. Nombres (voix);344;344;teemedde tati e capanɗe nay e nay;;;
+7. Nombres (voix);500;500;teemedde joy;;;
+7. Nombres (voix);1000;1 000;ujunere;;;
+7. Nombres (voix);1725;1 725;ujunere e teemedde jeeɗiɗi e noogaas e joy;;;
+7. Nombres (voix);2026;2 026;ujunaaje ɗiɗi e noogaas e jeegom;;;
+7. Nombres (voix);15000;15 000;ujunaaje sappo e joy;;;
+7. Nombres (voix);62000;62 000;ujunaaje capanɗe jeegom e ɗiɗi;;;
+7. Nombres (voix);140000;140 000;ujunaaje teemedere e capanɗe nay;;;
+7. Nombres (voix);1700000;1 700 000;miliyon go'o e ujunaaje teemedde jeeɗiɗi;;;
+8. Réponses complètes;Quel est le prix du mil à Kaolack ?;Au marché de Kaolack, le kilo de mil coûtait 300 FCFA en octobre 2026. C'est 10 % de plus qu'un an plus tôt.;E lewru Oktoobar 2026, coggu kiloo gawri ko 300 FCFA e luumo Kaolack. Coggu ngu ɓeydiima 10 % e dow ko woni hitaande ɓennunde.;;;texte affiché
+8. Réponses complètes;Quel est le prix du mil à Kaolack ?;(texte lu par la voix);E lewru Oktoobar ujunaaje ɗiɗi e noogaas e jeegom, coggu kiloo gawri ko teemedde tati sefa e luumo Kaolack. Coggu ngu ɓeydiima sappo e teemedere e dow ko woni hitaande ɓennunde.;;;texte prononcé
+8. Réponses complètes;Combien coûte le riz ?;En octobre 2026, le kilo de riz coûtait en moyenne 333 FCFA (importé) et 396 FCFA (local) au Sénégal (31 marchés suivis).;E lewru Oktoobar 2026, coggu kiloo maaro e Senegaal ko hedde 333 FCFA (naatnaaɗo) e 396 FCFA (ɗoo). Ɗum hiisaa ko e luumooji 31.;;;texte affiché
+8. Réponses complètes;Combien coûte le riz ?;(texte lu par la voix);E lewru Oktoobar ujunaaje ɗiɗi e noogaas e jeegom, coggu kiloo maaro e Senegaal ko hedde teemedde tati e capanɗe tati e tati sefa, naatnaaɗo, e teemedde tati e capanɗe jeenay e jeegom sefa, ɗoo. Ɗum hiisaa ko e luumooji capanɗe tati e go'o.;;;texte prononcé
+8. Réponses complètes;Prix du mil en 2030;"Je n'ai pas de relevé en 2030. Voici le dernier prix connu. En octobre 2026, le kilo de mil coûtait en moyenne 344 FCFA au Sénégal (30 marchés suivis). Le moins cher : Ndrame Escale (260 FCFA) ; le plus cher : Kédougou (500 FCFA). C'est 2 % de plus qu'un an plus tôt.";Mi alaa coggu hitaande 2030. Ngol ko coggu sakkitiingu ngu mi anndi. E lewru Oktoobar 2026, coggu kiloo gawri e Senegaal ko hedde 344 FCFA. Ɗum hiisaa ko e luumooji 30. Nokku ɗo ɓuri hoyde ko Ndrame Escale: 260 FCFA. Nokku ɗo ɓuri sattude ko Kédougou: 500 FCFA. Coggu ngu ɓeydiima 2 % e dow ko woni hitaande ɓennunde.;;;texte affiché
+8. Réponses complètes;Prix du mil en 2030;(texte lu par la voix);Mi alaa coggu hitaande ujunaaje ɗiɗi e capanɗe tati. Ngol ko coggu sakkitiingu ngu mi anndi. E lewru Oktoobar ujunaaje ɗiɗi e noogaas e jeegom, coggu kiloo gawri e Senegaal ko hedde teemedde tati e capanɗe nay e nay sefa. Ɗum hiisaa ko e luumooji capanɗe tati. Nokku ɗo ɓuri hoyde ko Ndrame Escale: teemedde ɗiɗi e capanɗe jeegom sefa. Nokku ɗo ɓuri sattude ko Kédougou: teemedde joy sefa. Coggu ngu ɓeydiima ɗiɗi e teemedere e dow ko woni hitaande ɓennunde.;;;texte prononcé
+8. Réponses complètes;Quelle a été la production d'arachide en 2024 ?;En 2024, la production d'arachide au Sénégal était d'environ 1 681 953 tonnes.;E hitaande 2024, ko heɓaa e biriiji e Senegaal ko hedde 1 681 953 tonn.;;;texte affiché
+8. Réponses complètes;Quelle a été la production d'arachide en 2024 ?;(texte lu par la voix);E hitaande ujunaaje ɗiɗi e noogaas e nay, ko heɓaa e biriiji e Senegaal ko hedde miliyon go'o e ujunaaje teemedde jeeɗiɗi tonn.;;;texte prononcé
+8. Réponses complètes;rendement du mil à Birkilane;En 2022, le rendement de mil dans le département de Birkilane était d'environ 1 725 kg par hectare.;E hitaande 2022, ektaar gooto gawri e depaartemaa Birkilane rokkii hedde 1 725 kiloo.;;;texte affiché
+8. Réponses complètes;rendement du mil à Birkilane;(texte lu par la voix);E hitaande ujunaaje ɗiɗi e noogaas e ɗiɗi, ektaar gooto gawri e depaartemaa Birkilane rokkii hedde ujunere e teemedde jeeɗiɗi e noogaas e joy kiloo.;;;texte prononcé
+8. Réponses complètes;Quelle variété de mil à cycle court ?;D'après le Catalogue ouest-africain des espèces et variétés végétales, voici des variétés de mil inscrites au Sénégal à cycle court : ITMV 8304 (80 à 85 jours, jusqu'à 2 500 kg/ha), Souna 3 (75 à 95 jours, jusqu'à 2 500 kg/ha), IBV 8001 (75 à 95 jours, jusqu'à 2 500 kg/ha).;E Katalog Afrik Hirnaange, noone gawri ɗee ina njiyaa e Senegaal yaawɗe: ITMV 8304 (balɗe 80 haa 85, haa 2 500 kg e ektaar), Souna 3 (balɗe 75 haa 95, haa 2 500 kg e ektaar) e IBV 8001 (balɗe 75 haa 95, haa 2 500 kg e ektaar).;;;texte affiché
+8. Réponses complètes;Quelle variété de mil à cycle court ?;(texte lu par la voix);E Katalog Afrik Hirnaange, noone gawri ɗee ina njiyaa e Senegaal yaawɗe: ITMV ujunaaje jeetati e teemedde tati e nay, balɗe capanɗe jeetati haa capanɗe jeetati e joy, haa ujunaaje ɗiɗi e teemedde joy kiloo e ektaar, Souna tati, balɗe capanɗe jeeɗiɗi e joy haa capanɗe jeenay e joy, haa ujunaaje ɗiɗi e teemedde joy kiloo e ektaar, e IBV ujunaaje jeetati e go'o, balɗe capanɗe jeeɗiɗi e joy haa capanɗe jeenay e joy, haa ujunaaje ɗiɗi e teemedde joy kiloo e ektaar.;;;texte prononcé
+8. Réponses complètes;Il a plu combien à Mbour ?;Selon l'ANACIM, il est tombé 146 mm à Mbour pendant la décade du 11 au 20 août 2026. Ce sont les derniers chiffres disponibles : les bulletins couvrent la saison des pluies (juin à octobre).;E balɗe sappo ɗe (11 haa 20 Ut 2026), toɓo e Mbour ko hedde 146 mm. Ɗum ko kabaruuji sakkitiiɗi ɗi njogiimi.;;;texte affiché
+8. Réponses complètes;Il a plu combien à Mbour ?;(texte lu par la voix);E balɗe sappo ɗe, sappo e go'o haa noogaas Ut ujunaaje ɗiɗi e noogaas e jeegom, toɓo e Mbour ko hedde teemedere e capanɗe nay e jeegom milimeeter. Ɗum ko kabaruuji sakkitiiɗi ɗi njogiimi.;;;texte prononcé
+8. Réponses complètes;Quand récolter l'arachide ?;"Recommandations de l'ANACIM (décade du 21 au 30 septembre 2025) : 1) Surseoir aux opérations de récolte de l’arachide dans les localités Centre du pays jusqu’à la troisième décade du mois d’octobre pour éviter l’exposition des récoltes à l’humidité ; 2) Protéger les premières récoltes des pluies prévues pour éviter les cas de regermination sur l’arachide.";E bulletin ANACIM (21 haa 30 Septaambar 2025), ena woodi wasiyaaji 2: e soñde. Ɗi mbinndaa ko e farayseere.;;;texte affiché
+8. Réponses complètes;Quand récolter l'arachide ?;(texte lu par la voix);E bulletin ANACIM, noogaas e go'o haa capanɗe tati Septaambar ujunaaje ɗiɗi e noogaas e joy, ena woodi wasiyaaji ɗiɗi: e soñde. Ɗi mbinndaa ko e farayseere.;;;texte prononcé
+8b. Questions dans la langue;Hol no coggu kiloo gawri woni e Kawlak?;compris : prix / mil / Kaolack;E lewru Oktoobar 2026, coggu kiloo gawri ko 300 FCFA e luumo Kaolack. Coggu ngu ɓeydiima 10 % e dow ko woni hitaande ɓennunde.;;;la question est-elle bien écrite ? l'app a-t-elle compris ?
+8b. Questions dans la langue;coggu maaro;compris : prix / riz / -;E lewru Oktoobar 2026, coggu kiloo maaro e Senegaal ko hedde 333 FCFA (naatnaaɗo) e 396 FCFA (ɗoo). Ɗum hiisaa ko e luumooji 31.;;;la question est-elle bien écrite ? l'app a-t-elle compris ?
+8b. Questions dans la langue;toɓo e Mbour;compris : pluie / - / Mbour;E balɗe sappo ɗe (11 haa 20 Ut 2026), toɓo e Mbour ko hedde 146 mm. Ɗum ko kabaruuji sakkitiiɗi ɗi njogiimi.;;;la question est-elle bien écrite ? l'app a-t-elle compris ?
+8b. Questions dans la langue;noone biriiji yaawɗe;compris : variete / arachide / -;E Katalog Afrik Hirnaange, noone biriiji ɗee ina njiyaa e Senegaal yaawɗe: 78-936 (balɗe 75 haa 80, haa 3 000 kg e ektaar), GC8-35 (balɗe 80, haa 1 500 kg e ektaar) e 55-33 (balɗe 80, haa 1 200 kg e ektaar).;;;la question est-elle bien écrite ? l'app a-t-elle compris ?
+8b. Questions dans la langue;ndey aawde gawri;compris : conseil / mil / -;E bulletin ANACIM sakkitiiɗi ɗi, ena woodi wasiyaaji 3: e aawdi. Ɗi mbinndaa ko e farayseere.;;;la question est-elle bien écrite ? l'app a-t-elle compris ?
+9. Mots-clés compris;mil;mil;gawri, maac;;;"pulaar et sereer mélangés ; ajouter les orthographes courantes"
+9. Mots-clés compris;mais;maïs;makka;;;"pulaar et sereer mélangés ; ajouter les orthographes courantes"
+9. Mots-clés compris;riz;riz;maaro, maalo;;;"pulaar et sereer mélangés ; ajouter les orthographes courantes"
+9. Mots-clés compris;arachide;arachide;biriiji, biriji;;;"pulaar et sereer mélangés ; ajouter les orthographes courantes"
+9. Mots-clés compris;oignon;oignon;basal;;;"pulaar et sereer mélangés ; ajouter les orthographes courantes"
+9. Mots-clés compris;fonio;fonio;foonye;;;"pulaar et sereer mélangés ; ajouter les orthographes courantes"
+9. Mots-clés compris;intentions;prix, pluie, variété, conseil…;voir agribaat/lexicon.py (mots marqués « pulaar »);;;à compléter

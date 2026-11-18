@@ -324,3 +324,89 @@ def test_interface_tabs_render_with_real_data(monkeypatch):
     assert "vtable" in app.variety_table("arachide", "court", False)
     assert "hbar" in app.rain_by_region(app.DECADES[0][1])[0]
     assert all("\n" in app._example_label(q, l, t) for q, l, t in app.EXAMPLE_CARDS)
+    for lang in ("Pulaar", "Sereer"):
+        card = app.on_text("coggu gawri e Kawlak", lang, [])[0]
+        assert f"{lang} :" in card and "brouillon" in card and "300" in card
+
+
+# ---------------------------------------------------------------- pulaar et sereer
+def test_pulaar_numbers():
+    from agribaat.pulaar import number_words
+
+    assert number_words(7) == "jeeɗiɗi"
+    assert number_words(344) == "teemedde tati e capanɗe nay e nay"
+    assert number_words(2026) == "ujunaaje ɗiɗi e noogaas e jeegom"
+    assert number_words(1000) == "ujunere"
+
+
+def test_language_modules_define_the_same_templates():
+    from agribaat import pulaar, sereer, wolof
+
+    for module in (pulaar, sereer):
+        assert set(module.T) == set(wolof.T), module.LABEL
+        assert set(module.PRODUCTS_WO) == set(wolof.PRODUCTS_WO)
+        assert set(module.THEMES_WO) == set(wolof.THEMES_WO)
+        assert set(module.WORDS) == set(wolof.WORDS)
+        assert len(module.MONTHS_WO) == 12
+
+
+@needs_data
+@pytest.mark.parametrize("lang", ["pul", "srr"])
+@pytest.mark.parametrize("question", [
+    "Quel est le prix du mil à Kaolack ?", "Combien coûte le riz ?", "Prix du mil en 2030",
+    "production d'arachide en 2024", "rendement du mil à Birkilane",
+])
+def test_other_languages_keep_every_number(kb, lang, question):
+    from agribaat import langues
+
+    module = langues.get(lang).module
+    ans = answer(parse([question], kb), kb, module)
+    fr = sorted(n.replace(" ", "") for n in _digits_in(ans.text))
+    local = sorted(n.replace(" ", "") for n in _digits_in(ans.wolof.text))
+    assert fr == local, (ans.text, ans.wolof.text)
+    assert "{" not in ans.wolof.text
+    if lang == "pul":  # voix pulaar : nombres en lettres
+        assert not any(ch.isdigit() for ch in ans.wolof.speech)
+
+
+def test_language_switch_does_not_leak(kb):
+    """Une réponse pulaar ne laisse pas la langue active sur le pulaar."""
+    from agribaat import pulaar
+
+    q = parse(["prix du mil à Kaolack"], kb)
+    assert "coggu" in answer(q, kb, pulaar).wolof.text
+    assert "kilo dugub" in answer(q, kb).wolof.text
+
+
+@needs_data
+@pytest.mark.parametrize("question, intent, product, place", [
+    ("Hol no coggu kiloo gawri woni e Kawlak?", "prix", "mil", "Kaolack"),
+    ("coggu maaro", "prix", "riz", None),
+    ("toɓo e Mbour", "pluie", None, "Mbour"),
+    ("noone biriiji yaawɗe", "variete", "arachide", None),
+    ("ndey aawde gawri", "conseil", "mil", None),
+    ("njeg kilo maac no Kaolack", "prix", "mil", "Kaolack"),
+    ("ndoɓ no Mbour", "pluie", None, "Mbour"),
+])
+def test_parse_pulaar_and_sereer_keywords(kb, question, intent, product, place):
+    q = parse([question], kb)
+    assert (q.intent, q.product) == (intent, product)
+    if place:
+        assert place in (q.market, q.region, q.locality)
+
+
+def test_partial_spoken_year_is_ignored():
+    from agribaat.lexicon import normalize
+    from agribaat.nlu import _year_in_words
+
+    assert _year_in_words(normalize("ujunaaje ɗiɗi e noogas e jeeko")) is None
+    assert _year_in_words(normalize("hitaande ujunaaje ɗiɗi e noogaas e ɗiɗi")) == 2022
+
+
+def test_sereer_voice_question_is_refused_politely(kb):
+    import numpy as np
+
+    from agribaat.pipeline import Assistant
+
+    res = Assistant(kb, speak=False).ask_audio(16000, np.zeros(16000, np.float32), "srr")
+    assert "tapez" in res.answer_fr
