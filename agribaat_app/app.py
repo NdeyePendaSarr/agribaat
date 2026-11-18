@@ -14,7 +14,7 @@ from agribaat.answers import CATALOGUE, fmt_month, fmt_number, fmt_period, place
 from agribaat.knowledge import KnowledgeBase
 from agribaat.knowledge import decade_end
 from agribaat.lexicon import PRODUCT_BY_KEY, PRODUCTS
-from agribaat import warmup
+from agribaat import labo, warmup
 from agribaat.pipeline import Assistant, Result
 
 # Windows : quand le navigateur recharge la page, asyncio journalise une « erreur »
@@ -409,6 +409,50 @@ def on_rain(decade: str):
     return gr.BarPlot(value=bars, y_lim=[0, round(top * 1.1)]), table, md  # axe à partir de 0
 
 
+# ---------------------------------------------------------------- labo langues
+LAB_STATUS = {
+    "pulaar": (
+        "**Pulaar — expérimental.** Reconnaissance vocale : `Wav2vec2-fula` "
+        "(erreur ≈ 80 % sur la radio KALLAAMA, souvent des différences d'orthographe ; "
+        "≈ 5 s par phrase). Voix de synthèse : Meta MMS (peul).\n\n"
+        "Le Labo **ne répond pas encore aux questions** : il montre ce que le modèle "
+        "entend et fait lire une phrase. À juger par un locuteur pulaar."),
+    "sereer": (
+        "**Sereer — en préparation.** Aucun modèle public de reconnaissance vocale ni de "
+        "voix de synthèse sereer n'est utilisable aujourd'hui. Il faudra entraîner le "
+        "nôtre sur les 38 h d'enregistrements KALLAAMA déjà collectées "
+        "(voir FEUILLE_DE_ROUTE_LANGUES.md)."),
+}
+
+
+def on_lab_lang(lang: str):
+    language = labo.LANGUAGES[lang]
+    return (LAB_STATUS[lang], gr.Audio(interactive=bool(language.asr_model)),
+            gr.Textbox(value=language.example, interactive=bool(language.tts_model)),
+            gr.Button(interactive=bool(language.tts_model)))
+
+
+def on_lab_listen(lang: str, audio):
+    if audio is None:
+        gr.Warning("Cliquez d'abord sur « Arrêter », ou importez un fichier.")
+        return gr.skip() if hasattr(gr, "skip") else gr.update()
+    sr, data = audio
+    try:
+        text = labo.transcribe(lang, sr, data)
+    except Exception as exc:  # noqa: BLE001 — modèle absent : message clair
+        gr.Warning(str(exc))
+        return ""
+    return text or "(rien de compréhensible)"
+
+
+def on_lab_speak(lang: str, text: str):
+    try:
+        return labo.synthesize(lang, text)
+    except Exception as exc:  # noqa: BLE001
+        gr.Warning(str(exc))
+        return None
+
+
 # ---------------------------------------------------------------- interface
 THEME = gr.themes.Soft(primary_hue="green", secondary_hue="amber",
                        font=[gr.themes.GoogleFont("Inter"), "sans-serif"])
@@ -522,6 +566,30 @@ with gr.Blocks(title="AgriBaat", css=CSS, theme=THEME) as demo:
                     rain_table = gr.Dataframe(interactive=False, max_height=320)
                 dd_decade.change(on_rain, dd_decade, [rain_chart, rain_table, advice_md])
                 demo.load(on_rain, dd_decade, [rain_chart, rain_table, advice_md])
+
+    if VOICE_READY:
+        with gr.Tab("🧪 Labo langues"):
+            gr.Markdown("Essayez les modèles publics existants pour les **autres langues "
+                        "du projet**. Phase expérimentale : à faire juger par des "
+                        "locuteurs natifs.")
+            lab_lang = gr.Radio([(l.label, k) for k, l in labo.LANGUAGES.items()],
+                                value="pulaar", label="Langue")
+            lab_status = gr.Markdown(LAB_STATUS["pulaar"])
+            with gr.Row(equal_height=False):
+                with gr.Column():
+                    lab_mic = gr.Audio(sources=["microphone", "upload"], type="numpy",
+                                       label="Dites une phrase (elle part à l'arrêt)")
+                    lab_heard = gr.Textbox(label="Ce que le modèle a entendu", lines=3,
+                                           interactive=False)
+                with gr.Column():
+                    lab_text = gr.Textbox(label="Phrase à faire lire",
+                                          value=labo.LANGUAGES["pulaar"].example, lines=3)
+                    lab_btn = gr.Button("🔊 Faire lire par la voix de synthèse")
+                    lab_audio = gr.Audio(label="Voix de synthèse", autoplay=True)
+            lab_lang.change(on_lab_lang, lab_lang, [lab_status, lab_mic, lab_text, lab_btn])
+            lab_mic.stop_recording(on_lab_listen, [lab_lang, lab_mic], lab_heard)
+            lab_mic.upload(on_lab_listen, [lab_lang, lab_mic], lab_heard)
+            lab_btn.click(on_lab_speak, [lab_lang, lab_text], lab_audio)
 
     with gr.Tab("ℹ️ À propos"):
         gr.Markdown("""

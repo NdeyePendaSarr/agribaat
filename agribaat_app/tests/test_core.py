@@ -295,3 +295,15 @@ def test_recording_list_questions_are_understood(kb):
     assert (queries["q10"].intent, queries["q10"].drought) == ("variete", True)
     assert queries["q13"].topic == "semis"
     assert (queries["q14"].intent, queries["q14"].topic) == ("conseil", "recolte")
+
+
+def test_labo_reports_missing_sereer_models_clearly():
+    import numpy as np
+
+    from agribaat import labo, models
+
+    assert labo.LANGUAGES["pulaar"].asr_model and labo.LANGUAGES["pulaar"].tts_model
+    with pytest.raises(models.ModelUnavailable, match="Sereer"):
+        labo.transcribe("sereer", 16000, np.zeros(16000, dtype=np.float32))
+    with pytest.raises(models.ModelUnavailable, match="Sereer"):
+        labo.synthesize("sereer", "phrase")

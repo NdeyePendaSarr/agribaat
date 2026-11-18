@@ -76,6 +76,7 @@ Les machines de 16 Go ou plus peuvent essayer les deux modèles plus gros, plus 
 | `agribaat/search.py` | Recherche de passages (secours, extraits cités ISRA / ANACIM) |
 | `data/curated/varietes.csv` | Variétés inscrites au Sénégal, saisies depuis le Catalogue ouest-africain |
 | `agribaat/models.py` | ASR, traduction, TTS (chargés à la demande, cache audio) |
+| `agribaat/labo.py` | Labo langues (pulaar, sereer) : modèles publics à essayer, expérimental |
 | `agribaat/warmup.py` | Préchargement des modèles et des réponses types au démarrage |
 | `agribaat/pipeline.py` | Enchaînement complet, mode dégradé, chronométrage |
 | `app.py` | Interface Gradio (assistant + graphique des prix) |

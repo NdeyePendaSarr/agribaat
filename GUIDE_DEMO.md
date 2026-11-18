@@ -79,6 +79,7 @@ Les enregistrements restent sur la machine (ils ne sont pas envoyés sur GitHub)
 | 6 | Onglet **📈 Prix des marchés** | Graphique, marché le moins cher / le plus cher |
 | 7 | Onglet **🌦️ Conseils** | Catalogue filtrable, pluie par région |
 | 8 | Micro : dire « Ñaata la kilo dugub di jar ci Kaolack ? » | Chaîne vocale complète (prévoir 1 à 2 min si la phrase est nouvelle) |
+| 9 | Onglet **🧪 Labo langues** (menu « ⋯ ») : faire lire la phrase pulaar, puis la dire au micro | Le pulaar est déjà amorcé (phase 2) ; sereer « en préparation » |
 
 ## 4. Messages clés pour le jury
 
@@ -87,8 +88,9 @@ Les enregistrements restent sur la machine (ils ne sont pas envoyés sur GitHub)
 - **Le wolof d'abord** : réponses construites directement en wolof (pas de traduction
   automatique qui perd des informations) ; nombres dits en lettres.
 - **Fonctionne sans GPU ni internet** une fois les modèles téléchargés.
-- **Prochaines étapes** : pulaar et sereer (données KALLAAMA déjà collectées), fiches
-  d'itinéraire technique, LLM pour reformuler les extraits cités.
+- **Prochaines étapes** : pulaar puis sereer, chiffrées dans `FEUILLE_DE_ROUTE_LANGUES.md`
+  (données KALLAAMA déjà collectées, modèles existants testés), fiches d'itinéraire
+  technique, LLM pour reformuler les extraits cités.
 
 ## 5. Plan B
 
