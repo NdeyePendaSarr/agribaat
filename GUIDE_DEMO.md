@@ -15,6 +15,27 @@
    en 2 à 3 secondes, voix comprise.
 4. Enregistrer une **vidéo de secours** de cette répétition.
 
+## 1 ter. Si l'app ne démarre plus (après un `git pull`)
+
+Lancer d'abord le diagnostic, qui dit en clair ce qui ne va pas :
+```bash
+cd agribaat_app
+python diagnostic.py
+```
+
+**Remettre la copie à jour.** L'historique GitHub a été réécrit le 18 novembre : une
+copie récupérée avant cette date ne peut pas être mise à jour par un simple `git pull`
+(conflits). Si vous n'avez pas de modifications à vous à garder :
+```bash
+git fetch origin
+git reset --hard origin/main
+```
+⚠️ `reset --hard` efface les modifications locales non envoyées : si vous en avez,
+mettez-les de côté avant (copie du dossier).
+
+Ensuite : `pip install -r agribaat_app/requirements.txt` (l'app demande Gradio 5), puis
+`python prepare_data.py` si le diagnostic signale des données manquantes.
+
 ## 1 bis. Tester la voix avec nos propres voix (à faire au plus tôt)
 
 1. Chaque membre enregistre les 14 questions de

@@ -208,7 +208,8 @@ def _render(res: Result, history: list, spoken: bool = False):
     return answer_card(res, spoken), res.audio, _details(res), history, _history_md(history)
 
 
-NOTHING = (gr.skip(),) * 5  # laisse la réponse précédente affichée
+# Laisse la réponse précédente affichée (gr.skip n'existe pas dans les vieux Gradio).
+NOTHING = ((gr.skip() if hasattr(gr, "skip") else gr.update()),) * 5
 
 
 def on_voice(audio, history):
