@@ -48,7 +48,7 @@ curl http://127.0.0.1:7860/gradio_api/call/demander/<event_id renvoyé>
 
 Ou en Python : `Client("http://127.0.0.1:7860").predict("njëg dugub ci Kaolack", "wo", api_name="/demander")`
 (bibliothèque `gradio_client`). Réponse : `reponse_fr`, `reponse_locale`, `texte_lu`, `source`,
-`chiffre_cle` (valeur, unité, variation sur un an). Liste complète : lien « Utiliser via l'API »
+`chiffre_cle` (valeur, unité, variation sur un an), `texte_a_partager` (réponse prête à relayer) et `orientation` (vers qui se tourner quand il n'y a pas de réponse). Liste complète : lien « Utiliser via l'API »
 en bas de page.
 
 ## Sur téléphone

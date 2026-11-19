@@ -5,6 +5,7 @@ from __future__ import annotations
 import html
 import importlib.util
 import logging
+import urllib.parse
 
 import gradio as gr
 import pandas as pd
@@ -234,6 +235,14 @@ html, body {overflow-x: hidden;}
 .wo-quote {font-size: 1.12rem; font-weight: 700; line-height: 1.45; margin-bottom: 6px;}
 .draft {font-size: .85rem; color: #8a5a00; background: #fff6e0; border-radius: 8px; padding: 4px 10px; margin-bottom: 8px; display: inline-block;}
 .fr-line {font-size: .92rem; color: var(--body-text-color-subdued); line-height: 1.5;}
+/* Orientation vers un conseiller (quand l'assistant n'a pas la réponse) */
+.orient {margin-top: 12px; font-size: .9rem; line-height: 1.45; border-radius: 10px;
+         padding: 10px 12px; background: var(--ab-mint); border: 1px solid var(--ab-line);}
+/* Partage WhatsApp (relais des organisations de producteurs) */
+.share {display: inline-flex; align-items: center; gap: 6px; margin-top: 12px;
+        font-size: .85rem; font-weight: 700; text-decoration: none !important;
+        color: #fff !important; background: #1f9d55; border-radius: 999px; padding: 7px 14px;}
+.share:hover {background: #15803d;}
 
 /* Questions types illustrées */
 .ex-title {font-size: .8rem; font-weight: 800; letter-spacing: .05em; text-transform: uppercase;
@@ -347,11 +356,38 @@ def _num(value: float) -> str:
     return f"{value:+.1f}".replace(".", ",")
 
 
+# Quand l'assistant n'a pas la réponse, il oriente vers une personne compétente
+# (besoin A1 de la cartographie des segments) au lieu de s'arrêter à « je ne sais pas ».
+ORIENTATION = ("Pour un problème sur votre parcelle (maladie, ravageur, sol, semences), "
+               "adressez-vous au conseiller agricole de votre zone (ANCAR), au service "
+               "départemental du développement rural ou à votre organisation de producteurs.")
+
+
+def _is_welcome(res: Result) -> bool:
+    return res.found and not res.source and not res.highlight
+
+
+def share_text(res: Result) -> str:
+    """Texte partagé sur WhatsApp : réponse locale, français et source."""
+    lines = []
+    if res.answer_wo:
+        lines.append(res.answer_wo)
+    lines.append(res.answer_fr)
+    if res.source:
+        lines.append(f"Source : {res.source}")
+    lines.append("— AgriBaat, assistant agricole vocal")
+    return "\n\n".join(lines)
+
+
+def share_link(res: Result) -> str:
+    return "https://wa.me/?text=" + urllib.parse.quote(share_text(res))
+
+
 def answer_card(res: Result, spoken: bool = False) -> str:
     """Carte réponse : chiffre clé vérifié + source + wolof + français."""
     esc = html.escape
     parts = ['<div class="answer"><div class="ans-head">']
-    if res.found and not res.source and not res.highlight:  # salutation, aide
+    if _is_welcome(res):  # salutation, aide
         parts.append('<span class="achip ok">💬 Ce que je sais faire</span>')
     elif res.found:
         parts.append('<span class="achip ok">📊 Chiffre vérifié</span>' if res.highlight
@@ -383,6 +419,12 @@ def answer_card(res: Result, spoken: bool = False) -> str:
             parts.append(f'<div class="draft">✍️ Phrase {langue.label.lower()} en brouillon, '
                          "en cours de relecture par un locuteur natif.</div>")
     parts.append(f'<div class="fr-line"><b>Français :</b> {esc(res.answer_fr)}</div>')
+    if not res.found:
+        parts.append(f'<div class="orient">🧑‍🌾 <b>Besoin d\'un avis sur place ?</b> '
+                     f"{esc(ORIENTATION)}</div>")
+    elif not _is_welcome(res):
+        parts.append(f'<a class="share" href="{esc(share_link(res))}" target="_blank" '
+                     'rel="noopener">📤 Partager sur WhatsApp</a>')
     if "total" in res.timings:
         parts.append(f'<div class="badges"><span class="badge">⏱ {res.timings["total"]} s'
                      "</span></div>")
@@ -779,6 +821,8 @@ def api_demander(question: str, langue: str = "fr") -> dict:
         "texte_lu": res.speech_wo, "source": res.source,
         "chiffre_cle": ({"libelle": hl.label, "valeur": hl.value, "unite": hl.unit,
                          "detail": hl.sub, "variation_pct": hl.delta} if hl else None),
+        "orientation": None if res.found else ORIENTATION,
+        "texte_a_partager": share_text(res) if res.found and not _is_welcome(res) else None,
     }
 
 

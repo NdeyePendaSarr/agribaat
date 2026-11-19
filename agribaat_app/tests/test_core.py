@@ -481,3 +481,29 @@ def test_json_api(monkeypatch):
     assert out["trouve"] and out["chiffre_cle"]["valeur"] == "300"
     assert out["source"].startswith("PAM") and out["reponse_locale"]
     assert app.api_demander("coggu gawri e Kawlak", "pul")["langue"] == "pul"
+
+
+@needs_data
+@needs_advice
+def test_share_and_orientation(monkeypatch):
+    """Partage WhatsApp d'une réponse trouvée ; orientation vers un conseiller sinon."""
+    monkeypatch.setenv("AGRIBAAT_WARMUP", "0")
+    import importlib
+    import urllib.parse
+
+    app = importlib.import_module("app")
+    res = app.api_assistant.ask_text("Quel est le prix du mil à Kaolack ?", "fr")
+    card = app.answer_card(res)
+    assert "wa.me/?text=" in card and "orient" not in card
+    text = urllib.parse.unquote(app.share_link(res).split("text=", 1)[1])
+    assert res.answer_fr in text and "Source : PAM" in text
+
+    miss = app.api_assistant.ask_text("Quelle est la production de café ?", "fr")
+    assert not miss.found
+    card = app.answer_card(miss)
+    assert "ANCAR" in card and "wa.me" not in card
+    out = app.api_demander("Quelle est la production de café ?", "fr")
+    assert out["orientation"] and out["texte_a_partager"] is None
+
+    hello = app.api_assistant.ask_text("Bonjour", "fr")
+    assert "wa.me" not in app.answer_card(hello) and "ANCAR" not in app.answer_card(hello)

@@ -53,6 +53,18 @@ Audit du 19 novembre 2026 (démo le 22). Référence : `FICHE_1` (vue d'ensemble
   l'écran d'accueil (PWA).
 - README mis à jour (schéma, langues, API, téléphone).
 
+**Besoins tirés de la cartographie des segments (v1.0, 3/11)**
+- Segment B1 (organisation qui relaie l'information à ses membres) : bouton
+  « 📤 Partager sur WhatsApp » sous chaque réponse, avec la réponse en langue locale, le
+  français et la source.
+- Segment A1 (« accéder à une personne compétente ») : quand l'assistant n'a pas la
+  réponse, il oriente vers le conseiller agricole (ANCAR), le service départemental du
+  développement rural ou l'organisation de producteurs, au lieu de s'arrêter à « je ne
+  sais pas ». Les mêmes informations sont renvoyées par l'API.
+- Non couverts, volontairement : mise en relation avec acheteurs, transporteurs et
+  stockage (A3, B2). La cartographie demande d'abord de vérifier en entretien que ce
+  besoin et cette offre existent.
+
 ## 3. Écarts restants (à dire honnêtement au jury)
 
 1. **Pas de LLM génératif.** Le cahier des charges prévoit un « LLM connecté à une base de
