@@ -64,22 +64,13 @@ EXAMPLES = [(q, lang) for q, lang, _ in EXAMPLE_CARDS]
 
 
 def _example_label(question: str, lang: str, title: str) -> str:
-    """« 🌾 Prix du mil à Kaolack » + ligne source · chiffre, tirés des vraies données."""
+    """« 🌾 Prix du mil à Kaolack » : une seule ligne, l'icône tirée de la vraie réponse."""
     from agribaat.answers import answer
     from agribaat.nlu import parse
 
-    ans = answer(parse([question], kb), kb)
-    hl = ans.highlight
-    source = (ans.source or "").split("(")[0].split(",")[0].strip()
-    source = {"Catalogue ouest-africain des espèces et variétés végétales": "Catalogue CEDEAO"
-              }.get(source, source)
-    if hl is not None:
-        icon, detail = hl.icon, f"{hl.value} {hl.unit}"
-    else:
-        icon, detail = ("🗣️" if lang != "Français" else "🌦️"), "conseils datés"
-    if lang != "Français":
-        detail = f"question en {lang.lower()}"
-    return f"{icon}  {title}\n{source} · {detail}" if source else f"{icon}  {title}\n{detail}"
+    hl = answer(parse([question], kb), kb).highlight
+    icon = hl.icon if hl is not None else ("🗣️" if lang != "Français" else "🌦️")
+    return f"{icon}  {title}"
 
 # Préparation en arrière-plan : modèles vocaux + réponses vocales des questions types.
 WARMUP = (warmup.start(assistant, [(t, LANG_CODES[l]) for t, l in EXAMPLES])
@@ -232,7 +223,7 @@ html, body {overflow-x: hidden;}
 .pill {font-size: .78rem; font-weight: 700; border-radius: 999px; padding: 2px 8px;
        vertical-align: middle; margin-left: 6px;}
 .pill.up {background: #dcfce7; color: #166534;} .pill.down {background: #fee2e2; color: #991b1b;}
-.wo-quote {font-size: 1.12rem; font-weight: 700; line-height: 1.45; margin-bottom: 6px;}
+.wo-quote {font-size: 1rem; font-weight: 600; line-height: 1.45; margin-bottom: 6px;}
 .draft {font-size: .85rem; color: #8a5a00; background: #fff6e0; border-radius: 8px; padding: 4px 10px; margin-bottom: 8px; display: inline-block;}
 .fr-line {font-size: .92rem; color: var(--body-text-color-subdued); line-height: 1.5;}
 /* Orientation vers un conseiller (quand l'assistant n'a pas la réponse) */
@@ -248,11 +239,10 @@ html, body {overflow-x: hidden;}
 .ex-title {font-size: .8rem; font-weight: 800; letter-spacing: .05em; text-transform: uppercase;
            margin: 14px 0 6px;}
 .ex-card {white-space: pre-line !important; text-align: left !important; display: block !important;
-          line-height: 1.35 !important; min-height: 74px; border-radius: 14px !important;
-          border: 1px solid var(--border-color-primary) !important; font-size: .82rem !important;
-          color: var(--ab-green) !important; background: var(--block-background-fill) !important;
-          padding: 10px 12px !important; font-weight: 500 !important;}
-.ex-card::first-line {color: var(--body-text-color); font-weight: 700; font-size: .95rem;}
+          line-height: 1.3 !important; min-height: 0; border-radius: 12px !important;
+          border: 1px solid var(--border-color-primary) !important;
+          color: var(--body-text-color) !important; background: var(--block-background-fill) !important;
+          padding: 10px 12px !important; font-weight: 600 !important; font-size: .9rem !important;}
 .ex-card:hover {border-color: var(--ab-green) !important; background: var(--ab-mint) !important;}
 
 /* Barres horizontales (production par région, pluie par région) */
@@ -311,8 +301,7 @@ html, body {overflow-x: hidden;}
   /* Questions types : deux par ligne, plus compactes. */
   .ex-row {flex-wrap: wrap !important; gap: 8px !important;}
   .ex-row > * {flex: 1 1 calc(50% - 8px) !important; min-width: 0 !important;}
-  .ex-card {min-height: 64px; font-size: .74rem !important; padding: 8px 10px !important;}
-  .ex-card::first-line {font-size: .84rem;}
+  .ex-card {font-size: .8rem !important; padding: 8px 10px !important;}
 }
 """
 
@@ -322,8 +311,7 @@ def hero_html() -> str:
     chips = [f"{N_MARKETS} marchés suivis", f"Dernier relevé : {fmt_month(LAST_DATE)}",
              f"Statistiques {YEARS_FAO[0]}–{YEARS_FAO[1]}", "Sources : PAM · FAOSTAT · DAPSA"]
     return ('<div id="hero"><span class="event">PAS Challenge 2026</span><h1>🌾 AgriBaat</h1>'
-            '<p class="tag">Assistant agricole vocal en wolof, pulaar et sereer — prix des marchés, '
-            'production et rendements, chiffres sourcés</p><div class="chips">'
+            '<p class="tag">Assistant agricole vocal · wolof, pulaar, sereer</p><div class="chips">'
             + "".join(f'<span class="chip">{c}</span>' for c in chips) + "</div></div>")
 
 
@@ -331,15 +319,12 @@ def mode_html() -> str:
     if VOICE_READY:
         s = WARMUP
         if s.state in ("en attente", "chargement"):
-            return ('<div class="mode text">⏳ Chargement de la voix en cours (1 à 3 minutes). '
-                    "Les questions écrites fonctionnent déjà.</div>")
+            return ('<div class="mode text">⏳ Chargement de la voix (1 à 3 min) · '
+                    "l'écrit marche déjà</div>")
         if s.state == "préparation":
-            return (f'<div class="mode text">⏳ Préparation des réponses vocales : '
-                    f"{s.done}/{s.total} questions types prêtes. Vous pouvez déjà poser "
-                    "vos questions (premières réponses vocales plus lentes).</div>")
-        return ('<div class="mode ok">🎙️ Mode vocal prêt : parlez en wolof ou en pulaar, la '
-                "réponse est lue à voix haute. Les questions types répondent instantanément."
-                "</div>")
+            return (f'<div class="mode text">⏳ Préparation de la voix : '
+                    f"{s.done}/{s.total}</div>")
+        return '<div class="mode ok">🎙️ Mode vocal prêt</div>'
     return ('<div class="mode text">⌨️ Mode texte : les modèles vocaux ne sont pas installés '
             "(torch, transformers). Les questions écrites en français fonctionnent ; "
             "voir le README pour activer la voix.</div>")
@@ -358,9 +343,8 @@ def _num(value: float) -> str:
 
 # Quand l'assistant n'a pas la réponse, il oriente vers une personne compétente
 # (besoin A1 de la cartographie des segments) au lieu de s'arrêter à « je ne sais pas ».
-ORIENTATION = ("Pour un problème sur votre parcelle (maladie, ravageur, sol, semences), "
-               "adressez-vous au conseiller agricole de votre zone (ANCAR), au service "
-               "départemental du développement rural ou à votre organisation de producteurs.")
+ORIENTATION = ("Pour un problème sur votre parcelle, demandez au conseiller agricole "
+               "de votre zone (ANCAR) ou à votre organisation de producteurs.")
 
 
 def _is_welcome(res: Result) -> bool:
@@ -420,14 +404,10 @@ def answer_card(res: Result, spoken: bool = False) -> str:
                          "en cours de relecture par un locuteur natif.</div>")
     parts.append(f'<div class="fr-line"><b>Français :</b> {esc(res.answer_fr)}</div>')
     if not res.found:
-        parts.append(f'<div class="orient">🧑‍🌾 <b>Besoin d\'un avis sur place ?</b> '
-                     f"{esc(ORIENTATION)}</div>")
+        parts.append(f'<div class="orient">🧑‍🌾 {esc(ORIENTATION)}</div>')
     elif not _is_welcome(res):
         parts.append(f'<a class="share" href="{esc(share_link(res))}" target="_blank" '
                      'rel="noopener">📤 Partager sur WhatsApp</a>')
-    if "total" in res.timings:
-        parts.append(f'<div class="badges"><span class="badge">⏱ {res.timings["total"]} s'
-                     "</span></div>")
     warnings = [w for w in res.warnings if "brouillon" not in w]  # déjà affiché au-dessus
     if warnings and VOICE_READY:  # en mode texte, le bandeau suffit
         parts.append('<div class="warn">' + "<br>".join(esc(w) for w in warnings) + "</div>")
@@ -490,13 +470,10 @@ def on_text(text: str, lang: str, history):
 
 
 MIC_HEAD = {
-    "Wolof": ("Maa ngi lay déglu…", "Appuyez sur le cercle rouge et posez votre question en wolof"),
-    "Pulaar": ("Question en pulaar", "Appuyez sur le cercle rouge et posez votre question en "
-               "pulaar"),
-    "Sereer": ("Sereer · à l'écrit", "Pas encore de reconnaissance vocale sereer : tapez la "
-               "question ci-dessous, la réponse s'affiche en sereer"),
-    "Français": ("Maa ngi lay déglu…", "Parlez en wolof, ou tapez votre question en français "
-                 "ci-dessous"),
+    "Wolof": ("Maa ngi lay déglu…", "Appuyez sur le cercle rouge et parlez"),
+    "Pulaar": ("Question en pulaar", "Appuyez sur le cercle rouge et parlez"),
+    "Sereer": ("Sereer · à l'écrit", "Tapez la question ci-dessous"),
+    "Français": ("Maa ngi lay déglu…", "Parlez en wolof, ou tapez en français ci-dessous"),
 }
 
 
@@ -864,8 +841,6 @@ with gr.Blocks(title="AgriBaat", css=CSS, theme=THEME, js=FORCE_LIGHT) as demo:
                 mic_title = gr.HTML(mic_head("Wolof"))
                 mic = gr.Audio(sources=["microphone", "upload"], type="numpy",
                                show_label=False, elem_id="mic", interactive=VOICE_READY)
-                gr.HTML("<span class='hint'>1. Appuyez sur le cercle · 2. parlez · 3. appuyez "
-                        "sur ■ : la question part toute seule.</span>")
                 btn_voice = gr.Button("↻ Renvoyer la dernière question vocale", size="sm",
                                       variant="secondary", elem_id="ask-voice",
                                       interactive=VOICE_READY)
@@ -879,7 +854,7 @@ with gr.Blocks(title="AgriBaat", css=CSS, theme=THEME, js=FORCE_LIGHT) as demo:
                     out_hist = gr.Markdown(_history_md([]), elem_classes="hist")
         outputs = [out_card, out_audio, out_details, history, out_hist]
 
-        gr.HTML('<div class="ex-title">⚡ Questions types — cliquez pour poser</div>')
+        gr.HTML('<div class="ex-title">Questions types</div>')
         example_buttons = []
         for row_start in range(0, len(EXAMPLE_CARDS), 4):
             with gr.Row(equal_height=True, elem_classes="ex-row"):
@@ -892,8 +867,6 @@ with gr.Blocks(title="AgriBaat", css=CSS, theme=THEME, js=FORCE_LIGHT) as demo:
                 txt = gr.Textbox(placeholder="Ex. : Quel est le prix du mil à Kaolack ?",
                                  show_label=False, lines=1, scale=5)
                 btn_text = gr.Button("Envoyer", variant="primary", scale=1, min_width=90)
-            gr.HTML("<span class='hint'>La langue choisie en haut s'applique à la question "
-                    "tapée.</span>")
 
         lang.change(on_lang, lang, [mic_title, mic, kb_box])
         btn_voice.click(on_voice, [mic, lang, history], outputs)

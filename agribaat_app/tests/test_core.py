@@ -323,7 +323,8 @@ def test_interface_tabs_render_with_real_data(monkeypatch):
     assert "Record" in kpis and len(series) > 10 and 'class="fill"' in bars
     assert "vtable" in app.variety_table("arachide", "court", False)
     assert "hbar" in app.rain_by_region(app.DECADES[0][1])[0]
-    assert all("\n" in app._example_label(q, l, t) for q, l, t in app.EXAMPLE_CARDS)
+    labels = [app._example_label(q, l, t) for q, l, t in app.EXAMPLE_CARDS]
+    assert all("\n" not in x and t in x for x, (_, _, t) in zip(labels, app.EXAMPLE_CARDS))
     for lang in ("Pulaar", "Sereer"):
         card = app.on_text("coggu gawri e Kawlak", lang, [])[0]
         assert f"{lang} :" in card and "brouillon" not in card and "300" in card
