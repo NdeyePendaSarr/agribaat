@@ -323,7 +323,7 @@ def _advice_answer(q: Query, kb: KnowledgeBase) -> Answer:
         f"le {PRODUCT_BY_KEY[q.product].label}" if q.product else "") if x)
     prefix, prefix_wo = "", wo.WolofText("", "")
     if asked and not fact.matched:
-        prefix = f"Je n'ai pas de recommandation sur {asked}. Voici celles du dernier bulletin. "
+        prefix = f"Je n'ai pas de recommandation sur {asked}. Voici les plus proches. "
         sujet = THEMES_OR_PRODUCT_WO(q)
         prefix_wo = wo.render("conseils_sans_sujet", sujet=sujet)
     if len(set(fact.dates)) > 1:  # plusieurs bulletins : chaque conseil garde sa date
@@ -376,13 +376,41 @@ def _excerpt(passage_text: str, question: str, idf: dict[str, float] | None = No
 
 def _search_answer(q: Query, kb: KnowledgeBase) -> Answer | None:
     passage = kb.search(q.text) if q.text else None
+    asked = q.text
+    if passage is None and q.focus and len(q.focus.split()) >= 2:
+        passage, asked = kb.search(q.focus), q.focus  # sens reconnu seulement
     if passage is None:
         return None
-    excerpt = _excerpt(passage.text, q.text, getattr(kb._search, "idf", None))
+    excerpt = _excerpt(passage.text, asked, getattr(kb._search, "idf", None))
     text = (f"Je n'ai pas de réponse chiffrée, mais voici un extrait de « {passage.source} » : "
             f"« {excerpt} »")
     return Answer(text, f"{passage.source} (extrait)", True,
                   wo.render("extrait", source=wo.Name(passage.source)))
+
+
+def _product_sheet(q: Query, kb: KnowledgeBase) -> Answer | None:
+    """Culture reconnue, mais pas le reste de la question (formulation inconnue) :
+    plutôt que deviner, on donne l'essentiel sur cette culture — dernier prix moyen et
+    production nationale —, avec les phrases déjà relues dans chaque langue."""
+    price = kb.price(q.product, region=q.region)
+    stat = kb.stat(q.product, "production", region=q.region)
+    if price is None and stat is None:
+        return None
+    texts, local, sources = [], wo.WolofText("", ""), []
+    if price is not None:
+        latest = kb.prices["date"].max()
+        texts.append(_price_answer(price, q, latest=latest))
+        local = local + _price_wolof(price, q, latest=latest)
+        sources.append("PAM / WFP (prix de détail)")
+    if stat is not None:
+        texts.append(_stat_answer(stat))
+        local = local + wo.WolofText(" ", " ") + _stat_wolof(stat) if price is not None \
+            else _stat_wolof(stat)
+        sources.append(stat.source)
+    label = PRODUCT_BY_KEY[q.product].label
+    text = f"Voici l'essentiel sur le {label}. " + " ".join(texts)
+    hl = _price_highlight(price, q) if price is not None else _stat_highlight(stat, kb)
+    return Answer(text, " ; ".join(sources), True, local, hl)
 
 
 def _technique_answer(q: Query, kb: KnowledgeBase) -> Answer:
@@ -391,7 +419,9 @@ def _technique_answer(q: Query, kb: KnowledgeBase) -> Answer:
     found = _search_answer(q, kb)
     if found is not None:
         return found
-    if q.topic == "ravageurs":
+    if q.topic or q.product:
+        # Pas de document précis : recommandations datées de l'ANACIM sur ce sujet ou
+        # cette culture (la réponse dit si elles ne portent pas exactement sur la question).
         return _advice_answer(q, kb)
     return Answer("Je n'ai pas encore d'information fiable sur ce sujet dans mes documents "
                   "(ISRA, ANACIM).", None, False,
@@ -420,6 +450,10 @@ def _answer(q: Query, kb: KnowledgeBase) -> Answer:
         return _advice_answer(q, kb)
     if q.intent == "technique":
         return _technique_answer(q, kb)
+    if q.intent == "fiche" and q.product:
+        return _product_sheet(q, kb) or Answer(
+            f"Je n'ai pas d'information sur le {PRODUCT_BY_KEY[q.product].label}.", None,
+            False, wo.render("pas_de_stat", produit=wo.L().PRODUCTS_WO[q.product]))
     if q.product is None:
         found = _search_answer(q, kb)  # question ouverte : extrait cité, si pertinent
         if found is not None:

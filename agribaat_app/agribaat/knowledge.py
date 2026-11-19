@@ -131,12 +131,16 @@ class KnowledgeBase:
             by_product |= text.str.contains(rf"\b{normalize(word)}", regex=True)
         by_topic = (text.str.contains(TOPICS[topic], regex=True) if topic
                     else pd.Series(False, index=df.index))
-        # Préférence : produit + thème, puis thème seul (c'est l'objet de la
-        # question), puis produit seul.
+        # Préférence : produit + thème, puis produit seul, puis thème seul. Le produit
+        # passe avant le thème : pour « maladie du mil », le thème seul ramenait des
+        # recommandations sur les maladies des animaux.
         mask = pd.Series(False, index=df.index)
-        for candidate in (by_product & by_topic, by_topic, by_product):
+        exact = False  # recommandations qui portent vraiment sur la question posée
+        both = bool(product_words) and topic is not None
+        for rank, candidate in enumerate((by_product & by_topic, by_product, by_topic)):
             if candidate.any():
                 mask = candidate
+                exact = rank == 0 or not both
                 break
         if mask.any():  # les plus récentes sur le sujet, éventuellement sur plusieurs bulletins
             sel = (df[mask].sort_values("decade_debut", ascending=False)
@@ -148,7 +152,7 @@ class KnowledgeBase:
         return AdviceFact(start=last, end=decade_end(last),
                           items=sel["recommandation"].tolist(),
                           dates=sel["decade_debut"].tolist(),
-                          source=str(sel["source"].iloc[0]), matched=bool(mask.any()))
+                          source=str(sel["source"].iloc[0]), matched=bool(mask.any()) and exact)
 
     # ---------------------------------------------------------- passages
     def search(self, question: str):

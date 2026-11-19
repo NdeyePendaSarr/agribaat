@@ -7,9 +7,11 @@ un locuteur natif avant la démo. Ajoutez des variantes orthographiques ici
 
 from __future__ import annotations
 
+import csv
 import re
 import unicodedata
 from dataclasses import dataclass, field
+from pathlib import Path
 
 
 def normalize(text: str) -> str:
@@ -113,7 +115,7 @@ INTENT_KEYWORDS: dict[str, tuple[str, ...]] = {
     "superficie": ("superficie", "surface", "hectares", "cultive", "emblave", "ektaar",
                    "tool", "bey", "aawaama", "aawaa", "beyaa"),
     "production": ("production", "produit", "produire", "recolte", "tonnes",
-                   "tonne", "combien de", "goob", "jur", "tonn",
+                   "tonne", "combien de", "goob", "goobu", "jur", "tonn",
                    "hebaa", "xoox"),  # pulaar heɓaa, sereer xoox : phrases relues
 }
 
@@ -125,6 +127,36 @@ LOCAL_GLOSS: dict[str, str] = {
     "ndiyam": "eau", "mbeel": "eau", "jawdi": "elevage", "mbaal": "elevage",
     "tobo": "pluie", "ndob": "pluie", "taw": "pluie", "ngesa": "champ", "tool": "champ",
 }
+
+# Vocabulaire agricole des langues locales, rempli par les locuteurs de l'équipe dans
+# vocabulaire_local.csv (une ligne par notion, une colonne par langue, mots séparés
+# par « / »). Ces mots servent seulement à COMPRENDRE la question : ils ne sont jamais
+# prononcés par l'application. Ajouter un mot = l'assistant le comprend au prochain
+# démarrage, sans toucher au code.
+VOCABULARY_FILE = Path(__file__).with_name("vocabulaire_local.csv")
+
+
+def _load_vocabulary(path: Path) -> int:
+    if not path.exists():
+        return 0
+    added = 0
+    with path.open(encoding="utf-8-sig", newline="") as f:
+        for row in csv.DictReader(f, delimiter=";"):
+            words = [normalize(w) for lang in ("wolof", "pulaar", "sereer")
+                     for w in (row.get(lang) or "").split("/") if normalize(w)]
+            intent = (row.get("intention") or "").strip()
+            if intent in INTENT_KEYWORDS:
+                new = tuple(w for w in dict.fromkeys(words) if w not in INTENT_KEYWORDS[intent])
+                INTENT_KEYWORDS[intent] += new
+                added += len(new)
+            gloss = normalize(row.get("mots_francais_pour_la_recherche") or "")
+            for w in words:
+                if gloss:
+                    LOCAL_GLOSS.setdefault(w, gloss)
+    return added
+
+
+_load_vocabulary(VOCABULARY_FILE)
 
 # Salutations et demandes d'aide (français, wolof, pulaar, sereer) : on répond par ce
 # que l'assistant sait faire, au lieu de chercher un extrait sans rapport.

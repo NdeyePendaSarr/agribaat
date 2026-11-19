@@ -460,9 +460,10 @@ def answer_card(res: Result, spoken: bool = False) -> str:
             parts.append(f'<div class="draft">✍️ Phrase {langue.label.lower()} en brouillon, '
                          "en cours de relecture par un locuteur natif.</div>")
     parts.append(f'<div class="fr-line"><b>Français :</b> {esc(res.answer_fr)}</div>')
-    if not res.found:
+    partial = res.answer_fr.startswith("Je n'ai pas de recommandation sur")
+    if not res.found or partial:  # pas de réponse, ou réponse approchante seulement
         parts.append(f'<div class="orient">🧑‍🌾 {esc(ORIENTATION)}</div>')
-    elif not _is_welcome(res):
+    if res.found and not _is_welcome(res):
         parts.append(f'<a class="share" href="{esc(share_link(res))}" target="_blank" '
                      'rel="noopener">📤 Partager sur WhatsApp</a>')
     warnings = [w for w in res.warnings if "brouillon" not in w]  # déjà affiché au-dessus
@@ -864,7 +865,8 @@ def api_demander(question: str, langue: str = "fr") -> dict:
         "texte_lu": res.speech_wo, "source": res.source,
         "chiffre_cle": ({"libelle": hl.label, "valeur": hl.value, "unite": hl.unit,
                          "detail": hl.sub, "variation_pct": hl.delta} if hl else None),
-        "orientation": None if res.found else ORIENTATION,
+        "orientation": ORIENTATION if (not res.found or res.answer_fr.startswith(
+            "Je n'ai pas de recommandation sur")) else None,
         "texte_a_partager": share_text(res) if res.found and not _is_welcome(res) else None,
     }
 

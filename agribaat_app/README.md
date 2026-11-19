@@ -131,7 +131,22 @@ Les machines de 16 Go ou plus peuvent essayer les deux modèles plus gros, plus 
 - **Salutations** (« Bonjour », « Salaam aleekum », « Jam waali », « Na fio ») : l'assistant
   dit ce qu'il sait faire, dans la langue choisie
 
+- **Question libre, formulation inconnue** : si la culture est reconnue (« gawri », « maac »,
+  « dugub »…) mais pas le reste, l'assistant donne la fiche de la culture (dernier prix moyen
+  et production nationale) au lieu de deviner ; si seul le sujet est reconnu (maladie,
+  insectes…), il donne les recommandations ANACIM les plus proches en le disant, avec
+  l'orientation vers le conseiller agricole.
+
 Produits : mil, sorgho, maïs, riz, arachide, niébé, oignon, manioc, fonio.
+
+### Enrichir le vocabulaire des langues locales (sans toucher au code)
+
+`agribaat/vocabulaire_local.csv` (s'ouvre dans Excel) : une ligne par notion agricole
+(maladie, insectes, eau, sol, vendre, semer…), une colonne par langue, plusieurs mots
+séparés par « / ». Chaque mot ajouté est compris au prochain démarrage de l'app. Ces mots
+servent seulement à **comprendre** la question : ils ne sont jamais prononcés par l'app.
+La colonne `a_faire_relire` liste les mots proposés qui attendent la relecture d'un
+locuteur ; les cases vides (par exemple « engrais » en pulaar et en sereer) sont à remplir.
 
 ## À faire avant la démo
 

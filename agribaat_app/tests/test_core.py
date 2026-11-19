@@ -527,7 +527,35 @@ def test_practical_question_never_gets_a_production_figure(kb, text):
     assert q.intent == "technique"
     ans = answer(q, kb)
     assert "production" not in ans.text.split("«")[0].lower()
-    assert (ans.source or "").endswith("(extrait)") or not ans.found
+    # extrait de document, recommandations ANACIM, ou aveu d'ignorance — jamais une stat
+    assert ((ans.source or "").endswith("(extrait)") or (ans.source or "").startswith("ANACIM")
+            or not ans.found)
+
+
+@needs_data
+@needs_advice
+@pytest.mark.parametrize("text,lang", [
+    ("Gawri am ina ñawi, hol ko mbaawmi waɗde?", "pul"),  # mil malade : que faire ?
+    ("Ɓoggi ina nyaama gawri am", "pul"),  # mot inconnu : fiche du mil
+    ("Dugub bi dafa am feebar, lan laa war a def?", "wo"),
+    ("Maac no Fatick", "srr"),
+    ("Soble ci Senegaal", "wo"),
+])
+def test_free_local_questions_get_a_useful_answer(kb, text, lang):
+    """Question libre, jamais vue : réponse utile (pas « je n'ai pas compris »)."""
+    from agribaat import langues
+
+    q = parse([text], kb)
+    ans = answer(q, kb, langues.get(lang).module)
+    assert ans.found and q.product is not None
+
+
+def test_vocabulary_file_feeds_the_keywords():
+    from agribaat import lexicon
+
+    assert "feebar" in lexicon.INTENT_KEYWORDS["technique"]
+    assert "ndungu" in lexicon.INTENT_KEYWORDS["pluie"]
+    assert lexicon.LOCAL_GLOSS.get("suuf") == "sol"
 
 
 @needs_data

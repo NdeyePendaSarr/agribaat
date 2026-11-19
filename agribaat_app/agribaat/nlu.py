@@ -40,6 +40,7 @@ class Query:
     topic: str | None = None  # semis | recolte | ravageurs | ... (conseils)
     text: str = ""  # question normalisée (recherche de passages)
     intent_guessed: bool = False  # intention déduite par défaut (aucun mot-clé)
+    focus: str = ""  # sens reconnu seulement (produit + notions), en français
 
     @property
     def is_complete(self) -> bool:
@@ -130,6 +131,9 @@ def parse(texts: list[str], kb: KnowledgeBase) -> Query:
     extra = [PRODUCT_BY_KEY[q.product].label] if q.product else []
     extra += [fr for local, fr in LOCAL_GLOSS.items() if _contains(text, local)]
     q.text = " ".join([text] + [normalize(x) for x in extra])
+    # Recherche de secours sur ce seul sens : des mots locaux (« def », « war ») existent
+    # parfois dans les documents français et faussent la recherche sur la phrase entière.
+    q.focus = " ".join(normalize(x) for x in extra)
     # Priorités : voir ORDER (« xeeti gerte yu mën a muñ ñàkk taw » = variétés).
     for intent in ORDER:
         if any(_contains(text, k) for k in INTENT_KEYWORDS[intent]):
@@ -151,7 +155,7 @@ def parse(texts: list[str], kb: KnowledgeBase) -> Query:
         r"secheresse|manque de pluie|peu de pluie|deficit|nakk taw|nakkum taw|nakku tobo"
         r"|ndob a tuuti", text))
     for topic, pattern in TOPICS.items():
-        if re.search(pattern, text):
+        if re.search(pattern, q.text):  # avec les équivalents français des mots locaux
             q.topic = topic
             break
     # « kañ » (quand ?) + góob / ji : question de calendrier -> conseil
@@ -186,10 +190,12 @@ def parse(texts: list[str], kb: KnowledgeBase) -> Query:
             _contains(text, k) for k in GREETING_KEYWORDS):
         q.intent = "salutation"
 
-    # Intention par défaut : marché cité, ou « kilo » sans hectare -> prix ; sinon production.
+    # Intention par défaut : marché cité, ou « kilo » sans hectare -> prix ; sinon fiche.
     if q.intent is None and q.product:
         per_kilo = _contains(text, "kilo") and not re.search(r"ektaar|hectare", text)
-        q.intent = "prix" if q.market or per_kilo else "production"
+        # Sans marché ni « kilo » : fiche de la culture (prix + production) plutôt
+        # qu'une intention devinée au hasard.
+        q.intent = "prix" if q.market or per_kilo else "fiche"
         q.intent_guessed = True
     return q
 

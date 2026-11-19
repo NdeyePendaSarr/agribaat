@@ -18,7 +18,7 @@ import pandas as pd
 from .lexicon import normalize
 
 STOPWORDS = set("""
-au aux avec ce ces dans de des du elle en et eux il ils je la le les leur lui ma mais me
+au aux avec ce ces dans de des du elle en et eux il ils je la le les leur lui ma me
 meme mes moi mon ne nos notre nous on ou par pas pour qu que qui sa se ses son sur ta te
 tes toi ton tu un une vos votre vous est sont ete etre avoir a ont fait faire comme plus
 moins tres tout tous toute toutes cette cet aussi bien entre sans sous chez donc alors
