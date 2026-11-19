@@ -58,7 +58,35 @@ def to_mono_16k(sr: int, audio: np.ndarray) -> np.ndarray:
         audio = audio.mean(axis=1)
     if sr != TARGET_SR:
         audio = AF.resample(torch.from_numpy(audio), sr, TARGET_SR).numpy()
-    return audio
+    return clean_speech(audio)
+
+
+def clean_speech(audio: np.ndarray, sr: int = TARGET_SR) -> np.ndarray:
+    """Prépare une question enregistrée pour la reconnaissance vocale (toutes langues).
+
+    - retire la composante continue (micro de PC portable) ;
+    - coupe les longs silences du début et de la fin (on y garde 0,25 s) : un silence
+      de plusieurs secondes fait parfois « entendre » des lettres au modèle ;
+    - remonte le volume d'un enregistrement trop faible (crête ramenée à 0,9).
+    """
+    audio = np.asarray(audio, dtype=np.float32)
+    if audio.size == 0:
+        return audio
+    audio = audio - float(audio.mean())
+    peak = float(np.abs(audio).max())
+    if peak < 1e-4:  # silence complet : rien à faire
+        return audio
+    frame = int(0.02 * sr)
+    n = len(audio) // frame
+    if n > 0:
+        energy = np.abs(audio[: n * frame]).reshape(n, frame).max(axis=1)
+        voiced = np.flatnonzero(energy > max(0.05 * peak, 1e-3))
+        if voiced.size:
+            pad = int(0.25 * sr)
+            start = max(int(voiced[0]) * frame - pad, 0)
+            end = min((int(voiced[-1]) + 1) * frame + pad, len(audio))
+            audio = audio[start:end]
+    return (audio * (0.9 / peak)).astype(np.float32)
 
 
 # ------------------------------------------------------------------------ ASR

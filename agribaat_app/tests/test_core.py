@@ -410,3 +410,74 @@ def test_sereer_voice_question_is_refused_politely(kb):
 
     res = Assistant(kb, speak=False).ask_audio(16000, np.zeros(16000, np.float32), "srr")
     assert "tapez" in res.answer_fr
+
+
+# ---------------------------------------------------------------- audit du 19/11
+@needs_data
+@pytest.mark.parametrize("text,lang", [("Bonjour", "fr"), ("Salaam aleekum", "wo"),
+                                       ("Jam waali", "pul"), ("Na fio", "srr")])
+def test_greeting_answers_with_what_the_assistant_can_do(kb, text, lang):
+    """Une salutation ne doit plus renvoyer un extrait de document sans rapport."""
+    from agribaat import langues
+
+    q = parse([text], kb)
+    assert q.intent == "salutation" and q.is_complete
+    ans = answer(q, kb, langues.get(lang).module)
+    assert ans.found and ans.source is None and "AgriBaat" in ans.text
+    assert ans.wolof is not None and ans.wolof.text
+
+
+@needs_data
+def test_greeting_does_not_hide_a_real_question(kb):
+    assert parse(["Bonjour, quel est le prix du mil à Kaolack ?"], kb).intent == "prix"
+
+
+@needs_data
+def test_market_without_this_product_falls_back_to_its_region(kb):
+    ans = answer(parse(["prix de l'oignon à Dakar"], kb), kb)
+    assert ans.found and "région de Dakar" in ans.text
+
+
+@needs_data
+def test_pulaar_and_wolof_name_of_dakar(kb):
+    assert parse(["coggu basal e Ndakaaru"], kb).region == "Dakar"
+
+
+@needs_data
+def test_wolof_variety_question_with_xeetu(kb):
+    q = parse(["ban xeetu dugub moo gaaw"], kb)
+    assert (q.intent, q.product, q.cycle) == ("variete", "mil", "court")
+
+
+@needs_data
+def test_intent_word_misheard_by_one_letter(kb):
+    """Transcription vocale : « cogu » pour « coggu » (prix, pulaar)."""
+    q = parse(["cogu gawri e kawlak"], kb)
+    assert (q.intent, q.product, q.market) == ("prix", "mil", "Kaolack")
+
+
+def test_clean_speech_trims_silence_and_raises_volume():
+    import numpy as np
+
+    from agribaat.models import clean_speech
+
+    sr = 16_000
+    voice = 0.05 * np.sin(np.linspace(0, 2 * np.pi * 220, sr)).astype(np.float32)
+    audio = np.concatenate([np.zeros(3 * sr, np.float32), voice, np.zeros(3 * sr, np.float32)])
+    out = clean_speech(audio, sr)
+    assert len(out) < 2 * sr  # 6 s de silence retirées (0,25 s gardée de chaque côté)
+    assert abs(float(np.abs(out).max()) - 0.9) < 0.01
+    assert clean_speech(np.zeros(sr, np.float32), sr).max() == 0
+
+
+@needs_data
+@needs_advice
+def test_json_api(monkeypatch):
+    monkeypatch.setenv("AGRIBAAT_WARMUP", "0")
+    import importlib
+
+    app = importlib.import_module("app")
+    out = app.api_demander("Quel est le prix du mil à Kaolack ?", "fr")
+    assert out["trouve"] and out["chiffre_cle"]["valeur"] == "300"
+    assert out["source"].startswith("PAM") and out["reponse_locale"]
+    assert app.api_demander("coggu gawri e Kawlak", "pul")["langue"] == "pul"

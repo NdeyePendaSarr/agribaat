@@ -290,6 +290,20 @@ html, body {overflow-x: hidden;}
   .kpi-box .big {font-size: 1.6rem;}
   .hbar {grid-template-columns: 84px 1fr 70px;}
   #mic .record-button, #mic .stop-button {width: 104px !important; height: 104px !important;}
+  /* Le micro doit être visible sans défiler : en-tête réduit à l'essentiel. */
+  #hero {padding: 14px 16px;}
+  #hero .event {display: none;}
+  #hero h1 {font-size: 1.45rem;}
+  #hero .tag {font-size: .84rem; margin: 2px 0 8px;}
+  #hero .chip:nth-child(n+3) {display: none;}
+  /* Langues : grille 2 x 2 bien alignée au lieu d'une ligne qui déborde. */
+  #lang-toggle .wrap {display: grid !important; grid-template-columns: 1fr 1fr; gap: 6px;}
+  #lang-toggle label {justify-content: center; padding: 10px 8px !important;}
+  /* Questions types : deux par ligne, plus compactes. */
+  .ex-row {flex-wrap: wrap !important; gap: 8px !important;}
+  .ex-row > * {flex: 1 1 calc(50% - 8px) !important; min-width: 0 !important;}
+  .ex-card {min-height: 64px; font-size: .74rem !important; padding: 8px 10px !important;}
+  .ex-card::first-line {font-size: .84rem;}
 }
 """
 
@@ -337,7 +351,9 @@ def answer_card(res: Result, spoken: bool = False) -> str:
     """Carte réponse : chiffre clé vérifié + source + wolof + français."""
     esc = html.escape
     parts = ['<div class="answer"><div class="ans-head">']
-    if res.found:
+    if res.found and not res.source and not res.highlight:  # salutation, aide
+        parts.append('<span class="achip ok">💬 Ce que je sais faire</span>')
+    elif res.found:
         parts.append('<span class="achip ok">📊 Chiffre vérifié</span>' if res.highlight
                      else '<span class="achip ok">📚 Réponse sourcée</span>')
     else:
@@ -742,6 +758,30 @@ ABOUT_HTML = (
     "</ul><p><i>Équipe SMART AGRO — PAS Challenge 2026.</i></p></div>")
 
 
+# ---------------------------------------------------------------- API (pilier 5)
+api_assistant = Assistant(kb, speak=False)  # l'API renvoie du texte : pas de synthèse
+
+
+def api_demander(question: str, langue: str = "fr") -> dict:
+    """Pose une question écrite à AgriBaat et renvoie la réponse en JSON.
+
+    Args:
+        question: la question, par ex. « Quel est le prix du mil à Kaolack ? »
+        langue: langue de la question et de la réponse locale : fr (réponse wolof),
+            wo (wolof), pul (pulaar) ou srr (sereer).
+    """
+    langue = langue if langue in ("fr", "wo", "pul", "srr") else "fr"
+    res = api_assistant.ask_text(question or "", langue)
+    hl = res.highlight
+    return {
+        "question": question, "langue": res.lang, "trouve": res.found,
+        "reponse_fr": res.answer_fr, "reponse_locale": res.answer_wo,
+        "texte_lu": res.speech_wo, "source": res.source,
+        "chiffre_cle": ({"libelle": hl.label, "valeur": hl.value, "unite": hl.unit,
+                         "detail": hl.sub, "variation_pct": hl.delta} if hl else None),
+    }
+
+
 # ---------------------------------------------------------------- interface
 THEME = gr.themes.Soft(primary_hue="green", secondary_hue="amber",
                        font=[gr.themes.GoogleFont("Inter"), "sans-serif"])
@@ -798,7 +838,7 @@ with gr.Blocks(title="AgriBaat", css=CSS, theme=THEME, js=FORCE_LIGHT) as demo:
         gr.HTML('<div class="ex-title">⚡ Questions types — cliquez pour poser</div>')
         example_buttons = []
         for row_start in range(0, len(EXAMPLE_CARDS), 4):
-            with gr.Row(equal_height=True):
+            with gr.Row(equal_height=True, elem_classes="ex-row"):
                 for question, ex_lang, title in EXAMPLE_CARDS[row_start:row_start + 4]:
                     button = gr.Button(_example_label(question, ex_lang, title),
                                        elem_classes="ex-card", min_width=150)
@@ -909,5 +949,9 @@ with gr.Blocks(title="AgriBaat", css=CSS, theme=THEME, js=FORCE_LIGHT) as demo:
     with gr.Tab("ℹ️ À propos"):
         gr.HTML(ABOUT_HTML)
 
+    # API JSON : POST /gradio_api/call/demander, ou gradio_client (voir README).
+    gr.api(api_demander, api_name="demander")
+
 if __name__ == "__main__":
-    demo.launch()
+    # pwa : sur téléphone, « Ajouter à l'écran d'accueil » installe AgriBaat comme une appli.
+    demo.launch(pwa=True)

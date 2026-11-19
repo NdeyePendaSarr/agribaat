@@ -5,6 +5,7 @@ Règle : chaque chiffre vient d'une table. Si la donnée manque, on le dit.
 
 from __future__ import annotations
 
+import dataclasses
 import re
 from dataclasses import dataclass
 
@@ -19,6 +20,10 @@ INDICATOR_LABELS = {"production": "la production", "superficie": "la superficie 
 HELP_TEXT = ("Je peux vous donner le prix d'un produit sur un marché, ou la production, "
              "la superficie et le rendement d'une culture. Par exemple : "
              "« Quel est le prix du mil à Kaolack ? »")
+WELCOME_TEXT = ("Bonjour ! Je suis AgriBaat. " + HELP_TEXT.removesuffix(
+    "Par exemple : « Quel est le prix du mil à Kaolack ? »")
+    + "Je connais aussi les pluies (ANACIM), les variétés recommandées et les conseils "
+    "de saison. Par exemple : « Quel est le prix du mil à Kaolack ? »")
 
 
 @dataclass
@@ -375,6 +380,8 @@ def answer(q: Query, kb: KnowledgeBase, lang=None) -> Answer:
 
 
 def _answer(q: Query, kb: KnowledgeBase) -> Answer:
+    if q.intent == "salutation":  # pas de chiffre : on dit ce que l'on sait faire
+        return Answer(WELCOME_TEXT, None, True, wo.render("aide"))
     if q.intent == "variete":
         return _variety_answer(q, kb)
     if q.intent == "pluie":
@@ -400,6 +407,12 @@ def _answer(q: Query, kb: KnowledgeBase) -> Answer:
             if fact is not None:
                 prefix = f"Je n'ai pas de relevé en {q.year}. Voici le dernier prix connu. "
                 prefix_wo = wo.render("annee_sans_prix", annee=wo.year(q.year))
+        if fact is None and q.market and q.region:
+            # Marché sans relevé pour ce produit (« oignon à Dakar ») : moyenne de la région.
+            q = dataclasses.replace(q, market=None)
+            region = q.region
+            fact = kb.price(q.product, region=region, year=q.year) or kb.price(
+                q.product, region=region)
         if fact is None:
             where = f" à {place(q.market or q.region)}" if (q.market or q.region) else ""
             where_wo = (wo.place("marche", place(q.market)) if q.market else

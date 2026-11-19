@@ -78,7 +78,7 @@ INTENT_KEYWORDS: dict[str, tuple[str, ...]] = {
               "precipitation", "precipitations", "meteo", "taw",
               "tobo", "ndob"),  # pulaar toɓo, sereer ndoɓ (À VALIDER)
     "variete": ("variete", "varietes", "semence", "semences", "cycle court", "cycle long",
-                "precoce", "precoces", "xeet", "xeeti", "jiwu",
+                "precoce", "precoces", "xeet", "xeeti", "xeetu", "jiwu",
                 "noone"),  # pulaar (À VALIDER)
     "conseil": ("conseil", "conseils", "recommandation", "recommandations", "que faire",
                 "quand semer", "semer", "semis", "recolter", "ravageur", "ravageurs",
@@ -98,6 +98,16 @@ INTENT_KEYWORDS: dict[str, tuple[str, ...]] = {
     "production": ("production", "produit", "produire", "recolte", "tonnes",
                    "tonne", "combien de", "goob", "jur", "tonn"),
 }
+
+# Salutations et demandes d'aide (français, wolof, pulaar, sereer) : on répond par ce
+# que l'assistant sait faire, au lieu de chercher un extrait sans rapport.
+GREETING_KEYWORDS: tuple[str, ...] = (
+    "bonjour", "bonsoir", "salut", "aide", "aidez moi", "que sais tu faire",
+    "que peux tu faire", "comment ca marche",
+    "salam", "salaam", "aleekum", "alaykum", "nanga def", "na nga def", "jamm nga fanane",
+    "jam waali", "jam weeti", "jam ngoo", "jam tan",
+    "nafio", "na fio", "na fiyo",
+)
 
 MONTHS_FR = ("janvier", "février", "mars", "avril", "mai", "juin", "juillet",
              "août", "septembre", "octobre", "novembre", "décembre")

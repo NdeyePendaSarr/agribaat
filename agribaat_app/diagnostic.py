@@ -44,7 +44,7 @@ else:
     bad("Python", platform.python_version(), "installer Python 3.10 ou plus récent")
 
 # 2. Bibliothèques
-REQUIRED = {"pandas": "2.0", "gradio": "5.0", "numpy": "1.24", "soundfile": "0.12"}
+REQUIRED = {"pandas": "2.0", "gradio": "5.30", "numpy": "1.24", "soundfile": "0.12"}
 OPTIONAL = {"torch": "2.1", "transformers": "4.44", "huggingface_hub": "0.23"}
 for name, minimum in {**REQUIRED, **OPTIONAL}.items():
     try:

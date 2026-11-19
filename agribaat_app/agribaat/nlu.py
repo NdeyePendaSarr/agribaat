@@ -11,7 +11,8 @@ import re
 from dataclasses import dataclass
 
 from .knowledge import TOPICS, KnowledgeBase
-from .lexicon import INTENT_KEYWORDS, OTHER_PRODUCT_KEYWORDS, PRODUCTS, normalize
+from .lexicon import (GREETING_KEYWORDS, INTENT_KEYWORDS, OTHER_PRODUCT_KEYWORDS,
+                      PRODUCTS, normalize)
 
 # Alias de lieux : orthographes courantes -> nom dans les données.
 PLACE_ALIASES: dict[str, str] = {
@@ -20,13 +21,14 @@ PLACE_ALIASES: dict[str, str] = {
     "saint louis": "Saint-Louis",
     "ndar": "Saint-Louis",  # nom wolof de Saint-Louis (À VALIDER)
     "kawlax": "Kaolack", "kawlaax": "Kaolack",  # nom wolof de Kaolack (À VALIDER)
-    "kawlak": "Kaolack",  # nom pulaar de Kaolack (À VALIDER)
+    "kawlak": "Kaolack",  # nom pulaar de Kaolack
+    "ndakaaru": "Dakar", "ndakaru": "Dakar",  # nom pulaar et wolof de Dakar
 }
 
 
 @dataclass
 class Query:
-    intent: str | None = None  # prix | production | rendement | superficie
+    intent: str | None = None  # prix | production | ... | salutation
     product: str | None = None
     market: str | None = None  # marché WFP
     region: str | None = None  # région (DAPSA ou WFP)
@@ -40,7 +42,7 @@ class Query:
 
     @property
     def is_complete(self) -> bool:
-        if self.intent in ("pluie", "conseil"):  # pas besoin de produit
+        if self.intent in ("pluie", "conseil", "salutation"):  # pas besoin de produit
             return True
         return self.intent is not None and self.product is not None
 
@@ -123,6 +125,13 @@ def parse(texts: list[str], kb: KnowledgeBase) -> Query:
         if any(_contains(text, k) for k in INTENT_KEYWORDS[intent]):
             q.intent = intent
             break
+    if q.intent is None:  # mot-clé déformé par la transcription (« cogu » -> « coggu »)
+        words = text.split()
+        for intent in ("variete", "pluie", "conseil", "prix", "rendement", "superficie",
+                       "production"):
+            if any(_close(k, words) for k in INTENT_KEYWORDS[intent]):
+                q.intent = intent
+                break
 
     # Précisions pour les conseils.
     if re.search(r"cycle court|precoce|hatif|rapide|\bgaaw|\byaaw", text):  # yaaw : pulaar
@@ -161,6 +170,11 @@ def parse(texts: list[str], kb: KnowledgeBase) -> Query:
     q.department = _find_place(text, kb.departments)
     q.region = _find_place(text, kb.regions) or _find_place(text, kb.price_regions)
     q.locality = _find_place(text, kb.localities)
+
+    # Salutation ou demande d'aide sans autre précision : « Jam waali », « bonjour ».
+    if q.intent is None and q.product is None and any(
+            _contains(text, k) for k in GREETING_KEYWORDS):
+        q.intent = "salutation"
 
     # Intention par défaut : marché cité, ou « kilo » sans hectare -> prix ; sinon production.
     if q.intent is None and q.product:

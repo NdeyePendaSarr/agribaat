@@ -1,7 +1,7 @@
 # Données et interface
 pandas>=2.0
 openpyxl>=3.1
-gradio>=5.0,<6       # l'app utilise des fonctions de Gradio 5
+gradio>=5.30,<6      # API JSON (gr.api) et appli installable (pwa)
 # Modèles pré-entraînés (CPU suffit)
 torch>=2.1
 torchaudio>=2.1
