@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import base64
 import html
 import importlib.util
 import logging
 import urllib.parse
+from pathlib import Path
 
 import gradio as gr
 import pandas as pd
@@ -412,6 +414,44 @@ body, .gradio-container, gradio-app {background: #f7f1e3 !important;}
   #hero .fig:nth-child(n+3), #hero .src {display: none;}
 }
 """
+
+# Photo de fond (assets/fond_agricole.webp) : plein écran, fixe, intégrée à la page
+# (aucun fichier à servir, marche hors ligne). Les blocs deviennent des panneaux
+# translucides pour que la photo occupe le plus d'espace possible.
+BACKGROUND = Path(__file__).with_name("assets") / "fond_agricole.webp"
+if BACKGROUND.exists():
+    _bg = "data:image/webp;base64," + base64.b64encode(BACKGROUND.read_bytes()).decode()
+    CSS += """
+body::before {content: ""; position: fixed; inset: 0; z-index: -1;
+    background: linear-gradient(180deg, rgba(10,40,20,.18), rgba(10,40,20,.32)),
+                url(__BG__) center 30% / cover no-repeat;}
+body, gradio-app, .gradio-container, .gradio-container > .main, .app, .contain,
+.gradio-container .wrap.default {background: transparent !important;}
+/* En-tête : une bannière où la photo se voit (texte lisible à gauche, visages à droite) */
+#hero {background: linear-gradient(90deg, rgba(8,40,18,.78) 0%, rgba(8,40,18,.5) 38%,
+                                   rgba(8,40,18,0) 68%) !important;
+       box-shadow: none; min-height: 300px; display: flex; align-items: flex-end;}
+#hero .hero-art, #hero .hero-veil {display: none;}
+#hero .hero-text {max-width: 620px;}
+#hero h1, #hero .tag {text-shadow: 0 2px 12px rgba(0,0,0,.55);}
+.block:has(> #hero), .block:has(#hero), .prose:has(#hero) {background: transparent !important;
+    border: none !important; box-shadow: none !important; backdrop-filter: none !important;}
+@media (max-width: 640px) {
+  #hero {min-height: 210px; background: linear-gradient(180deg, rgba(8,40,18,.15) 0%,
+                                                         rgba(8,40,18,.82) 70%) !important;}
+}
+/* Panneaux translucides */
+.gradio-container .block, #mic-card, .answer, .ex-card, .gradio-container .tabitem {
+    background: rgba(255,253,248,.86) !important; backdrop-filter: blur(6px);}
+.gradio-container .tabitem {border-radius: 18px; padding: 10px !important;
+    background: rgba(255,253,248,.38) !important;}
+[role=tablist] {background: rgba(255,253,248,.9); border-radius: 14px; padding: 2px 6px;}
+.ex-title {background: rgba(255,253,248,.9); border-radius: 999px; padding: 4px 12px;
+           width: fit-content;}
+.mode {backdrop-filter: blur(4px);}
+.mode.ok {background: rgba(236,252,203,.92);}
+.mode.text {background: rgba(254,243,199,.92);}
+""".replace("__BG__", _bg)
 
 
 # ---------------------------------------------------------------- en-tête
