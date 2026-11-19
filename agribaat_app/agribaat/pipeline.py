@@ -94,7 +94,9 @@ class Assistant:
             # Les mots-clés wolof suffisent souvent : on évite alors la traduction (lente
             # et parfois fausse). Sinon, la traduction française aide à comprendre.
             query = parse([res.question_wo], self.kb)
-            if not query.is_complete:
+            # Intention seulement devinée (« dugub » sans mot-clé de prix, de pluie…) :
+            # la traduction française peut révéler une question de pratique agricole.
+            if not query.is_complete or query.intent_guessed:
                 res.question_fr = self._timed(res, "traduction_wo_fr", models.translate,
                                               res.question_wo, config.LANG_WO,
                                               config.LANG_FR) or ""

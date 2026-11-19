@@ -120,7 +120,14 @@ Les machines de 16 Go ou plus peuvent essayer les deux modèles plus gros, plus 
   « Quelle variété de mil à cycle court ? », « variété d'arachide résistante à la sécheresse »
 - **Pluies** (bulletins ANACIM 2023–2026, 152 localités) : « Il a plu combien à Mbour ? »
 - **Conseils** (recommandations ANACIM) : « Quand récolter l'arachide ? »
+- **Pratiques agricoles** (engrais, stockage, ravageurs, striga, sarclage, sol…) :
+  « Quelle dose de NPK pour le mil ? » → extrait cité des documents ISRA / ANACIM, centré
+  sur les mots de la question ; sinon l'assistant dit qu'il n'a pas l'information (jamais
+  un chiffre sans rapport)
 - **Questions ouvertes** : extrait cité des documents ISRA / ANACIM, s'il est pertinent
+- **Dans les quatre langues** : 8 questions types par langue dans l'interface ; en pulaar
+  et en sereer, l'assistant comprend aussi les mots des phrases de réponse relues
+  (« heɓaa », « aawaama », « xoox », « jeg »…) et les emprunts au français (« engrais »)
 - **Salutations** (« Bonjour », « Salaam aleekum », « Jam waali », « Na fio ») : l'assistant
   dit ce qu'il sait faire, dans la langue choisie
 

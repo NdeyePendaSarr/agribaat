@@ -23,11 +23,29 @@ meme mes moi mon ne nos notre nous on ou par pas pour qu que qui sa se ses son s
 tes toi ton tu un une vos votre vous est sont ete etre avoir a ont fait faire comme plus
 moins tres tout tous toute toutes cette cet aussi bien entre sans sous chez donc alors
 quel quelle quels quelles comment combien quand pourquoi dois doit faut peut peux
+contre
 """.split())
 
 
+SUFFIXES = ("ations", "ation", "ements", "ement", "ages", "age", "eurs", "eur", "ees", "ee",
+            "ers", "er", "es", "e", "s")
+
+
+def stem(word: str) -> str:
+    """Racine grossière : terminaison courante retirée, puis 6 premières lettres.
+    « conserver » / « conservation », « oignon » / « oignons », « irriguer » /
+    « irrigation », « stocker » / « stockage » se retrouvent."""
+    for suffix in SUFFIXES:
+        if word.endswith(suffix) and len(word) - len(suffix) >= 4:
+            word = word[:-len(suffix)]
+            break
+    if word.endswith("gu"):  # irrigu(er) -> irrig
+        word = word[:-1]
+    return word[:6]
+
+
 def tokens(text: str) -> list[str]:
-    return [w for w in normalize(text).split() if len(w) > 2 and w not in STOPWORDS]
+    return [stem(w) for w in normalize(text).split() if len(w) > 2 and w not in STOPWORDS]
 
 
 @dataclass

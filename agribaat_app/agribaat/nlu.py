@@ -11,8 +11,8 @@ import re
 from dataclasses import dataclass
 
 from .knowledge import TOPICS, KnowledgeBase
-from .lexicon import (GREETING_KEYWORDS, INTENT_KEYWORDS, OTHER_PRODUCT_KEYWORDS,
-                      PRODUCTS, normalize)
+from .lexicon import (GREETING_KEYWORDS, INTENT_KEYWORDS, LOCAL_GLOSS,
+                      OTHER_PRODUCT_KEYWORDS, PRODUCTS, PRODUCT_BY_KEY, normalize)
 
 # Alias de lieux : orthographes courantes -> nom dans les données.
 PLACE_ALIASES: dict[str, str] = {
@@ -39,12 +39,20 @@ class Query:
     drought: bool = False  # variété tolérante à la sécheresse
     topic: str | None = None  # semis | recolte | ravageurs | ... (conseils)
     text: str = ""  # question normalisée (recherche de passages)
+    intent_guessed: bool = False  # intention déduite par défaut (aucun mot-clé)
 
     @property
     def is_complete(self) -> bool:
-        if self.intent in ("pluie", "conseil", "salutation"):  # pas besoin de produit
+        if self.intent in ("pluie", "conseil", "salutation", "technique"):  # sans produit
             return True
         return self.intent is not None and self.product is not None
+
+
+# Ordre de priorité des intentions. « variete » avant « pluie » : « variété résistante
+# au manque de pluie » parle de variétés ; « technique » avant « conseil » : « que faire
+# contre le striga » demande une pratique (documents ISRA), pas le calendrier ANACIM.
+ORDER = ("variete", "pluie", "technique", "conseil", "prix", "rendement", "superficie",
+         "production")
 
 
 def _contains(text: str, keyword: str) -> bool:
@@ -117,18 +125,19 @@ def parse(texts: list[str], kb: KnowledgeBase) -> Query:
                 q.product = product.key
                 break
 
-    q.text = text
-    # « variete » avant « pluie » : « variété résistante au manque de pluie » /
-    # « xeeti gerte yu mën a muñ ñàkk taw » parlent de variétés, pas de météo.
-    for intent in ("variete", "pluie", "conseil", "prix", "rendement", "superficie",
-                   "production"):
+    # Texte pour la recherche dans les documents (en français) : on ajoute le nom
+    # français du produit et les équivalents des mots locaux connus.
+    extra = [PRODUCT_BY_KEY[q.product].label] if q.product else []
+    extra += [fr for local, fr in LOCAL_GLOSS.items() if _contains(text, local)]
+    q.text = " ".join([text] + [normalize(x) for x in extra])
+    # Priorités : voir ORDER (« xeeti gerte yu mën a muñ ñàkk taw » = variétés).
+    for intent in ORDER:
         if any(_contains(text, k) for k in INTENT_KEYWORDS[intent]):
             q.intent = intent
             break
     if q.intent is None:  # mot-clé déformé par la transcription (« cogu » -> « coggu »)
         words = text.split()
-        for intent in ("variete", "pluie", "conseil", "prix", "rendement", "superficie",
-                       "production"):
+        for intent in ORDER:
             if any(_close(k, words) for k in INTENT_KEYWORDS[intent]):
                 q.intent = intent
                 break
@@ -136,10 +145,11 @@ def parse(texts: list[str], kb: KnowledgeBase) -> Query:
     # Précisions pour les conseils.
     if re.search(r"cycle court|precoce|hatif|rapide|\bgaaw|\byaaw", text):  # yaaw : pulaar
         q.cycle = "court"
-    elif re.search(r"cycle long|tardi|\bneeb", text):  # neeɓ : pulaar
+    elif re.search(r"cycle long|tardi|\bneeb|\byaage", text):  # neeɓ pulaar, yaage sereer
         q.cycle = "long"
     q.drought = bool(re.search(
-        r"secheresse|manque de pluie|peu de pluie|deficit|nakk taw|nakkum taw|nakku tobo", text))
+        r"secheresse|manque de pluie|peu de pluie|deficit|nakk taw|nakkum taw|nakku tobo"
+        r"|ndob a tuuti", text))
     for topic, pattern in TOPICS.items():
         if re.search(pattern, text):
             q.topic = topic
@@ -180,6 +190,7 @@ def parse(texts: list[str], kb: KnowledgeBase) -> Query:
     if q.intent is None and q.product:
         per_kilo = _contains(text, "kilo") and not re.search(r"ektaar|hectare", text)
         q.intent = "prix" if q.market or per_kilo else "production"
+        q.intent_guessed = True
     return q
 
 

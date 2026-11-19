@@ -112,7 +112,7 @@ class Browser:
                 time.sleep(0.5)
         if ws_url is None:
             sys.exit("Chrome n'a pas démarré le mode pilotage.")
-        self.ws = connect(ws_url, max_size=None)
+        self.ws = connect(ws_url, max_size=None, ping_interval=None)  # Chrome chargé : pas de coupure
         self.n = 0
         if headless:
             self.call("Emulation.setDeviceMetricsOverride",
@@ -186,8 +186,13 @@ def wait_for(br: Browser, code: str, timeout: float = 120) -> bool:
     return False
 
 
+# Signature de la carte réponse : question posée (data-q) + texte. Deux questions qui
+# donnent la même réponse (français puis wolof) ont quand même deux signatures.
+ANSWER_SIG = "(a => a ? (a.dataset.q || '') + '|' + a.innerText : '')(document.querySelector('.answer'))"
+
+
 def answer_text(br: Browser) -> str:
-    return br.js("document.querySelector('.answer')?.innerText || ''") or ""
+    return br.js(ANSWER_SIG) or ""
 
 
 def audio_link(br: Browser) -> str | None:
@@ -276,9 +281,8 @@ def run(headless: bool, film: bool = False) -> None:
                     br.js(CLICK_BY_TEXT_JS % (json.dumps("#lang-toggle label"), json.dumps(lang)))
                     time.sleep(1)
                     br.js(CLICK_BY_TEXT_JS % (json.dumps("button.ex-card"), json.dumps(arg)))
-                wait_for(br, "(() => { const a = document.querySelector('.answer');"
-                             " return a && a.innerText.includes('Français :') && a.innerText"
-                             f" !== {json.dumps(before)}; }})()")
+                wait_for(br, f"(s => s.includes('Français :') && s !== {json.dumps(before)})"
+                             f"({ANSWER_SIG})")
                 br.js("document.querySelector('.answer').scrollIntoView({block: 'start'});"
                       "window.scrollBy(0, -90)")
                 time.sleep(1.5)

@@ -323,8 +323,13 @@ def test_interface_tabs_render_with_real_data(monkeypatch):
     assert "Record" in kpis and len(series) > 10 and 'class="fill"' in bars
     assert "vtable" in app.variety_table("arachide", "court", False)
     assert "hbar" in app.rain_by_region(app.DECADES[0][1])[0]
-    labels = [app._example_label(q, l, t) for q, l, t in app.EXAMPLE_CARDS]
-    assert all("\n" not in x and t in x for x, (_, _, t) in zip(labels, app.EXAMPLE_CARDS))
+    for lang, cards in app.EXAMPLES_BY_LANG.items():
+        labels = app.EXAMPLE_LABELS[lang]
+        assert all("\n" not in x and t in x for x, (_, t) in zip(labels, cards))
+        # chaque question type de chaque langue trouve une réponse (sans synthèse vocale)
+        for question, _ in cards:
+            res = app.api_assistant.ask_text(question, app.LANG_CODES[lang])
+            assert res.found, (lang, question)
     for lang in ("Pulaar", "Sereer"):
         card = app.on_text("coggu gawri e Kawlak", lang, [])[0]
         assert f"{lang} :" in card and "brouillon" not in card and "300" in card
@@ -508,3 +513,55 @@ def test_share_and_orientation(monkeypatch):
 
     hello = app.api_assistant.ask_text("Bonjour", "fr")
     assert "wa.me" not in app.answer_card(hello) and "ANCAR" not in app.answer_card(hello)
+
+
+@needs_data
+@needs_advice
+@pytest.mark.parametrize("text", [
+    "Quel engrais pour l'arachide ?", "Comment conserver les oignons ?",
+    "Quelle dose de NPK pour le mil ?", "engrais biriiji", "traitement maac",
+])
+def test_practical_question_never_gets_a_production_figure(kb, text):
+    """Avant : un produit cité sans mot-clé connu donnait le tonnage de production."""
+    q = parse([text], kb)
+    assert q.intent == "technique"
+    ans = answer(q, kb)
+    assert "production" not in ans.text.split("«")[0].lower()
+    assert (ans.source or "").endswith("(extrait)") or not ans.found
+
+
+@needs_data
+@needs_advice
+def test_practical_answer_cites_the_relevant_passage(kb):
+    ans = answer(parse(["Quelle dose de NPK pour le mil ?"], kb), kb)
+    assert ans.found and "NPK" in ans.text
+    ans = answer(parse(["Comment lutter contre le striga ?"], kb), kb)
+    assert ans.found and "striga" in ans.text.lower()
+
+
+@needs_data
+@needs_advice
+@pytest.mark.parametrize("text,lang,intent,product", [
+    ("hol ko heɓaa e biriiji e hitaande 2022", "pul", "production", "arachide"),
+    ("gawri aawaama e ektaar no foti e Kaffrine", "pul", "superficie", "mil"),
+    ("ektaar gooto makka rokkata no foti", "pul", "rendement", "mais"),
+    ("hol luumo ɗo basi ɓuri hoyde", "pul", "prix", "sorgho"),
+    ("xoox gerte no ndiig 2022", "srr", "production", "arachide"),
+    ("fo basi a yombe ten", "srr", "prix", "sorgho"),
+    ("kilo maalo a jeg no marse Tilene", "srr", "prix", "riz"),
+])
+def test_local_words_from_reviewed_sentences_are_understood(kb, text, lang, intent, product):
+    from agribaat import langues
+
+    q = parse([text], kb)
+    assert (q.intent, q.product) == (intent, product)
+    assert answer(q, kb, langues.get(lang).module).found
+
+
+def test_search_stems_word_families():
+    from agribaat.search import stem
+
+    assert stem("conserver") == stem("conservation")
+    assert stem("irriguer") == stem("irrigation")
+    assert stem("oignons") == stem("oignon")
+    assert stem("conseil") != stem("conserver")

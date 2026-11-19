@@ -356,16 +356,46 @@ def THEMES_OR_PRODUCT_WO(q: Query) -> str:  # noqa: N802 — petite aide de form
     return wo.word("and").join(parts) or wo.word("this")
 
 
+def _excerpt(passage_text: str, question: str, idf: dict[str, float] | None = None,
+             size: int = 70) -> str:
+    """Les `size` mots du passage les plus proches de la question (plutôt que son
+    début, souvent sans rapport). Les mots rares (« striga ») comptent plus que les
+    mots courants (« lutter »)."""
+    from .search import tokens
+
+    words = passage_text.split()
+    if len(words) <= size:
+        return passage_text
+    wanted = set(tokens(question))
+    idf = idf or {}
+    hits = [sum(idf.get(t, 1.0) for t in set(tokens(w)) & wanted) for w in words]
+    best = max(range(0, len(words) - size + 1, 5), key=lambda i: sum(hits[i:i + size]))
+    out = " ".join(words[best:best + size])
+    return ("… " if best else "") + out + (" …" if best + size < len(words) else "")
+
+
 def _search_answer(q: Query, kb: KnowledgeBase) -> Answer | None:
     passage = kb.search(q.text) if q.text else None
     if passage is None:
         return None
-    words = passage.text.split()
-    excerpt = " ".join(words[:70]) + (" …" if len(words) > 70 else "")
+    excerpt = _excerpt(passage.text, q.text, getattr(kb._search, "idf", None))
     text = (f"Je n'ai pas de réponse chiffrée, mais voici un extrait de « {passage.source} » : "
             f"« {excerpt} »")
     return Answer(text, f"{passage.source} (extrait)", True,
                   wo.render("extrait", source=wo.Name(passage.source)))
+
+
+def _technique_answer(q: Query, kb: KnowledgeBase) -> Answer:
+    """Pratique agricole (engrais, conservation, lutte…) : extrait des documents ISRA,
+    sinon recommandations ANACIM sur les ravageurs, sinon aveu d'ignorance."""
+    found = _search_answer(q, kb)
+    if found is not None:
+        return found
+    if q.topic == "ravageurs":
+        return _advice_answer(q, kb)
+    return Answer("Je n'ai pas encore d'information fiable sur ce sujet dans mes documents "
+                  "(ISRA, ANACIM).", None, False,
+                  wo.render("pas_de_stat", produit=wo.word("this")))
 
 
 def answer(q: Query, kb: KnowledgeBase, lang=None) -> Answer:
@@ -388,6 +418,8 @@ def _answer(q: Query, kb: KnowledgeBase) -> Answer:
         return _rain_answer(q, kb)
     if q.intent == "conseil":
         return _advice_answer(q, kb)
+    if q.intent == "technique":
+        return _technique_answer(q, kb)
     if q.product is None:
         found = _search_answer(q, kb)  # question ouverte : extrait cité, si pertinent
         if found is not None:

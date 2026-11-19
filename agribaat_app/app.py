@@ -49,18 +49,66 @@ LANG_CODES = {"Wolof": "wo", "Pulaar": "pul", "Sereer": "srr", "Français": "fr"
 LANG_CHOICES = [("Wolof · prioritaire", "Wolof"), ("Pulaar", "Pulaar"),
                 ("Sereer · écrit", "Sereer"), ("Français", "Français")]
 
-# Questions types illustrées : (question, langue, titre court).
-EXAMPLE_CARDS = [
-    ("Quel est le prix du mil à Kaolack ?", "Français", "Prix du mil à Kaolack"),
-    ("Quelle a été la production d'arachide en 2024 ?", "Français", "Production d'arachide 2024"),
-    ("Quelle variété de mil à cycle court ?", "Français", "Variété de mil à cycle court"),
-    ("Il a plu combien à Mbour ?", "Français", "Pluie à Mbour"),
-    ("Quand récolter l'arachide ?", "Français", "Quand récolter l'arachide ?"),
-    ("njëg dugub ci Kaolack", "Wolof", "« njëg dugub ci Kaolack »"),
-    ("Hol no coggu kiloo gawri woni e Kawlak?", "Pulaar", "« coggu gawri e Kawlak »"),
-    ("njeg kilo maac no Kaolack", "Sereer", "« njeg kilo maac no Kaolack »"),
+# Questions types, différentes pour chaque langue choisie : (question, titre court).
+# Phrases locales construites avec le vocabulaire des réponses relues par les locuteurs
+# (wolof.py, pulaar.py, sereer.py) ; chacune est vérifiée par tests/test_core.py.
+EXAMPLES_BY_LANG: dict[str, list[tuple[str, str]]] = {
+    "Français": [
+        ("Quel est le prix du mil à Kaolack ?", "Prix du mil à Kaolack"),
+        ("Quelle a été la production d'arachide en 2024 ?", "Production d'arachide 2024"),
+        ("Quelle variété de mil à cycle court ?", "Variété de mil à cycle court"),
+        ("Il a plu combien à Mbour ?", "Pluie à Mbour"),
+        ("Quand récolter l'arachide ?", "Quand récolter l'arachide ?"),
+        ("Quelle dose de NPK pour le mil ?", "Dose d'engrais NPK pour le mil"),
+        ("Comment stocker le niébé ?", "Stocker le niébé"),
+        ("Comment lutter contre le striga ?", "Lutter contre le striga"),
+    ],
+    "Wolof": [
+        ("njëg dugub ci Kaolack", "« njëg dugub ci Kaolack »"),
+        ("soble bi ñaata lay jar ci Dakar", "« soble bi ñaata lay jar ci Dakar »"),
+        ("ñaata gerte lañu góob ci 2022", "« ñaata gerte lañu góob ci 2022 »"),
+        ("ñaata ektaar dugub lañu bey ci Kaffrine", "« ektaar dugub ci Kaffrine »"),
+        ("taw bi ñaata la ci Kolda", "« taw bi ñaata la ci Kolda »"),
+        ("xeeti ñebbe yu gaaw", "« xeeti ñebbe yu gaaw »"),
+        ("kañ lañuy góob gerte", "« kañ lañuy góob gerte »"),
+        ("engrais NPK ci dugub", "« engrais NPK ci dugub »"),
+    ],
+    "Pulaar": [
+        ("Hol no coggu kiloo gawri woni e Kawlak?", "« coggu gawri e Kawlak »"),
+        ("coggu maaro e luumo Tilene", "« coggu maaro e luumo Tilene »"),
+        ("hol ko heɓaa e biriiji e hitaande 2022", "« ko heɓaa e biriiji 2022 »"),
+        ("gawri aawaama e ektaar no foti e Kaffrine", "« gawri aawaama e Kaffrine »"),
+        ("toɓo e Kolda no foti", "« toɓo e Kolda no foti »"),
+        ("noone ñebbe yaawɗe", "« noone ñebbe yaawɗe »"),
+        ("ektaar gooto makka rokkata no foti", "« ektaar gooto makka »"),
+        ("engrais NPK e gawri", "« engrais NPK e gawri »"),
+    ],
+    "Sereer": [
+        ("njeg kilo maac no Kaolack", "« njeg kilo maac no Kaolack »"),
+        ("kilo maalo a jeg no marse Tilene", "« kilo maalo no marse Tilene »"),
+        ("xoox gerte no ndiig 2022", "« xoox gerte no ndiig 2022 »"),
+        ("tool maac a beyaa no Kaffrine", "« tool maac no Kaffrine »"),
+        ("ndoɓ no Mbour", "« ndoɓ no Mbour »"),
+        ("xeet ñebbe a gaawe", "« xeet ñebbe a gaawe »"),
+        ("ektaar leng mboq", "« ektaar leng mboq »"),
+        ("engrais NPK no maac", "« engrais NPK no maac »"),
+    ],
+}
+N_EXAMPLES = 8
+assert all(len(v) == N_EXAMPLES for v in EXAMPLES_BY_LANG.values())
+
+# Réponses vocales préparées au démarrage : celles du scénario de démo seulement (sur un
+# PC de 8 Go, chaque phrase nouvelle prend 30 s à 2 min).
+WARM_QUESTIONS = [
+    ("Quel est le prix du mil à Kaolack ?", "Français"),
+    ("Quelle a été la production d'arachide en 2024 ?", "Français"),
+    ("Quelle variété de mil à cycle court ?", "Français"),
+    ("Il a plu combien à Mbour ?", "Français"),
+    ("Quand récolter l'arachide ?", "Français"),
+    ("njëg dugub ci Kaolack", "Wolof"),
+    ("Hol no coggu kiloo gawri woni e Kawlak?", "Pulaar"),
+    ("njeg kilo maac no Kaolack", "Sereer"),
 ]
-EXAMPLES = [(q, lang) for q, lang, _ in EXAMPLE_CARDS]
 
 
 def _example_label(question: str, lang: str, title: str) -> str:
@@ -68,12 +116,18 @@ def _example_label(question: str, lang: str, title: str) -> str:
     from agribaat.answers import answer
     from agribaat.nlu import parse
 
-    hl = answer(parse([question], kb), kb).highlight
-    icon = hl.icon if hl is not None else ("🗣️" if lang != "Français" else "🌦️")
+    ans = answer(parse([question], kb), kb)
+    hl = ans.highlight
+    icon = hl.icon if hl is not None else ("📚" if (ans.source or "").endswith("(extrait)")
+                                           else "🌦️")
     return f"{icon}  {title}"
 
+
+EXAMPLE_LABELS = {lang: [_example_label(q, lang, t) for q, t in cards]
+                  for lang, cards in EXAMPLES_BY_LANG.items()}
+
 # Préparation en arrière-plan : modèles vocaux + réponses vocales des questions types.
-WARMUP = (warmup.start(assistant, [(t, LANG_CODES[l]) for t, l in EXAMPLES])
+WARMUP = (warmup.start(assistant, [(t, LANG_CODES[l]) for t, l in WARM_QUESTIONS])
           if VOICE_READY else warmup.WarmupStatus(state="désactivé"))
 
 CSS = """
@@ -370,7 +424,10 @@ def share_link(res: Result) -> str:
 def answer_card(res: Result, spoken: bool = False) -> str:
     """Carte réponse : chiffre clé vérifié + source + wolof + français."""
     esc = html.escape
-    parts = ['<div class="answer"><div class="ans-head">']
+    # data-q : la carte change même quand deux questions donnent la même réponse
+    # (la démo automatique s'en sert pour savoir que la réponse est arrivée).
+    asked = esc(res.question_wo or res.question_fr or "")
+    parts = [f'<div class="answer" data-q="{asked}"><div class="ans-head">']
     if _is_welcome(res):  # salutation, aide
         parts.append('<span class="achip ok">💬 Ce que je sais faire</span>')
     elif res.found:
@@ -483,10 +540,19 @@ def mic_head(lang: str) -> str:
 
 
 def on_lang(lang: str):
-    """Change le titre du micro ; en sereer, ouvre directement la saisie au clavier."""
+    """Change le titre du micro et les questions types ; en sereer, ouvre directement
+    la saisie au clavier."""
     sereer = lang == "Sereer"
+    labels = EXAMPLE_LABELS.get(lang, EXAMPLE_LABELS["Wolof"])
     return (mic_head(lang), gr.Audio(interactive=VOICE_READY and not sereer),
-            gr.Accordion(open=True) if sereer else gr.Accordion())
+            gr.Accordion(open=True) if sereer else gr.Accordion(),
+            *[gr.Button(value=label) for label in labels])
+
+
+def on_example(i: int, lang: str, history: list):
+    """Clic sur la i-ème question type de la langue choisie."""
+    question, _ = EXAMPLES_BY_LANG.get(lang, EXAMPLES_BY_LANG["Wolof"])[i]
+    return on_text(question, lang, history)
 
 
 # ---------------------------------------------------------------- prix
@@ -855,20 +921,19 @@ with gr.Blocks(title="AgriBaat", css=CSS, theme=THEME, js=FORCE_LIGHT) as demo:
         outputs = [out_card, out_audio, out_details, history, out_hist]
 
         gr.HTML('<div class="ex-title">Questions types</div>')
-        example_buttons = []
-        for row_start in range(0, len(EXAMPLE_CARDS), 4):
+        example_buttons = []  # libellés : ceux de la langue choisie (voir on_lang)
+        for row_start in range(0, N_EXAMPLES, 4):
             with gr.Row(equal_height=True, elem_classes="ex-row"):
-                for question, ex_lang, title in EXAMPLE_CARDS[row_start:row_start + 4]:
-                    button = gr.Button(_example_label(question, ex_lang, title),
-                                       elem_classes="ex-card", min_width=150)
-                    example_buttons.append((button, question, ex_lang))
+                for i in range(row_start, row_start + 4):
+                    example_buttons.append(gr.Button(EXAMPLE_LABELS["Wolof"][i],
+                                                     elem_classes="ex-card", min_width=150))
         with gr.Accordion("⌨️ Ou tapez votre question (mode clavier)", open=False) as kb_box:
             with gr.Row(equal_height=True):
                 txt = gr.Textbox(placeholder="Ex. : Quel est le prix du mil à Kaolack ?",
                                  show_label=False, lines=1, scale=5)
                 btn_text = gr.Button("Envoyer", variant="primary", scale=1, min_width=90)
 
-        lang.change(on_lang, lang, [mic_title, mic, kb_box])
+        lang.change(on_lang, lang, [mic_title, mic, kb_box, *example_buttons])
         btn_voice.click(on_voice, [mic, lang, history], outputs)
         if VOICE_READY:
             # La question part dès qu'on arrête l'enregistrement ou qu'on importe un
@@ -877,8 +942,8 @@ with gr.Blocks(title="AgriBaat", css=CSS, theme=THEME, js=FORCE_LIGHT) as demo:
             mic.upload(on_voice, [mic, lang, history], outputs)
         btn_text.click(on_text, [txt, lang, history], outputs)
         txt.submit(on_text, [txt, lang, history], outputs)
-        for button, question, ex_lang in example_buttons:  # un clic pose la question
-            button.click(lambda h, q=question, l=ex_lang: on_text(q, l, h), history, outputs)
+        for i, button in enumerate(example_buttons):  # un clic pose la question
+            button.click(lambda lg, h, i=i: on_example(i, lg, h), [lang, history], outputs)
 
     with gr.Tab("📈 Prix des marchés"):
         with gr.Row():

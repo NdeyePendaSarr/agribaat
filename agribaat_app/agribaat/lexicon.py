@@ -80,23 +80,50 @@ INTENT_KEYWORDS: dict[str, tuple[str, ...]] = {
     "variete": ("variete", "varietes", "semence", "semences", "cycle court", "cycle long",
                 "precoce", "precoces", "xeet", "xeeti", "xeetu", "jiwu",
                 "noone"),  # pulaar (À VALIDER)
+    # Pratiques agricoles (engrais, conservation, lutte, eau, sol…) : réponse tirée des
+    # documents de l'ISRA. Les mots français servent aussi d'emprunts dans les trois
+    # langues ; « reende ngesa » (pulaar) et « aar tool » (sereer) viennent des phrases relues.
+    "technique": ("engrais", "fumure", "fertilisation", "fertiliser", "fertilisant",
+                  "fertilisants", "npk", "uree", "compost", "fumier", "conserver",
+                  "conservation", "stocker", "stockage", "magasin", "lutter", "lutte",
+                  "combattre", "traiter", "traitement", "traitements", "maladie", "maladies",
+                  "striga", "chenille", "chenilles", "mildiou", "insecte", "insectes",
+                  "insecticide", "pesticide", "pesticides", "mauvaises herbes", "desherbage",
+                  "desherber", "sarclage", "sarcler", "irrigation", "irriguer", "arroser",
+                  "arrosage", "sol", "sols", "densite", "ecartement", "itineraire technique",
+                  "bonnes pratiques", "comment cultiver", "comment produire",
+                  "reende", "aar tool"),
     "conseil": ("conseil", "conseils", "recommandation", "recommandations", "que faire",
                 "quand semer", "semer", "semis", "recolter", "ravageur", "ravageurs",
-                "traitement", "chenille", "chenilles", "oiseaux", "criquet", "criquets",
-                "maladie", "maladies", "digal", "ndigal", "jiyee", "denc", "dencee",
-                "wasiyaaji", "wasiya", "aawde", "aawdi"),  # pulaar (À VALIDER)
+                "oiseaux", "criquet", "criquets",
+                "digal", "ndigal", "jiyee", "denc", "dencee",
+                "wasiyaaji", "wasiya", "aawde", "aawdi",  # pulaar (À VALIDER)
+                "sonde", "jiw"),  # récolte (pulaar soñde), semis (sereer jiw) : phrases relues
     "prix": ("prix", "coute", "couter", "tarif", "cher", "vend", "vendre",
              "acheter", "marche", "njeg", "njegu", "jend", "jaay", "jar", "jaar", "jaroon", "marse",
              "seer", "yomb",
              # pulaar (À VALIDER) : coggu = prix, luumo = marché, soodde = acheter,
              # yeeyde = vendre, sattii = c'est cher, hoyii = c'est bon marché
-             "coggu", "luumo", "soodde", "yeeyde", "sattii", "hoyii"),
+             "coggu", "luumo", "soodde", "yeeyde", "sattii", "hoyii",
+             # mots des phrases relues : pulaar hoyde / sattude (moins cher / plus cher),
+             # sereer jeg / jegoon (coûter), yombe / seere (bon marché / cher)
+             "hoyde", "sattude", "satti", "jeg", "jegoon", "yombe", "seere"),
     "rendement": ("rendement", "par hectare", "kg ha", "kg/ha", "benn ektaar",
-                  "ektaar gooto", "ektaar leng"),
+                  "ektaar gooto", "ektaar leng", "rokkata", "rokkii"),
     "superficie": ("superficie", "surface", "hectares", "cultive", "emblave", "ektaar",
-                   "tool", "bey"),
+                   "tool", "bey", "aawaama", "aawaa", "beyaa"),
     "production": ("production", "produit", "produire", "recolte", "tonnes",
-                   "tonne", "combien de", "goob", "jur", "tonn"),
+                   "tonne", "combien de", "goob", "jur", "tonn",
+                   "hebaa", "xoox"),  # pulaar heɓaa, sereer xoox : phrases relues
+}
+
+# Mots des langues locales -> mots français des documents, pour la recherche dans les
+# documents de l'ISRA et de l'ANACIM (écrits en français). Tirés des phrases relues.
+LOCAL_GLOSS: dict[str, str] = {
+    "reende": "ravageurs protection", "aar tool": "ravageurs protection",
+    "aawdi": "semis", "aawde": "semis", "jiw": "semis", "sonde": "recolte", "xoox": "recolte",
+    "ndiyam": "eau", "mbeel": "eau", "jawdi": "elevage", "mbaal": "elevage",
+    "tobo": "pluie", "ndob": "pluie", "taw": "pluie", "ngesa": "champ", "tool": "champ",
 }
 
 # Salutations et demandes d'aide (français, wolof, pulaar, sereer) : on répond par ce
