@@ -87,7 +87,11 @@ class Browser:
                 f"--user-data-dir={self.profile}", "--no-first-run",
                 "--no-default-browser-check", "--autoplay-policy=no-user-gesture-required",
                 "--window-size=1366,900", "--window-position=0,0", "--hide-crash-restore-bubble",
-                "--disable-features=Translate", "--lang=fr", "--test-type"]
+                "--disable-features=Translate", "--lang=fr", "--test-type",
+                # Fenêtre cachée ou réduite : Chrome continue de dessiner la page, sinon
+                # captures d'écran et vidéo se bloquent.
+                "--disable-backgrounding-occluded-windows", "--disable-renderer-backgrounding",
+                "--disable-background-timer-throttling"]
         if headless:
             args += ["--headless=new", "--mute-audio"]
         else:  # fenêtre « application » : sans barre d'adresse ni onglets
@@ -118,7 +122,11 @@ class Browser:
         self.n += 1
         self.ws.send(json.dumps({"id": self.n, "method": method, "params": params}))
         while True:
-            msg = json.loads(self.ws.recv())
+            try:
+                msg = json.loads(self.ws.recv(timeout=180))
+            except TimeoutError:
+                sys.exit(f"Chrome ne répond plus depuis 3 minutes ({method}). Ne pas "
+                         "réduire ni fermer la fenêtre Chrome pendant la démo, puis relancer.")
             if msg.get("id") == self.n:
                 if "error" in msg:
                     raise RuntimeError(f"{method} : {msg['error']}")
