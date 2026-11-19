@@ -357,16 +357,125 @@ html, body {overflow-x: hidden;}
   .ex-row > * {flex: 1 1 calc(50% - 8px) !important; min-width: 0 !important;}
   .ex-card {font-size: .8rem !important; padding: 8px 10px !important;}
 }
+
+/* ===================== Ambiance agricole : terre, champs, mil ===================== */
+body, .gradio-container, gradio-app {background: #f7f1e3 !important;}
+.gradio-container {background:
+    radial-gradient(circle at 12% -10%, rgba(253,230,138,.55), transparent 42%),
+    radial-gradient(circle at 95% 0%, rgba(187,247,208,.5), transparent 38%),
+    #f7f1e3 !important;}
+
+/* En-tête : paysage dessiné + voile vert pour la lisibilité du texte */
+#hero {position: relative; overflow: hidden; padding: 0; min-height: 214px; border-radius: 22px;
+       background: #14532d; box-shadow: 0 10px 30px rgba(20,83,45,.18);}
+#hero .hero-art {position: absolute; inset: 0; width: 100%; height: 100%;}
+#hero .hero-veil {position: absolute; inset: 0;
+    background: linear-gradient(90deg, rgba(20,83,45,.96) 0%, rgba(20,83,45,.86) 34%,
+                rgba(20,83,45,.25) 62%, rgba(20,83,45,0) 80%);}
+#hero .hero-text {position: relative; padding: 24px 30px 18px; max-width: 640px;}
+#hero .event {position: static; display: inline-block; margin-bottom: 8px;
+              background: rgba(253,230,138,.18); border-color: rgba(253,230,138,.5);}
+#hero h1 {font-size: 2.4rem; text-shadow: 0 2px 10px rgba(0,0,0,.25);}
+#hero .tag {color: #fef3c7; font-weight: 600; margin: 2px 0 14px;}
+#hero .figs {display: flex; flex-wrap: wrap; gap: 10px;}
+#hero .fig {display: flex; flex-direction: column; background: rgba(255,255,255,.14);
+            border: 1px solid rgba(255,255,255,.28); border-radius: 14px; padding: 7px 13px;
+            backdrop-filter: blur(3px); min-width: 108px;}
+#hero .fig b {color: #fff; font-size: 1.05rem; white-space: nowrap;}
+#hero .fig small {color: #d9f99d; font-size: .74rem; letter-spacing: .02em;}
+#hero .src {color: rgba(255,255,255,.72); font-size: .74rem; margin: 12px 0 0;}
+
+/* Cartes : blanches, ombre douce, liseré vert */
+#mic-card, .answer {background: #fffdf8 !important; border: 1px solid #eadfc6 !important;
+                    box-shadow: 0 6px 18px rgba(120,90,30,.08);}
+.answer {border-left: 5px solid var(--ab-green) !important;}
+.kpi-box {background: linear-gradient(135deg, #f0fdf4, #fefce8); border-color: #d9f99d !important;}
+.kpi-box .ico {background: #fef3c7; border-color: #fde68a;}
+.ex-title {color: #713f12; display: flex; align-items: center; gap: 6px;}
+.ex-title::before {content: "🌾";}
+.ex-card {background: #fffdf8 !important; border-color: #eadfc6 !important;}
+.ex-card:hover {background: #f0fdf4 !important; border-color: var(--ab-green) !important;
+                transform: translateY(-1px); box-shadow: 0 4px 12px rgba(21,128,61,.12);}
+[role=tablist] button[aria-selected=true] {color: var(--ab-green-d) !important;
+    border-bottom: 3px solid #ca8a04 !important; font-weight: 700;}
+.mode.ok {background: #ecfccb; color: #365314;}
+
+@media (max-width: 640px) {
+  #hero {min-height: 0; border-radius: 16px;}
+  #hero .hero-veil {background: linear-gradient(90deg, rgba(20,83,45,.95) 0%,
+                    rgba(20,83,45,.8) 60%, rgba(20,83,45,.45) 100%);}
+  #hero .hero-text {padding: 14px 16px 12px;}
+  #hero h1 {font-size: 1.5rem;}
+  #hero .tag {margin-bottom: 8px;}
+  #hero .fig {min-width: 0; padding: 5px 9px;}
+  #hero .fig b {font-size: .9rem;}
+  #hero .fig:nth-child(n+3), #hero .src {display: none;}
+}
 """
 
 
 # ---------------------------------------------------------------- en-tête
+# Paysage agricole dessiné en SVG (aucune image à télécharger : marche hors ligne) :
+# ciel d'aube, soleil, collines, champ en rangs, mil mûr au premier plan, baobab.
+_MILLET = "".join(
+    f'<g transform="translate({x},{y}) scale({s})"><path d="M0 0 Q2 -40 0 -78" '
+    f'stroke="#6b4f12" stroke-width="2.4" fill="none"/>'
+    f'<ellipse cx="1" cy="-92" rx="5.5" ry="17" fill="#a16207"/>'
+    f'<path d="M0 -30 Q-14 -40 -22 -36 M0 -46 Q14 -56 22 -52" stroke="#4d7c0f" '
+    f'stroke-width="2.2" fill="none"/></g>'
+    for x, y, s in ((700, 236, 1.0), (735, 240, 1.15), (770, 234, .9), (805, 242, 1.2),
+                    (845, 238, 1.0), (1135, 240, 1.1), (1170, 236, .95)))
+HERO_SVG = f"""<svg class="hero-art" viewBox="0 0 1200 240" preserveAspectRatio="xMidYMid slice"
+ aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+<defs>
+ <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+  <stop offset="0" stop-color="#fde68a"/><stop offset=".6" stop-color="#fcd34d"/>
+  <stop offset="1" stop-color="#f59e0b"/></linearGradient>
+ <radialGradient id="sun"><stop offset="0" stop-color="#fffbeb"/>
+  <stop offset=".45" stop-color="#fef3c7" stop-opacity=".9"/>
+  <stop offset="1" stop-color="#fde68a" stop-opacity="0"/></radialGradient>
+ <pattern id="rows" width="26" height="12" patternUnits="userSpaceOnUse"
+  patternTransform="skewX(-35)"><rect width="26" height="12" fill="#65a30d"/>
+  <rect width="26" height="4" fill="#4d7c0f"/></pattern>
+</defs>
+<rect width="1200" height="240" fill="url(#sky)"/>
+<circle cx="980" cy="88" r="95" fill="url(#sun)"/><circle cx="980" cy="88" r="34" fill="#fffbeb"/>
+<path d="M0 150 Q160 110 330 140 T700 128 T1000 136 T1200 122 V240 H0Z" fill="#a3b763"/>
+<path d="M0 178 Q220 140 480 168 T900 160 T1200 166 V240 H0Z" fill="url(#rows)"/>
+<path d="M0 210 Q260 188 560 206 T1200 198 V240 H0Z" fill="#ca8a04"/>
+<g fill="#3f3a1d"><path d="M1052 205 C1050 170 1046 150 1040 132 L1062 132 C1060 150 1058 172 1062 205Z"/>
+ <ellipse cx="1024" cy="122" rx="30" ry="14"/><ellipse cx="1060" cy="112" rx="36" ry="17"/>
+ <ellipse cx="1094" cy="124" rx="26" ry="12"/></g>
+{_MILLET}
+</svg>"""
+
+
+def _hero_figures() -> list[str]:
+    """Chiffres du jour, tirés des vraies données (mêmes calculs que l'Assistant)."""
+    from agribaat.answers import answer
+    from agribaat.nlu import parse
+
+    out = []
+    for question, label in (("Quel est le prix du mil à Kaolack ?", "Mil · Kaolack"),
+                            ("Il a plu combien à Mbour ?", "Pluie · Mbour")):
+        hl = answer(parse([question], kb), kb).highlight
+        if hl is not None:
+            out.append(f'<span class="fig"><b>{hl.icon} {html.escape(hl.value)} '
+                       f'{html.escape(hl.unit)}</b><small>{label}</small></span>')
+    out.append(f'<span class="fig"><b>📍 {N_MARKETS}</b><small>marchés suivis</small></span>')
+    out.append('<span class="fig"><b>🗣️ 3</b><small>langues locales</small></span>')
+    return out
+
+
 def hero_html() -> str:
-    chips = [f"{N_MARKETS} marchés suivis", f"Dernier relevé : {fmt_month(LAST_DATE)}",
-             f"Statistiques {YEARS_FAO[0]}–{YEARS_FAO[1]}", "Sources : PAM · FAOSTAT · DAPSA"]
-    return ('<div id="hero"><span class="event">PAS Challenge 2026</span><h1>🌾 AgriBaat</h1>'
-            '<p class="tag">Assistant agricole vocal · wolof, pulaar, sereer</p><div class="chips">'
-            + "".join(f'<span class="chip">{c}</span>' for c in chips) + "</div></div>")
+    figures = "".join(_hero_figures())
+    return ('<div id="hero">' + HERO_SVG + '<div class="hero-veil"></div>'
+            '<div class="hero-text"><span class="event">PAS Challenge 2026</span>'
+            '<h1>🌾 AgriBaat</h1>'
+            '<p class="tag">Assistant agricole vocal · wolof, pulaar, sereer</p>'
+            f'<div class="figs">{figures}</div>'
+            f'<p class="src">Données officielles : PAM · ANACIM · FAOSTAT · DAPSA · '
+            f'relevé de {fmt_month(LAST_DATE)}</p></div></div>')
 
 
 def mode_html() -> str:
