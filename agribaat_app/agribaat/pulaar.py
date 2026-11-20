@@ -99,6 +99,14 @@ T = {
     "bulletin_intro": "Kabaruuji AgriBaat e {lieu}.",
     "bulletin_fin": "AgriBaat: kabaruuji ɗii iwi ko e ANACIM, PAM e Open-Meteo.",
     "alerte_intro": "Reentino, AgriBaat e {lieu}!",
+    # --- Où vendre ? (20/11) : BROUILLON, à faire relire par Mouhameth ---
+    "vente_marche": "Ngam yeeyde {produit} maa, luumo ɓurngo nafde e takko maa ko {marche}: "
+                    "kiloo ko {prix}, laawol ngol ko {km}. So a ittii coggu laawol, a heɓay "
+                    "{gain} e kiloo kala, so fotondiraa e {local}.",
+    "vente_sur_place": "Ngam yeeyde {produit} maa, {marche} ɓuri moƴƴude e takko maa: kiloo "
+                       "ko {prix}.",
+    "vente_mois": "So a waawii ndesaade {produit} maa no moƴƴi, e lewru {mois} coggu ngu "
+                  "ɓurata toowde: {pct} ko ɓuri jamanu soñde.",
 }
 
 WORDS = {"and": " e ", "days": "balɗe ", "to": " haa ", "up_to": ", haa ",
@@ -122,6 +130,7 @@ UNITS_WO = {  # unité -> (écran, oral)
     "c": ("°C", "degre"),
     "mm": ("mm", "milimeeter"),
     "kg": ("kg", "kiloo"),
+    "km": ("km", "kilomeeter"),
     "": ("", ""),
 }
 

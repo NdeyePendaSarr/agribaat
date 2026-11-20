@@ -108,6 +108,14 @@ T = {
     "bulletin_intro": "Xibaaru AgriBaat ci {lieu}.",
     "bulletin_fin": "AgriBaat: xibaar yi jóge nañu ci ANACIM, PAM ak Open-Meteo.",
     "alerte_intro": "Artu AgriBaat ci {lieu}!",
+    # --- Où vendre ? (20/11) : BROUILLON, à faire relire ---
+    "vente_marche": "Ngir jaay sa {produit}, marse bi gëna jariñ ci sa wet mooy {marche}: kilo "
+                    "bi {prix}, yoon wi {km}. Bu nga dindee njëgu yoon wi, dangay gañ {gain} "
+                    "ci kilo bu nekk, buy méngoo ak {local}.",
+    "vente_sur_place": "Ngir jaay sa {produit}, {marche} moo gëna baax ci sa wet: kilo bi "
+                       "{prix}.",
+    "vente_mois": "Su nga mënee denc sa {produit} bu baax, ci weeru {mois} la njëg li di gëna "
+                  "kawe: {pct} lu ëpp jamonoy góob.",
 }
 
 # Petits mots utilisés pour assembler les listes et les fiches variétés.
@@ -132,6 +140,7 @@ UNITS_WO = {  # unité -> (écran, oral)
     "c": ("°C", "degre"),
     "mm": ("mm", "milimetar"),
     "kg": ("kg", "kilo"),
+    "km": ("km", "kilomeetar"),
     "": ("", ""),
 }
 

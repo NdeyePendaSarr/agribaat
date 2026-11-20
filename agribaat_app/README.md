@@ -153,6 +153,18 @@ Les machines de 16 Go ou plus peuvent essayer les deux modèles plus gros, plus 
   14 régions. « Quand semer le mil à Kaffrine ? » dans l'Assistant ajoute ce calendrier à la
   réponse (en français). Fin de saison et zones : repères généraux, à affiner avec l'ANACIM.
 
+- **Où vendre ?** (page « 🧭 Où vendre ? ») : pour un producteur d'une région, classe les
+  marchés suivis par le PAM dans un rayon choisi (50 à 300 km) selon le prix net, c.-à-d. le
+  dernier prix relevé moins le transport (FCFA par sac de 100 kg et par 100 km, valeur saisie
+  par l'utilisateur ; distance entre chefs-lieux × 1,25), et donne le gain par kilo et par sac
+  par rapport au marché local. Indique aussi le meilleur mois pour vendre : écart de chaque
+  mois au prix moyen de l'année, marché par marché (ce qui retire l'inflation), sur les 5
+  dernières années complètes (ex. arachide : +29 % en septembre par rapport à la récolte).
+  Dans l'Assistant : « Où vendre mon arachide ? Je suis à Kaffrine », « Fan laa wara jaay sama
+  dugub ci Kaolack ? », « Toy mi yeeyata gawri am e Kolda ? ». Limite : prix de détail (le
+  prix producteur est plus bas). Phrases wolof / pulaar : brouillon à faire relire ; en
+  sereer, la réponse lit le prix du meilleur marché (phrase déjà relue).
+
 - **Bulletins vocaux & alertes** (page « Bulletins & alertes ») : bulletin audio de la semaine
   par région et par langue (météo + prix du mil et de l'arachide + sources), enregistré dans
   `outputs/bulletins/` pour une radio communautaire ou un groupe WhatsApp ; régions en alerte

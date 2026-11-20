@@ -667,3 +667,32 @@ body.nav-open .nav-scrim { display: block; position: fixed; inset: 0; z-index: 9
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 }
+
+/* 17. Où vendre ? --------------------------------------------------------------------- */
+.sell-card { border-left: 5px solid var(--ag-gold); }
+.sell-card.ok { border-left-color: var(--ag-leaf); }
+.sell-card.ok .cal-st { background: var(--ag-leaf-50); color: var(--ag-leaf-600); }
+.sell-card p { font-size: .92rem; line-height: 1.5; }
+.sell-gain { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; align-items: baseline;
+             padding: 10px 12px; margin: 8px 0; border-radius: 12px; background: var(--ag-leaf-50); }
+.sell-gain b { font-size: 1.15rem; font-weight: 800; color: var(--ag-leaf-600); }
+.sell-gain span { font-size: .84rem; color: var(--ag-muted); }
+.sell-when { padding: 9px 12px; margin: 8px 0; border-radius: 12px; font-size: .9rem; line-height: 1.45;
+             background: var(--ag-surface-2); border: 1px solid var(--ag-line); }
+.month-chart .mb.up { fill: var(--ag-leaf); opacity: .55; }
+.month-chart .mb.down { fill: var(--ag-clay); opacity: .45; }
+.month-chart .mb.best { opacity: 1; }
+.month-chart .mb.harvest { opacity: .9; }
+.month-chart line.zero { stroke: var(--ag-muted); stroke-width: 1.2; }
+.month-chart .mk { font-size: 13px; font-weight: 800; font-family: var(--ag-font); paint-order: stroke;
+                   stroke: #fff; stroke-width: 4px; }
+.month-chart .mk.on { fill: var(--ag-leaf-600); }
+.month-chart .mk.fs { fill: var(--ag-clay); }
+.block:has(.sell-card) { background: transparent !important; border: none !important;
+                         box-shadow: none !important; padding: 0 !important; }
+.sell-rank .hbar { grid-template-columns: minmax(0, 1.3fr) 1fr 96px; }
+.sell-rank .hbar .n { text-align: left; }
+.sell-rank + * { margin-top: 12px; }
+@media (max-width: 640px) {
+  .sell-rank .hbar { grid-template-columns: minmax(0, 1.6fr) .7fr 80px; font-size: .8rem; gap: 6px; }
+}

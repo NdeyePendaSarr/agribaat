@@ -14,11 +14,11 @@ import gradio as gr
 import pandas as pd
 
 import config
-from agribaat.answers import CATALOGUE, fmt_month, fmt_number, fmt_period, place
+from agribaat.answers import CATALOGUE, ICONS, fmt_month, fmt_number, fmt_period, place
 from agribaat.knowledge import KnowledgeBase
 from agribaat.knowledge import decade_end
 from agribaat.lexicon import PRODUCT_BY_KEY, PRODUCTS
-from agribaat import bulletin, calendrier, carte, charts, labo, langues, meteo, models, usage, warmup
+from agribaat import bulletin, calendrier, carte, charts, labo, langues, meteo, models, usage, vente, warmup
 from agribaat.carte import SenegalMap
 from agribaat.charts import area_chart
 from agribaat.pipeline import Assistant, Result
@@ -208,7 +208,8 @@ def nav_items() -> list[tuple[str, str, str]]:
              ("Bulletins & alertes", "📻", "Bulletins & alertes"),
              ("Impact", "📊", "Impact & tests terrain"),
              ("Climat & cultures", "🗺️", "Climat & cultures"),
-             ("Prix des marchés", "📈", "Prix des marchés"), ("Production", "🌱", "Production")]
+             ("Prix des marchés", "📈", "Prix des marchés"), ("Où vendre", "🧭", "Où vendre ?"),
+             ("Production", "🌱", "Production")]
     items += [("Conseils", "🌦️", "Conseils de saison")] if ADVICE_READY else []
     items += [("Labo langues", "🧪", "Labo langues")] if VOICE_READY else []
     return items + [("À propos", "ℹ️", "À propos")]
@@ -757,6 +758,61 @@ def calendar_national(mode: str) -> str:
     title = "maintenant" if mode == "now" else f"hivernage {mode}"
     return (f'<div class="mt-card"><h4>🇸🇳 Démarrage de la saison · {title}</h4>'
             f'<div class="cal-grid">{"".join(rows)}</div></div>') if rows else ""
+
+
+# ---------------------------------------------------------------- où vendre ?
+SELL_PRODUCTS = PRICE_PRODUCTS
+SELL_RADIUS = [("50 km", 50), ("100 km", 100), ("150 km", 150), ("300 km", 300)]
+
+
+def sell_view(product: str, region: str, transport: float, radius: int):
+    """(fiche conseil, classement des marchés, saisonnalité) pour un producteur."""
+    product, region = product or "arachide", region or "Kaffrine"
+    sp = vente.plan(kb.prices, product, region, float(transport or 0), float(radius or 150))
+    label = PRODUCT_BY_KEY[product].label
+    if sp is None or sp.best is None:
+        return ('<div class="mt-card"><b>Aucun prix récent</b><p>Aucun marché suivi par le PAM '
+                f"dans ce rayon pour le {html.escape(label)}.</p></div>"), "", ""
+    b, loc = sp.best, sp.local
+    what = vente.VARIANT_LABEL.get(product, label)
+    if sp.gain >= 5:
+        verdict, level = f"Vendre à {place(b.market)}", "ok"
+        body = (f"<p><b>{fmt_number(b.price)} FCFA/kg</b> ({fmt_month(b.date)}), à environ "
+                f"{fmt_number(b.km)} km. Transport : environ {fmt_number(b.transport)} FCFA/kg.</p>"
+                f'<div class="sell-gain"><b>+{fmt_number(sp.gain)} FCFA/kg</b><span>net, par '
+                f"rapport à {place(loc.market)} ({fmt_number(loc.price)} FCFA/kg)</span>"
+                f"<b>+{fmt_number(round(sp.gain) * 100)} FCFA</b><span>par sac de 100 kg</span></div>")
+    else:
+        verdict, level = f"Vendre sur place, à {place(loc.market)}", "local"
+        body = (f"<p><b>{fmt_number(loc.price)} FCFA/kg</b> ({fmt_month(loc.date)}). Aller plus "
+                "loin ne rapporte pas assez une fois le transport payé.</p>")
+    when = ""
+    if sp.best_month and sp.season_gain is not None and sp.season_gain >= 3:
+        when = (f'<div class="sell-when">📦 Si vous pouvez stocker sans pertes (sacs hermétiques) : '
+                f"vendre en <b>{vente.MONTHS[sp.best_month - 1]}</b>, "
+                f"<b>+{fmt_number(sp.season_gain)} %</b> par rapport à la récolte "
+                f"(novembre-décembre), en moyenne {sp.season_years[0]}-{sp.season_years[1]}.</div>")
+    card = (f'<div class="mt-card sell-card {level}"><div class="cal-st">🧭 {html.escape(verdict)}'
+            f"</div><h4>{ICONS.get(product, '🌾')} {html.escape(what.capitalize())} · depuis "
+            f"{carte.label(region)}</h4>{body}{when}"
+            '<div class="src-note">Prix de détail PAM / WFP (le prix payé au producteur est plus '
+            "bas : l'écart entre marchés reste un repère). Distance : à vol d'oiseau entre "
+            "chefs-lieux × 1,25. Transport : la valeur que vous indiquez.</div></div>")
+    rows = [(f"{place(o.market)} · {fmt_number(o.km)} km" if o.km else f"{place(o.market)} · sur place",
+             max(o.net, 0)) for o in sp.offers[:8]]
+    rank = '<div class="sell-rank">' + hbars_html(
+        f"Prix net après transport (rayon {radius} km)", rows, "FCFA/kg",
+        f"{len(sp.offers)} marchés relevés ces 3 derniers mois dans le rayon.") + "</div>"
+    the = f"l'{label}" if label[:1] in "aeiouyéèh" else f"le {label}"
+    season = charts.month_bars(
+        sp.season, best=sp.best_month, harvest=vente.HARVEST_MONTHS,
+        title=f"Quand vendre {the} ? Écart au prix moyen de l'année",
+        source=(f"PAM / WFP · tout le Sénégal · moyenne {sp.season_years[0]}-{sp.season_years[1]}"
+                if sp.season_years else "PAM / WFP"))
+    if not season:
+        season = ('<div class="mt-card"><p>Pas assez d\'années complètes de relevés pour '
+                  f"dire quel mois vendre {html.escape(the)}.</p></div>")
+    return card, rank, season
 
 
 # ---------------------------------------------------------------- bulletins & alertes
@@ -1425,6 +1481,30 @@ with gr.Blocks(title="AgriBaat", css=CSS, theme=THEME, js=APP_JS) as demo:
             comp.change(on_price_filters, price_filters, price_out)
         dd_market.input(on_price_market, [dd_product, dd_region, dd_market], [kpis, chart])
         demo.load(on_price_filters, price_filters, price_out)
+
+    with gr.Tab("🧭 Où vendre"):
+        gr.HTML(page_head("🧭", "Où vendre ?",
+                          "Le marché qui rapporte le plus une fois le transport payé, et le "
+                          "meilleur mois pour vendre : prix réels du PAM, dans votre rayon."))
+        with gr.Row(elem_classes="toolbar"):
+            sell_product = gr.Dropdown(SELL_PRODUCTS, value="arachide", label="Je vends")
+            sell_region = gr.Dropdown(MAP_REGIONS, value="Kaffrine", label="Je suis à")
+            sell_radius = gr.Radio(SELL_RADIUS, value=150, label="Jusqu'à")
+        sell_transport = gr.Slider(0, 4000, value=vente.DEFAULT_TRANSPORT, step=100,
+                                   label="Transport : FCFA par sac de 100 kg et par 100 km "
+                                         "(à ajuster avec votre transporteur)")
+        with gr.Row(equal_height=False):
+            with gr.Column(scale=2, min_width=300):
+                sell_card = gr.HTML()
+            with gr.Column(scale=3, min_width=320):
+                sell_rank = gr.HTML()
+                sell_season = gr.HTML()
+        sell_in = [sell_product, sell_region, sell_transport, sell_radius]
+        sell_out = [sell_card, sell_rank, sell_season]
+        for comp in (sell_product, sell_region, sell_radius):
+            comp.change(sell_view, sell_in, sell_out)
+        sell_transport.release(sell_view, sell_in, sell_out)
+        demo.load(sell_view, sell_in, sell_out)
 
     with gr.Tab("🌱 Production"):
         gr.HTML(page_head("🌱", "Production agricole",

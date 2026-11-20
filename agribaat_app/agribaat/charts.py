@@ -85,6 +85,54 @@ def rain_bars(days: list[tuple[date, float]], *, today: date | None = None,
             f"<small>au total</small></div></div>{svg}</div>")
 
 
+def month_bars(season: dict[int, float], *, best: int | None = None,
+               harvest: tuple[int, ...] = (), title: str = "", source: str = "") -> str:
+    """Écart du prix de chaque mois à la moyenne de l'année (en %) : barres au-dessus
+    (vert, prix plus haut) ou au-dessous (argile) de zéro ; meilleur mois et récolte marqués."""
+    esc = html.escape
+    if not season:
+        return ""
+    W, H, L, R, T, B = 760, 230, 44, 12, 26, 34
+    top = max(5.0, max(abs(v) for v in season.values()))
+    step = _nice_step(top, 2)
+    ymax = math.ceil(top / step) * step
+    py = lambda v: T + (ymax - v) / (2 * ymax) * (H - T - B)  # noqa: E731
+    bw = (W - L - R) / 12
+    parts = []
+    v = -ymax
+    while v <= ymax + 1e-9:
+        cls = "g zero" if abs(v) < 1e-9 else "g"
+        parts.append(f'<line x1="{L}" x2="{W - R}" y1="{py(v):.1f}" y2="{py(v):.1f}" class="{cls}"/>'
+                     f'<text x="{L - 6}" y="{py(v) + 4:.1f}" class="ya">{v:+.0f} %</text>'
+                     .replace("+0 %", "0 %"))
+        v += step
+    for m in range(1, 13):
+        if m not in season:
+            continue
+        val = season[m]
+        x = L + (m - 1) * bw
+        cls = "mb up" if val >= 0 else "mb down"
+        cls += " best" if m == best else " harvest" if m in harvest else ""
+        y0, y1 = sorted((py(0), py(val)))
+        tip = f"{MONTHS[m - 1]} : " + f"{val:+.1f} %".replace(".", ",")
+        parts.append(f'<rect x="{x + bw * .18:.1f}" y="{y0:.1f}" width="{bw * .64:.1f}" '
+                     f'height="{max(y1 - y0, 1):.1f}" rx="3" class="{cls}"><title>'
+                     f"{tip}</title></rect>")
+        parts.append(f'<text x="{x + bw / 2:.1f}" y="{H - 12}" class="xa" text-anchor="middle">'
+                     f"{MONTHS[m - 1]}</text>")
+        if m == best:
+            parts.append(f'<text x="{x + bw / 2:.1f}" y="{py(val) - 6:.1f}" class="mk on" '
+                         f'text-anchor="middle">vendre ici</text>')
+    if harvest and all(m in season for m in harvest):
+        xs = [L + (m - 1) * bw for m in harvest]
+        parts.append(f'<text x="{(min(xs) + max(xs) + bw) / 2:.1f}" y="{T - 8}" class="mk fs" '
+                     'text-anchor="middle">récolte</text>')
+    svg = (f'<svg viewBox="0 0 {W} {H}" class="ag-chart month-chart" role="img" '
+           f'aria-label="{esc(title)}">{"".join(parts)}</svg>')
+    return (f'<div class="chart-card"><div class="cc-head"><div><h4>{esc(title)}</h4>'
+            f"<span>{esc(source)}</span></div></div>{svg}</div>")
+
+
 MONTHS = ("janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.",
           "nov.", "déc.")
 

@@ -28,7 +28,7 @@ PLACE_ALIASES: dict[str, str] = {
 
 @dataclass
 class Query:
-    intent: str | None = None  # prix | production | ... | salutation
+    intent: str | None = None  # prix | vendre | production | ... | salutation
     product: str | None = None
     market: str | None = None  # marché WFP
     region: str | None = None  # région (DAPSA ou WFP)
@@ -145,6 +145,13 @@ def parse(texts: list[str], kb: KnowledgeBase) -> Query:
             if any(_close(k, words) for k in INTENT_KEYWORDS[intent]):
                 q.intent = intent
                 break
+
+    # « Où vendre ? » (fr), « fan laa wara jaay » (wo), « toy mi yeeyata » (pulaar,
+    # À VALIDER), « meilleur marché », « quand vendre » : marché le plus rentable.
+    if re.search(r"\b(ou|fan|toy|quel marche|quand|kan|ndey)\b.{0,40}"
+                 r"\b(vendre|vend|jaay|yeey\w*)\b|meilleur marche|meilleur prix"
+                 r"|\b(jaay|yeey\w*)\b.{0,30}\b(fan|toy)\b", text):
+        q.intent = "vendre"
 
     # Précisions pour les conseils.
     if re.search(r"cycle court|precoce|hatif|rapide|\bgaaw|\byaaw", text):  # yaaw : pulaar

@@ -348,8 +348,9 @@ def test_pulaar_numbers():
 def test_language_modules_define_the_same_templates():
     from agribaat import pulaar, sereer, wolof
 
-    # Conseils météo : seul le résumé existe en sereer (phrases de conseil à écrire).
-    advice_only = {k for k in wolof.T if k.startswith("meteo_") and not k.startswith("meteo_resume")}
+    # Conseils météo et « où vendre » : seul le résumé météo existe en sereer (à écrire).
+    advice_only = {k for k in wolof.T if k.startswith(("meteo_", "vente_"))
+                   and not k.startswith("meteo_resume")}
     for module in (pulaar, sereer):
         missing = set(wolof.T) - set(module.T)
         assert missing <= (advice_only if module is sereer else set()), module.LABEL
@@ -832,3 +833,65 @@ def test_rain_chart_marks_onset_and_forecast():
                     false_starts=(date(2025, 7, 1),), title="Pluie", source="test")
     assert "semis 02/07" in svg and "faux départ 01/07" in svg and "prévisions" in svg
     assert "(prévision)" in svg and "40 mm" in svg
+
+
+def _prices(rows):
+    import pandas as pd
+
+    return pd.DataFrame(rows, columns=["date", "region", "market", "product", "product_variant",
+                                       "price_xof_kg"]).assign(date=lambda d: pd.to_datetime(d["date"]))
+
+
+def test_where_to_sell_net_price_and_radius():
+    """Prix net = prix − transport ; marché trop loin écarté ; marché local repéré."""
+    from agribaat import vente
+
+    df = _prices([("2026-10-15", "Kaffrine", "Kaffrine", "mil", "Millet", 300),
+                  ("2026-10-15", "Kaolack", "Kaolack", "mil", "Millet", 360),  # ~70 km
+                  ("2026-10-15", "Dakar", "Tilene", "mil", "Millet", 500),  # ~270 km
+                  ("2020-10-15", "Fatick", "Fatick", "mil", "Millet", 900)])  # trop ancien
+    sp = vente.plan(df, "mil", "Kaffrine", transport_rate=1000)
+    assert [o.market for o in sp.offers] == ["Kaolack", "Kaffrine"]  # Dakar > 150 km
+    assert sp.local.market == "Kaffrine" and 50 < sp.best.km < 90
+    assert abs(sp.best.transport - sp.best.km / 10) < 1e-9  # 1000 F / sac de 100 kg / 100 km
+    assert round(sp.gain) == round(60 - sp.best.km / 10)
+    far = vente.plan(df, "mil", "Kaffrine", transport_rate=1000, max_km=None)
+    assert far.best.market == "Tilene"
+    assert vente.plan(df, "mil", "Kaffrine", transport_rate=10000).best.market == "Kaffrine"
+
+
+def test_where_to_sell_seasonality_removes_inflation():
+    from agribaat import vente
+
+    rows = []
+    for year, base in ((2024, 300), (2025, 400)):  # +33 % d'inflation : ne doit rien changer
+        for m in range(1, 13):
+            rows.append((f"{year}-{m:02d}-15", "Kaolack", "Kaolack", "mil", "Millet",
+                         base * (1.10 if m == 9 else 0.95 if m in (11, 12) else 1.0)))
+    season, years = vente.seasonality(_prices(rows))
+    assert years == (2024, 2025) and max(season, key=season.get) == 9
+    assert abs(season[9] - season[1] - 10.0) < 0.6
+
+
+@needs_data
+def test_where_to_sell_question_in_three_languages(kb):
+    from agribaat import pulaar, sereer
+
+    for text, lang in (("Où vendre mon arachide ? Je suis à Kaffrine", None),
+                       ("Fan laa wara jaay sama dugub ci Kaolack ?", None),
+                       ("Toy mi yeeyata gawri am e Kolda ?", pulaar),
+                       ("Où vendre mon mil à Kédougou ?", sereer)):
+        q = parse([text], kb)
+        assert q.intent == "vendre", text
+        a = answer(q, kb, lang)
+        assert a.found and "FCFA" in a.text and a.wolof.text and "Prix de détail" in a.text
+    q = parse(["Quel est le prix du mil à Kaolack ?"], kb)
+    assert q.intent == "prix"  # une simple question de prix ne change pas
+
+
+def test_month_chart_marks_best_month_and_harvest():
+    from agribaat.charts import month_bars
+
+    svg = month_bars({m: (8.0 if m == 9 else -6.0 if m in (11, 12) else 0.5) for m in range(1, 13)},
+                     best=9, harvest=(11, 12), title="Quand vendre", source="test")
+    assert "vendre ici" in svg and "récolte" in svg and "sept. : +8,0 %" in svg

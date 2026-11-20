@@ -98,7 +98,8 @@ def fmt_month(ts) -> str:
 
 
 DISPLAY_NAMES = {"Zigiunchor": "Ziguinchor", "Thies": "Thiès", "Kedougou": "Kédougou",
-                 "Sedhiou": "Sédhiou", "Saint Louis": "Saint-Louis"}  # corrige les fautes du fichier source
+                 "Sedhiou": "Sédhiou", "Saint Louis": "Saint-Louis",
+                 "Ndoumbé DIOP": "Ndoumbé Diop", "TOUBA GARE BOU NDAW": "Touba Gare Bou Ndaw"}  # corrige les fautes du fichier source
 
 
 def place(name: str | None) -> str:
@@ -433,6 +434,67 @@ def _meteo_answer(q: Query, kb: KnowledgeBase) -> Answer:
                   meteo.local_text(fc, advices, wo.L()), hl)
 
 
+def _sell_answer(q: Query, kb: KnowledgeBase) -> Answer:
+    """« Où vendre mon arachide ? (Kaffrine) » : marché le plus rentable après transport
+    et meilleur mois pour vendre (prix PAM / WFP, voir vente.py)."""
+    from . import vente
+
+    region = q.region or (kb.prices.loc[kb.prices["market"] == q.market, "region"].iloc[0]
+                          if q.market else None)
+    label = PRODUCT_BY_KEY[q.product].label
+    product_wo = wo.L().PRODUCTS_WO[q.product]
+    if region is None:
+        region = "Kaolack"
+        intro = "Sans région précisée, je prends Kaolack. "
+    else:
+        intro = ""
+    sp = vente.plan(kb.prices, q.product, region)
+    if sp is None or sp.best is None:
+        return Answer(f"Je n'ai pas de prix récent {de(label)} près de {place(region)}.", None,
+                      False, wo.render("pas_de_prix", produit=product_wo,
+                                       lieu=wo.place("region", place(region))))
+    b, loc = sp.best, sp.local
+    what = vente.VARIANT_LABEL.get(q.product, label)
+    if sp.gain >= 5:
+        text = (f"{intro}Pour vendre votre {what} depuis {place(region)}, le marché le plus "
+                f"rentable à moins de {sp.max_km:.0f} km est {place(b.market)} : "
+                f"{fmt_number(b.price)} FCFA/kg ({fmt_month(b.date)}), à environ "
+                f"{fmt_number(b.km)} km. Après transport (environ {fmt_number(b.transport)} "
+                f"FCFA/kg), vous gagnez {fmt_number(sp.gain)} FCFA de plus par kilo qu'à "
+                f"{place(loc.market)} ({fmt_number(loc.price)} FCFA/kg), soit "
+                f"{fmt_number(round(sp.gain) * 100)} FCFA par sac de 100 kg.")
+        local = wo.render("vente_marche", produit=product_wo, marche=place(b.market),
+                          prix=wo.Qty(b.price, "fcfa"), km=wo.Qty(b.km, "km"),
+                          gain=wo.Qty(sp.gain, "fcfa"), local=place(loc.market)) \
+            if "vente_marche" in wo.L().T else None
+    else:
+        text = (f"{intro}Pour vendre votre {what} depuis {place(region)}, le mieux est de vendre "
+                f"sur place, à {place(loc.market)} : {fmt_number(loc.price)} FCFA/kg "
+                f"({fmt_month(loc.date)}). Aller plus loin ne rapporte pas assez une fois le "
+                "transport payé.")
+        local = wo.render("vente_sur_place", produit=product_wo, marche=place(loc.market),
+                          prix=wo.Qty(loc.price, "fcfa")) if "vente_sur_place" in wo.L().T else None
+    if local is None:  # langue sans ces phrases (sereer) : le prix du marché, phrase relue
+        local = wo.render("prix_marche", mois=wo.month(b.date), produit=product_wo,
+                          prix=wo.Qty(b.price, "fcfa"), lieu=wo.place("marche", place(b.market)))
+    gain = sp.season_gain
+    if sp.best_month and gain is not None and gain >= 3:
+        month = vente.MONTHS[sp.best_month - 1]
+        text += (f" Si vous pouvez stocker sans pertes (sacs hermétiques), c'est en {month} que "
+                 f"le prix est le plus haut : {fmt_number(gain)} % de plus qu'à la récolte "
+                 f"(novembre-décembre), en moyenne {sp.season_years[0]}-{sp.season_years[1]}.")
+        if "vente_mois" in wo.L().T:
+            local = local + wo.WolofText(" ", " ") + wo.render(
+                "vente_mois", produit=product_wo, mois=wo.L().MONTHS_WO[sp.best_month - 1],
+                pct=wo.Qty(gain, "pct"))
+    text += " Prix de détail : le prix payé au producteur est plus bas, mais l'écart reste un repère."
+    hl = Highlight(f"Où vendre · {label} depuis {place(region)}",
+                   fmt_number(b.net if sp.gain >= 5 else loc.net), "FCFA/kg net",
+                   f"{place(b.market if sp.gain >= 5 else loc.market)} · après transport",
+                   None, ICONS.get(q.product, "🌾"))
+    return Answer(text, "PAM / WFP (prix de détail) · transport estimé", True, local, hl)
+
+
 def _product_sheet(q: Query, kb: KnowledgeBase) -> Answer | None:
     """Culture reconnue, mais pas le reste de la question (formulation inconnue) :
     plutôt que deviner, on donne l'essentiel sur cette culture — dernier prix moyen et
@@ -519,6 +581,9 @@ def _answer(q: Query, kb: KnowledgeBase) -> Answer:
                       wo.render("produit_inconnu") + wo.render("aide"))
     label = PRODUCT_BY_KEY[q.product].label
     product_wo = wo.L().PRODUCTS_WO[q.product]
+
+    if q.intent == "vendre":
+        return _sell_answer(q, kb)
 
     if q.intent == "prix":
         region = None if q.market else q.region
