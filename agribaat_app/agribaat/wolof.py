@@ -90,6 +90,20 @@ T = {
     "conseils_sans_sujet": "Amuma digal bu jëm ci {sujet}. Yii ñoo mujj.",
     "extrait": "Amuma tontu bu leer, waaye gis naa xibaar bii ci {source}. "
                "Ci farañse la bind.",
+    # --- Météo en direct (20/11) : BROUILLON, à faire relire par un locuteur natif ---
+    "meteo_resume": "Ci {lieu}, ci juróom-ñaari fan yii di ñëw: taw bi dina tollu ci {mm}, "
+                    "tàngaay bi dina yegg {tmax}.",
+    "meteo_resume_sec": "Ci {lieu}, ci juróom-ñaari fan yii di ñëw: tàngaay bi dina yegg {tmax}.",
+    "meteo_pluie_forte": "Taw bu bari dina ñëw ({mm} ci ñetti fan): bul def garab, bul tuur "
+                         "engrais, ubbil yoonu ndox yi.",
+    "meteo_pluie": "Taw dina ñëw ({mm} ci ñetti fan): bul def garab balaa taw bi; ngir ji, "
+                   "xaaral ba suuf si tooy bu baax.",
+    "meteo_recolte": "Jamonoy góob la: muural li ngay wow, te denc say saaku fu taw dul jot.",
+    "meteo_chaleur": "Du am taw te tàngaay bi dafa metti ({tmax}): ndoxal sa tool ci suba "
+                     "walla ci ngoon.",
+    "meteo_sec": "Du am taw ci ayu-bés bii: ndoxal sa tool saa su nekk.",
+    "meteo_vent": "Ngelaw li dafa bari: bul def garab.",
+    "meteo_normal": "Amul benn jafe-jafe ci asamaan bi ci fan yii di ñëw.",
 }
 
 # Petits mots utilisés pour assembler les listes et les fiches variétés.
@@ -111,6 +125,7 @@ UNITS_WO = {  # unité -> (écran, oral)
     "ha": ("ektaar", "ektaar"),
     "kg/ha": ("kilo", "kilo"),
     "pct": ("%", "ci téeméer"),
+    "c": ("°C", "degre"),
     "mm": ("mm", "milimetar"),
     "kg": ("kg", "kilo"),
     "": ("", ""),
@@ -233,7 +248,7 @@ def render(key: str, **values) -> WolofText:
     for mark, repl in (("(", ", "), (")", ","), ("«", ""), ("»", "")):  # non lus à voix haute
         spoken = spoken.replace(mark, repl)
     return WolofText(_tidy(template.format(**show)), _tidy(spoken).replace(",.", ".")
-                     .replace(",,", ","))
+                     .replace(",,", ",").replace(",:", ":"))
 
 
 def _tidy(text: str) -> str:

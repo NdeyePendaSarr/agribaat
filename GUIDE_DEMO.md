@@ -89,7 +89,8 @@ Les enregistrements restent sur la machine (ils ne sont pas envoyés sur GitHub)
 | 8 | Micro : dire « Ñaata la kilo dugub di jar ci Kaolack ? » | Chaîne vocale complète (prévoir 1 à 2 min si la phrase est nouvelle) |
 | 9 | Langue **Pulaar**, question type « coggu gawri e Kawlak » (ou au micro) | Même réponse chiffrée **en pulaar, lue à voix haute** |
 | 10 | Langue **Sereer · écrit**, taper « ndoɓ no Mbour » | Réponse **écrite en sereer** (pas encore de voix sereer) |
-| 11 | Onglet **🗺️ Climat & cultures** | **Carte du Sénégal** : zone climatique de chaque région et cultures où son rendement dépasse la moyenne nationale (ex. Sédhiou : mil +74 %), variétés adaptées à la pluviométrie |
+| 11 | Menu **🌤️ Météo en direct**, puis « 🔊 Écouter le conseil » | **Prévisions Open-Meteo en temps réel** (7 jours) et conseil lu en wolof ou en pulaar ; question à l'Assistant : « Va-t-il pleuvoir à Kaolack ? » |
+| 12 | Onglet **🗺️ Climat & cultures** | **Carte du Sénégal** : zone climatique de chaque région et cultures où son rendement dépasse la moyenne nationale (ex. Sédhiou : mil +74 %), variétés adaptées à la pluviométrie |
 
 Phrases pulaar et sereer relues et approuvées par Mouhameth et Seydina (18/11). La
 reconnaissance vocale pulaar reste expérimentale : pour la démo, préférer la question

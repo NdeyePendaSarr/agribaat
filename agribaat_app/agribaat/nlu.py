@@ -44,7 +44,7 @@ class Query:
 
     @property
     def is_complete(self) -> bool:
-        if self.intent in ("pluie", "conseil", "salutation", "technique"):  # sans produit
+        if self.intent in ("pluie", "conseil", "salutation", "technique", "meteo"):  # sans produit
             return True
         return self.intent is not None and self.product is not None
 
@@ -52,7 +52,7 @@ class Query:
 # Ordre de priorité des intentions. « variete » avant « pluie » : « variété résistante
 # au manque de pluie » parle de variétés ; « technique » avant « conseil » : « que faire
 # contre le striga » demande une pratique (documents ISRA), pas le calendrier ANACIM.
-ORDER = ("variete", "pluie", "technique", "conseil", "prix", "rendement", "superficie",
+ORDER = ("variete", "meteo", "pluie", "technique", "conseil", "prix", "rendement", "superficie",
          "production")
 
 

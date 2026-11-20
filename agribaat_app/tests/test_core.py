@@ -348,8 +348,12 @@ def test_pulaar_numbers():
 def test_language_modules_define_the_same_templates():
     from agribaat import pulaar, sereer, wolof
 
+    # Conseils météo : seul le résumé existe en sereer (phrases de conseil à écrire).
+    advice_only = {k for k in wolof.T if k.startswith("meteo_") and not k.startswith("meteo_resume")}
     for module in (pulaar, sereer):
-        assert set(module.T) == set(wolof.T), module.LABEL
+        missing = set(wolof.T) - set(module.T)
+        assert missing <= (advice_only if module is sereer else set()), module.LABEL
+        assert set(module.T) <= set(wolof.T), module.LABEL
         assert set(module.PRODUCTS_WO) == set(wolof.PRODUCTS_WO)
         assert set(module.THEMES_WO) == set(wolof.THEMES_WO)
         assert set(module.WORDS) == set(wolof.WORDS)
@@ -622,3 +626,52 @@ def test_area_chart_annotates_max_and_last():
                       (date(2022, 1, 1), 200.0)], title="Test", unit="t", source="S", yearly=True)
     assert "Max 300 · 2021" in svg and "200 t" in svg and svg.count('class="hit"') == 3
     assert "Pas assez" in area_chart([(date(2020, 1, 1), 1.0)], title="T", unit="", source="")
+
+
+def _fake_forecast(rain, tmax, wind=10.0, month=7):
+    from datetime import date, datetime
+
+    from agribaat.meteo import Day, Forecast
+
+    days = [Day(date(2026, month, 1 + i), r, 80 if r else 0, tmax, tmax - 12, wind, 5.0)
+            for i, r in enumerate(rain)]
+    return Forecast("Kaolack", datetime(2026, month, 1, 9), True, tmax - 5, 60, wind, days)
+
+
+def test_weather_advice_rules():
+    from agribaat import meteo
+
+    keys = lambda fc: [a.key for a in meteo.advice(fc)]  # noqa: E731
+    assert keys(_fake_forecast([15, 10, 5, 0, 0, 0, 0], 33))[0] == "pluie_forte"
+    assert keys(_fake_forecast([4, 3, 0, 0, 0, 0, 0], 33))[0] == "pluie"
+    assert "recolte" in keys(_fake_forecast([4, 3, 0, 0, 0, 0, 0], 33, month=10))
+    assert keys(_fake_forecast([0] * 7, 38)) == ["chaleur"]
+    assert keys(_fake_forecast([0] * 7, 30)) == ["sec"]
+    assert "vent" in keys(_fake_forecast([0] * 7, 30, wind=40))
+
+
+def test_weather_advice_in_local_languages():
+    from agribaat import meteo, pulaar, sereer, wolof
+
+    fc = _fake_forecast([15, 10, 5, 0, 0, 0, 0], 33)
+    adv = meteo.advice(fc)
+    wo_text = meteo.local_text(fc, adv, wolof)
+    assert "Taw bu bari" in wo_text.text and "fukk" in wo_text.speech  # nombres en lettres
+    assert "Toɓo mawɗo" in meteo.local_text(fc, adv, pulaar).text
+    assert meteo.local_text(fc, adv, sereer).text.startswith("No fan 7")
+    dry = _fake_forecast([0] * 7, 38)
+    assert "0 mm" not in meteo.local_text(dry, meteo.advice(dry), wolof).text
+
+
+@needs_data
+@needs_advice
+def test_weather_question_uses_the_forecast(kb, monkeypatch):
+    from agribaat import meteo
+
+    monkeypatch.setattr(meteo, "forecast", lambda region, force=False: _fake_forecast(
+        [0] * 7, 38) if region else None)
+    q = parse(["Va-t-il pleuvoir à Kaolack ?"], kb)
+    assert q.intent == "meteo"
+    ans = answer(q, kb)
+    assert ans.found and ans.source.startswith("Open-Meteo") and "38 °C" in ans.text
+    assert parse(["Il a plu combien à Mbour ?"], kb).intent == "pluie"  # le passé : ANACIM

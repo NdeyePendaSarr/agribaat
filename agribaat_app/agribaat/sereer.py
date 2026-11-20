@@ -75,6 +75,10 @@ T = {
                           "Ɗa binda no farañse.",
     "conseils_sans_sujet": "Mi ga'um digal no {sujet}. Ya mujel ten.",
     "extrait": "Mi ga'um tontu, waaye xibaar oxe no {source}. Ɗa binda no farañse.",
+    # --- Météo en direct (20/11) : résumé construit sur la structure relue de
+    # « pluie_lieu ». Les phrases de conseil sereer restent à écrire par Seydina. ---
+    "meteo_resume": "No fan 7 ({lieu}): ndoɓ {mm}, {tmax}.",
+    "meteo_resume_sec": "No fan 7 ({lieu}): {tmax}.",
 }
 
 WORDS = {"and": " na ", "days": "fan ", "to": "–", "up_to": ", haa ",
@@ -94,6 +98,7 @@ UNITS_WO = {
     "ha": ("ektaar", "ektaar"),
     "kg/ha": ("kilo", "kilo"),
     "pct": ("%", "%"),
+    "c": ("°C", "°C"),
     "mm": ("mm", "mm"),
     "kg": ("kg", "kg"),
     "": ("", ""),

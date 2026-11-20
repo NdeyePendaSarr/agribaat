@@ -80,6 +80,21 @@ T = {
     "conseils_sans_sujet": "Mi alaa wasiyaaji e {sujet}. Ɗii ɗoo ko sakkitiiɗi.",
     "extrait": "Mi alaa jaabawol laaɓngol, kono mi yiyii ngol humpito e {source}. "
                "Ngol winndaa ko e farayseere.",
+    # --- Météo en direct (20/11) : BROUILLON, à faire relire par Mouhameth ---
+    "meteo_resume": "E {lieu}, e balɗe jeeɗiɗi garooje ɗee: toɓo ina yettoo {mm}, ngulɓiri "
+                    "ina yettoo {tmax}.",
+    "meteo_resume_sec": "E {lieu}, e balɗe jeeɗiɗi garooje ɗee: ngulɓiri ina yettoo {tmax}.",
+    "meteo_pluie_forte": "Toɓo mawɗo ina wara ({mm} e balɗe tati): wata a waɗ lekki, wata a "
+                         "werlo engrais.",
+    "meteo_pluie": "Toɓo ina wara ({mm} e balɗe tati): wata a waɗ lekki hade toɓo; ngam "
+                   "aawde, fadu leydi ndi heewa ndiyam.",
+    "meteo_recolte": "Ko jamanu soñde: suddu ko yoorata, ndesku saakuuji maa ɗo toɓo "
+                     "heɓataa ɗi.",
+    "meteo_chaleur": "Toɓo alaa, ngulɓiri ina tiiɗi ({tmax}): yarnu ngesa maa subaka walla "
+                     "kikiiɗe.",
+    "meteo_sec": "Toɓo alaa e ndee yontere: yarnu ngesa maa sahaa kala.",
+    "meteo_vent": "Henndu ina tiiɗi: wata a waɗ lekki.",
+    "meteo_normal": "Alaa caɗeele asamaan e balɗe garooje ɗee.",
 }
 
 WORDS = {"and": " e ", "days": "balɗe ", "to": " haa ", "up_to": ", haa ",
@@ -100,6 +115,7 @@ UNITS_WO = {  # unité -> (écran, oral)
     "ha": ("ektaar", "ektaar"),
     "kg/ha": ("kiloo", "kiloo"),
     "pct": ("%", "e teemedere"),
+    "c": ("°C", "degre"),
     "mm": ("mm", "milimeeter"),
     "kg": ("kg", "kiloo"),
     "": ("", ""),

@@ -137,6 +137,13 @@ Les machines de 16 Go ou plus peuvent essayer les deux modèles plus gros, plus 
   insectes…), il donne les recommandations ANACIM les plus proches en le disant, avec
   l'orientation vers le conseiller agricole.
 
+- **Météo en direct** (API Open-Meteo, gratuite, sans clé) : « Va-t-il pleuvoir à Kaolack ? »,
+  « dina taw ëllëg ci Ziguinchor », « toɓo ina wara e Kolda ? » → prévisions à 7 jours et
+  conseil (forte pluie, chaleur sèche, vent fort, récoltes à protéger), lu en wolof et en
+  pulaar. Seules les coordonnées des chefs-lieux sont envoyées ; sans connexion, les
+  dernières prévisions (outputs/meteo_cache.json) sont utilisées, avec leur date.
+  Phrases météo locales : brouillon à faire relire (wolof.py, pulaar.py).
+
 Produits : mil, sorgho, maïs, riz, arachide, niébé, oignon, manioc, fonio.
 
 ### Enrichir le vocabulaire des langues locales (sans toucher au code)

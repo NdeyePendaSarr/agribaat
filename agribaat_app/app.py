@@ -17,7 +17,7 @@ from agribaat.answers import CATALOGUE, fmt_month, fmt_number, fmt_period, place
 from agribaat.knowledge import KnowledgeBase
 from agribaat.knowledge import decade_end
 from agribaat.lexicon import PRODUCT_BY_KEY, PRODUCTS
-from agribaat import carte, labo, langues, warmup
+from agribaat import carte, labo, langues, meteo, models, warmup
 from agribaat.carte import SenegalMap
 from agribaat.charts import area_chart
 from agribaat.pipeline import Assistant, Result
@@ -203,7 +203,8 @@ def hero_html() -> str:
 # menu pilote par JavaScript : les tests et la démo automatique fonctionnent toujours).
 def nav_items() -> list[tuple[str, str, str]]:
     """(texte de l'onglet, icône, libellé du menu), dans l'ordre des onglets."""
-    items = [("Assistant", "🎙️", "Assistant vocal"), ("Climat & cultures", "🗺️", "Climat & cultures"),
+    items = [("Assistant", "🎙️", "Assistant vocal"), ("Météo en direct", "🌤️", "Météo en direct"),
+             ("Climat & cultures", "🗺️", "Climat & cultures"),
              ("Prix des marchés", "📈", "Prix des marchés"), ("Production", "🌱", "Production")]
     items += [("Conseils", "🌦️", "Conseils de saison")] if ADVICE_READY else []
     items += [("Labo langues", "🧪", "Labo langues")] if VOICE_READY else []
@@ -606,6 +607,84 @@ def _span(lo, hi, unit: str = "") -> str:
     return (f"{lo:g}" if lo == hi else f"{lo:g}–{hi:g}") + unit
 
 
+# ---------------------------------------------------------------- météo en direct
+METEO_LANGS = [("Wolof", "wo"), ("Pulaar", "pul"), ("Sereer · écrit", "srr")]
+DAY_NAMES = ("lun.", "mar.", "mer.", "jeu.", "ven.", "sam.", "dim.")
+
+
+def _sky(day) -> str:
+    if day.rain >= 10:
+        return "⛈️"
+    if day.rain >= 1 or day.prob >= 50:
+        return "🌧️"
+    if day.prob >= 20:
+        return "⛅"
+    return "☀️"
+
+
+def meteo_view(region: str, lang: str, force: bool = False):
+    """(conditions + 7 jours, conseils, texte local, vue nationale) pour une région."""
+    region = region or "Kaolack"
+    fc = meteo.forecast(region, force=force)
+    if fc is None:
+        empty = ('<div class="mt-card"><b>Prévisions indisponibles</b><p>Pas de connexion à '
+                 "Open-Meteo et aucune prévision gardée en mémoire. Connectez-vous à internet "
+                 "puis cliquez sur « Actualiser ».</p></div>")
+        return empty, "", "", ""
+    when = fc.fetched.strftime("%d/%m à %H:%M")
+    status = (f'<span class="mt-live">● En direct · mis à jour le {when}</span>' if fc.live else
+              f'<span class="mt-off">● Hors ligne · prévisions du {when}</span>')
+    days = "".join(
+        f'<div class="mt-day"><small>{"Auj." if i == 0 else DAY_NAMES[d.day.weekday()]}</small>'
+        f'<span class="mt-sky">{_sky(d)}</span><b>{d.tmax:.0f}°</b><i>{d.tmin:.0f}°</i>'
+        f'<em class="{"wet" if d.rain >= 1 else ""}">{d.rain:.0f} mm</em>'
+        f'<small>{d.prob:.0f} %</small></div>' for i, d in enumerate(fc.days))
+    now = (f'<div class="mt-card mt-now"><div class="mt-top"><div><h4>📍 {carte.label(region)}'
+           f"</h4>{status}</div><div class=\"mt-temp\">{fc.temp:.0f}<small>°C</small></div></div>"
+           f'<div class="mt-meta"><span>💧 Humidité {fc.humidity:.0f} %</span><span>💨 Vent '
+           f"{fc.wind:.0f} km/h</span><span>🌧️ {fc.rain7:.0f} mm sur 7 j</span><span>🌱 "
+           f"{fc.et0:.0f} mm/j évaporés</span></div>"
+           + f'<div class="mt-days">{days}</div><div class="src-note">Source : Open-Meteo, '
+           "prévisions à 7 jours (pluie, probabilité, températures, vent, évapotranspiration)."
+           "</div></div>")
+    advices = meteo.advice(fc)
+    adv = '<div class="mt-advice">' + "".join(
+        f'<div class="mt-adv {a.level}"><span class="mt-ico">{a.icon}</span><div><b>'
+        f"{html.escape(a.title)}</b><p>{html.escape(a.text)}</p></div></div>" for a in advices)         + '<div class="src-note">Conseils calculés automatiquement à partir des prévisions '        "(règles générales de bonnes pratiques).</div></div>"
+    langue = langues.get(lang)
+    local = meteo.local_text(fc, advices, langue.module)
+    note = ("" if meteo.has_local_advice(langue.module) else
+            '<div class="draft">Conseils sereer à écrire par un locuteur : seul le résumé est '
+            "traduit pour l'instant.</div>")
+    local_html = (f'<div class="mt-card mt-local"><div class="mt-lh">🗣️ Conseil en '
+                  f"{langue.label.lower()}</div><p>« {html.escape(local.text)} »</p>{note}"
+                  '<div class="draft">Phrases météo en brouillon : à faire relire par un '
+                  "locuteur natif.</div></div>")
+    return now, adv, local_html, meteo_national()
+
+
+def meteo_national() -> str:
+    rows = []
+    for region, fc in sorted(meteo.all_forecasts().items(), key=lambda kv: -kv[1].rain7):
+        top = meteo.advice(fc)[0]
+        rows.append(f'<div class="mt-reg"><b>{carte.label(region)}</b><span>{top.icon}</span>'
+                    f"<em>{fc.rain7:.0f} mm</em><i>{fc.tmax7:.0f}°</i></div>")
+    return ('<div class="mt-card"><h4>🇸🇳 Toutes les régions · 7 jours</h4><div class="mt-grid">'
+            + "".join(rows) + "</div></div>") if rows else ""
+
+
+def meteo_listen(region: str, lang: str):
+    """Conseil lu à voix haute (wolof : SpeechT5 ; pulaar : Meta MMS ; sereer : pas de voix)."""
+    fc = meteo.forecast(region or "Kaolack")
+    langue = langues.get(lang)
+    if fc is None or not VOICE_READY or langue.voice_out is None:
+        return None
+    text = meteo.local_text(fc, meteo.advice(fc), langue.module).speech
+    if langue.voice_out == "wolof":
+        return models.synthesize(text)
+    return labo.synthesize(langue.labo_key, text)
+
+
 # ---------------------------------------------------------------- carte climat
 SN_MAP = SenegalMap(kb.regional, kb.varieties, kb.rain)
 MAP_MODES = [("🌾 Cultures à fort rendement", "best"), ("🌦️ Zones climatiques", "zones"),
@@ -915,6 +994,33 @@ with gr.Blocks(title="AgriBaat", css=CSS, theme=THEME, js=APP_JS) as demo:
         txt.submit(on_text, [txt, lang, history], outputs)
         for i, button in enumerate(example_buttons):  # un clic pose la question
             button.click(lambda lg, h, i=i: on_example(i, lg, h), [lang, history], outputs)
+
+    with gr.Tab("🌤️ Météo en direct"):
+        gr.HTML(page_head("🌤️", "Météo en direct",
+                          "Prévisions à 7 jours pour chaque région et conseils pour les "
+                          "cultures, lus en wolof et en pulaar."))
+        with gr.Row(elem_classes="toolbar"):
+            mt_region = gr.Dropdown(MAP_REGIONS, value="Kaolack", label="Région")
+            mt_lang = gr.Radio(METEO_LANGS, value="wo", label="Langue du conseil",
+                               elem_id="mt-lang")
+            mt_refresh = gr.Button("🔄 Actualiser", variant="secondary", scale=0,
+                                   min_width=130)
+        with gr.Row(equal_height=False):
+            with gr.Column(scale=3, min_width=320):
+                mt_now = gr.HTML()
+            with gr.Column(scale=2, min_width=280):
+                mt_adv = gr.HTML()
+                mt_local = gr.HTML()
+                mt_listen = gr.Button("🔊 Écouter le conseil", variant="primary",
+                                      visible=VOICE_READY)
+                mt_audio = gr.Audio(label="Conseil lu", autoplay=True, visible=VOICE_READY)
+        mt_nat = gr.HTML()
+        mt_out = [mt_now, mt_adv, mt_local, mt_nat]
+        mt_region.change(meteo_view, [mt_region, mt_lang], mt_out)
+        mt_lang.change(meteo_view, [mt_region, mt_lang], mt_out)
+        mt_refresh.click(lambda r, l: meteo_view(r, l, force=True), [mt_region, mt_lang], mt_out)
+        mt_listen.click(meteo_listen, [mt_region, mt_lang], mt_audio)
+        demo.load(meteo_view, [mt_region, mt_lang], mt_out)
 
     with gr.Tab("🗺️ Climat & cultures"):
         gr.HTML(page_head("🗺️", "Quoi cultiver, et où ?",

@@ -52,13 +52,15 @@ SCENARIO = [
      "Quand récolter l'arachide ?"),
     ("6. En pulaar : le prix du mil à Kaolack", "example", "coggu gawri e Kawlak"),
     ("7. En sereer, à l'écrit : la pluie à Mbour", "sereer", "ndoɓ no Mbour"),
-    ("8. Climat : quoi cultiver dans chaque région pour un fort rendement", "tab",
+    ("8. Météo en direct : prévisions à 7 jours et conseil dans la langue", "tab",
+     "Météo en direct"),
+    ("9. Climat : quoi cultiver dans chaque région pour un fort rendement", "tab",
      "Climat & cultures"),
-    ("9. Prix des marchés : prix moyen, marché le moins cher et le plus cher", "tab",
+    ("10. Prix des marchés : prix moyen, marché le moins cher et le plus cher", "tab",
      "Prix des marchés"),
-    ("10. Production : évolution nationale et par région", "tab", "Production"),
-    ("11. Conseils : variétés et pluies ANACIM", "tab", "Conseils"),
-    ("12. À propos : sources officielles, aucun chiffre inventé", "tab", "À propos"),
+    ("11. Production : évolution nationale et par région", "tab", "Production"),
+    ("12. Conseils : variétés et pluies ANACIM", "tab", "Conseils"),
+    ("13. À propos : sources officielles, aucun chiffre inventé", "tab", "À propos"),
 ]
 
 

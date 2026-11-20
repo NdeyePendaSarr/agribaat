@@ -76,8 +76,15 @@ INTENT_KEYWORDS: dict[str, tuple[str, ...]] = {
     # marse = marché ; benn ektaar = un hectare ; bey = cultiver ; góob/jur = récolter/produire.
     # Conseils (wolof À VALIDER) : taw = pluie, xeet = sorte/variété, jiwu = semence,
     # digal = conseiller, ji = semer.
+    # Prévisions (météo en direct, Open-Meteo). Wolof ëllëg / dina taw, pulaar jaango /
+    # ina wara : demain, va venir (À VALIDER).
+    "meteo": ("meteo", "prevision", "previsions", "demain", "va pleuvoir", "va t il pleuvoir",
+              "va-t-il pleuvoir", "pleuvra", "il va pleuvoir", "va-t-il faire",
+              "pleuvoir demain", "cette semaine", "semaine prochaine", "les prochains jours",
+              "temps qu il fera", "temperature", "temperatures", "chaleur", "vent",
+              "elleg", "dina taw", "jaango", "ina wara"),
     "pluie": ("pluie", "pluies", "plu", "pleut", "pleuvoir", "pluviometrie",
-              "precipitation", "precipitations", "meteo", "taw",
+              "precipitation", "precipitations", "taw",
               "tobo", "ndob"),  # pulaar toɓo, sereer ndoɓ (À VALIDER)
     "variete": ("variete", "varietes", "semence", "semences", "cycle court", "cycle long",
                 "precoce", "precoces", "xeet", "xeeti", "xeetu", "jiwu",

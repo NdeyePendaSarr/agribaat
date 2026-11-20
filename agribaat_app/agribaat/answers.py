@@ -388,6 +388,51 @@ def _search_answer(q: Query, kb: KnowledgeBase) -> Answer | None:
                   wo.render("extrait", source=wo.Name(passage.source)))
 
 
+def _meteo_region(q: Query, kb: KnowledgeBase) -> str | None:
+    """Région de la question (région, marché ou localité citée), pour les prévisions."""
+    from . import meteo
+
+    if q.region in meteo.CITIES:
+        return q.region
+    if q.market:
+        rows = kb.prices[kb.prices["market"] == q.market]["region"]
+        if len(rows) and rows.iloc[0] in meteo.CITIES:
+            return rows.iloc[0]
+    if q.locality and not kb.rain.empty:
+        rows = kb.rain[kb.rain["localite"] == q.locality]["region"].dropna()
+        if len(rows) and rows.iloc[0] in meteo.CITIES:
+            return rows.iloc[0]
+    return None
+
+
+def _meteo_answer(q: Query, kb: KnowledgeBase) -> Answer:
+    """Prévisions en temps réel (Open-Meteo) et conseils, dans la langue choisie."""
+    from . import meteo
+    from .carte import label
+
+    region = _meteo_region(q, kb)
+    if region is None:  # pas de lieu : la région où il pleuvra le plus (sinon la plus chaude)
+        every = meteo.all_forecasts()
+        if every:
+            region = max(every, key=lambda r: (every[r].rain7, every[r].tmax7))
+    fc = meteo.forecast(region) if region else None
+    if fc is None:
+        return Answer("Je n'ai pas pu récupérer les prévisions météo (pas de connexion à "
+                      "Open-Meteo).", None, False,
+                      wo.render("pas_de_pluie", lieu=place(region) if region else
+                                wo.word("senegal")))
+    advices = meteo.advice(fc)
+    text = meteo.summary_fr(fc)
+    if not fc.live:
+        text += f" (Hors ligne : prévisions du {fc.fetched:%d/%m à %H:%M}.)"
+    sky = "🌧️" if fc.rain7 >= 1 else "☀️"
+    hl = Highlight(f"Météo · {label(fc.region)} · 7 jours", f"{fc.tmax7:.0f}", "°C max",
+                   f"{fc.rain7:.0f} mm de pluie prévus · {fc.days[0].day:%d/%m}–"
+                   f"{fc.days[-1].day:%d/%m}", None, sky)
+    return Answer(text, f"Open-Meteo (prévisions du {fc.fetched:%d/%m à %H:%M})", True,
+                  meteo.local_text(fc, advices, wo.L()), hl)
+
+
 def _product_sheet(q: Query, kb: KnowledgeBase) -> Answer | None:
     """Culture reconnue, mais pas le reste de la question (formulation inconnue) :
     plutôt que deviner, on donne l'essentiel sur cette culture — dernier prix moyen et
@@ -450,6 +495,8 @@ def _answer(q: Query, kb: KnowledgeBase) -> Answer:
         return _advice_answer(q, kb)
     if q.intent == "technique":
         return _technique_answer(q, kb)
+    if q.intent == "meteo":
+        return _meteo_answer(q, kb)
     if q.intent == "fiche" and q.product:
         return _product_sheet(q, kb) or Answer(
             f"Je n'ai pas d'information sur le {PRODUCT_BY_KEY[q.product].label}.", None,
