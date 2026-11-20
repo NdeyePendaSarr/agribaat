@@ -106,8 +106,10 @@ def _cached(key: str, compute):
     return value
 
 
-def _ask_json(system: str, user: str, schema: dict, max_tokens: int = 2000) -> dict | None:
-    """Un appel, réponse JSON imposée par un schéma. None en cas d'échec ou de refus."""
+def _ask_json(system: str, user, schema: dict, max_tokens: int = 2000) -> dict | None:
+    """Un appel, réponse JSON imposée par un schéma. None en cas d'échec ou de refus.
+
+    `user` : texte, ou liste de blocs (image + texte) pour le diagnostic photo."""
     import anthropic
 
     try:

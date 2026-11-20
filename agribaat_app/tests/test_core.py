@@ -1011,3 +1011,47 @@ def test_llm_off_topic_question_is_declined(kb, monkeypatch):
                              "annee": 0, "sujet": "aucun", "question_fr": q}])
     res = Assistant(kb, speak=False).ask_text(q, "fr")
     assert res.intent == "hors_sujet" and not res.found and "agriculture" in res.answer_fr
+
+
+# ---------------------------------------------------------------- diagnostic photo
+def test_photo_diagnosis_drops_hypotheses_with_numbers():
+    from agribaat import diagnostic
+
+    d = diagnostic.parse_reply({
+        "photo_exploitable": True, "culture": "mil",
+        "observations": ["Taches brunes sur les feuilles", "Environ 30 % des feuilles touchées"],
+        "hypotheses": [
+            {"probleme": "Mildiou", "type": "maladie", "confiance": "moyenne",
+             "indices": "duvet blanchâtre sous les feuilles"},
+            {"probleme": "Carence", "type": "carence", "confiance": "faible",
+             "indices": "épandre 50 kg d'urée"},  # dose : écartée
+            {"probleme": "X", "type": "inconnu", "confiance": "faible", "indices": ""}],
+        "question_documents": "mildiou du mil", "conseil_photo": ""})
+    assert [h.problem for h in d.hypotheses] == ["Mildiou"] and d.dropped == 1
+    assert d.observations == ["Taches brunes sur les feuilles"]  # « 30 % » écarté
+    blurry = diagnostic.parse_reply({"photo_exploitable": False, "culture": "inconnue",
+                                     "observations": [], "hypotheses": [{"probleme": "a",
+                                     "type": "autre", "confiance": "faible", "indices": ""}],
+                                     "question_documents": "", "conseil_photo": "Plus près."})
+    assert not blurry.usable and not blurry.hypotheses and blurry.photo_tip == "Plus près."
+    assert diagnostic.parse_reply({"culture": "mil"}) is None
+
+
+@needs_data
+def test_photo_diagnosis_page(monkeypatch):
+    import numpy as np
+
+    import app
+
+    img = (np.random.default_rng(0).random((60, 80, 3)) * 255).astype("uint8")
+    assert "Diagnostic photo indisponible" in app.diag_view(img, "")  # sans clé
+    assert "Ajoutez une photo" in app.diag_view(None, "")
+    _fake_llm(monkeypatch, [
+        {"photo_exploitable": True, "culture": "mil", "observations": ["Feuilles jaunies"],
+         "hypotheses": [{"probleme": "Mildiou du mil", "type": "maladie",
+                         "confiance": "moyenne", "indices": "jaunissement en bandes"}],
+         "question_documents": "mildiou du mil", "conseil_photo": ""},
+        {"repond": False, "reponse": "", "passages_utilises": []}])
+    out = app.diag_view(img, "mil")
+    assert "Mildiou du mil" in out and "non vérifiées" in out and "conseiller agricole" in out
+    assert "Pas de fiche" in out  # documents muets : on ne conseille pas de traitement

@@ -6,6 +6,7 @@ import base64
 import html
 import importlib.util
 import logging
+import time
 import urllib.parse
 from datetime import date
 from pathlib import Path
@@ -18,7 +19,8 @@ from agribaat.answers import CATALOGUE, ICONS, fmt_month, fmt_number, fmt_period
 from agribaat.knowledge import KnowledgeBase
 from agribaat.knowledge import decade_end
 from agribaat.lexicon import PRODUCT_BY_KEY, PRODUCTS
-from agribaat import (bulletin, calendrier, carte, charts, labo, langues, llm, meteo, models,
+from agribaat import (bulletin, calendrier, carte, charts, diagnostic, labo, langues, llm, meteo,
+                      models,
                       usage, vente, warmup)
 from agribaat.carte import SenegalMap
 from agribaat.charts import area_chart
@@ -210,6 +212,7 @@ def nav_items() -> list[tuple[str, str, str]]:
              ("Impact", "📊", "Impact & tests terrain"),
              ("Climat & cultures", "🗺️", "Climat & cultures"),
              ("Prix des marchés", "📈", "Prix des marchés"), ("Où vendre", "🧭", "Où vendre ?"),
+             ("Diagnostic photo", "📷", "Diagnostic photo"),
              ("Production", "🌱", "Production")]
     items += [("Conseils", "🌦️", "Conseils de saison")] if ADVICE_READY else []
     items += [("Labo langues", "🧪", "Labo langues")] if VOICE_READY else []
@@ -821,6 +824,70 @@ def sell_view(product: str, region: str, transport: float, radius: int):
         season = ('<div class="mt-card"><p>Pas assez d\'années complètes de relevés pour '
                   f"dire quel mois vendre {html.escape(the)}.</p></div>")
     return card, rank, season
+
+
+# ---------------------------------------------------------------- diagnostic photo
+DIAG_CROPS = [("Je ne sais pas / autre", "")] + [
+    (lbl, lbl.lower()) for lbl in ("Mil", "Sorgho", "Maïs", "Riz", "Arachide", "Niébé", "Oignon",
+                                   "Manioc", "Tomate")]
+DIAG_KIND = {"maladie": "🦠 Maladie", "ravageur": "🐛 Ravageur", "carence": "🧪 Carence",
+             "manque_eau": "🏜️ Manque d'eau", "exces_eau": "💧 Excès d'eau",
+             "adventice": "🌿 Mauvaise herbe", "autre": "❔ Autre"}
+DIAG_LEVEL = {"faible": "confiance faible", "moyenne": "confiance moyenne",
+              "elevee": "confiance élevée"}
+DIAG_EMPTY = ('<div class="mt-card diag-card"><h4>📷 Ajoutez une photo</h4><p>Photographiez de '
+              "près la partie malade (feuille, tige, épi), en plein jour, sans flou. Une photo "
+              "par problème.</p></div>")
+
+
+def diag_view(image, crop: str, session: dict | None = None) -> str:
+    """Carte du diagnostic : observations, hypothèses (non vérifiées), conseils sourcés."""
+    esc = html.escape
+    if image is None:
+        return DIAG_EMPTY
+    if not llm.enabled():
+        return ('<div class="mt-card diag-card"><h4>Diagnostic photo indisponible</h4><p>Il '
+                "utilise l'IA Claude : lancer l'app avec la clé API (voir le guide de démo). "
+                f"</p><div class=\"orient\">🧑‍🌾 {esc(ORIENTATION)}</div></div>")
+    start = time.perf_counter()
+    diag = diagnostic.diagnose(image, kb, crop or None)
+    usage.log_question(canal="Photo", langue="Français", sujet="diagnostic",
+                       trouve=bool(diag and diag.usable and diag.hypotheses),
+                       temps_s=time.perf_counter() - start, session=session)
+    if diag is None:
+        return ('<div class="mt-card diag-card"><h4>Analyse impossible</h4><p>Pas de connexion '
+                "à l'IA, ou réponse refusée. Réessayez dans un instant.</p>"
+                f'<div class="orient">🧑‍🌾 {esc(ORIENTATION)}</div></div>')
+    if not diag.usable:
+        return ('<div class="mt-card diag-card alerte"><div class="cal-st">📷 Photo difficile à '
+                f"lire</div><p>{esc(diag.photo_tip or 'Reprenez la photo de plus près.')}</p></div>")
+    crop_txt = "" if diag.crop in ("autre", "inconnue") else f" · {esc(diag.crop)}"
+    obs = "".join(f"<li>{esc(o)}</li>" for o in diag.observations)
+    if diag.hypotheses:
+        hyps = "".join(
+            f'<div class="diag-hyp {h.confidence}"><b>{esc(h.problem)}</b>'
+            f"<span>{DIAG_KIND[h.kind]} · {DIAG_LEVEL[h.confidence]}</span>"
+            f"<small>{esc(h.clues)}</small></div>" for h in diag.hypotheses)
+        verdict = "🔎 Hypothèses à confirmer"
+    else:
+        hyps = "<p>Aucun symptôme net : la plante paraît saine sur cette photo.</p>"
+        verdict = "✅ Rien d'anormal visible"
+    if diag.photo_tip:
+        hyps += f'<p class="src-note">📷 {esc(diag.photo_tip)}</p>'
+    if diag.advice:
+        advice = (f'<div class="diag-adv"><h5>📚 Ce que disent nos documents</h5>'
+                  f"<p>{esc(diag.advice)}</p><div class=\"src-note\">Source : "
+                  f"{esc(' ; '.join(diag.sources))} · rédigé par l'IA, chiffres vérifiés</div></div>")
+    elif diag.hypotheses:
+        advice = ('<div class="diag-adv"><h5>📚 Ce que disent nos documents</h5><p>Pas de fiche '
+                  "sur ce problème dans nos documents (ISRA, ANACIM) : ne traitez pas sans "
+                  "l'avis d'un conseiller.</p></div>")
+    else:
+        advice = ""
+    return (f'<div class="mt-card diag-card ok"><div class="cal-st">{verdict}{crop_txt}</div>'
+            "<span class=\"achip ai\">🤖 Vu par l'IA · hypothèses non vérifiées</span>"
+            f"<h5>Ce que l'IA observe</h5><ul class=\"diag-obs\">{obs}</ul>{hyps}{advice}"
+            f'<div class="orient">🧑‍🌾 {esc(ORIENTATION)} Montrez-lui cette photo.</div></div>')
 
 
 # ---------------------------------------------------------------- bulletins & alertes
@@ -1522,6 +1589,20 @@ with gr.Blocks(title="AgriBaat", css=CSS, theme=THEME, js=APP_JS) as demo:
             comp.change(sell_view, sell_in, sell_out)
         sell_transport.release(sell_view, sell_in, sell_out)
         demo.load(sell_view, sell_in, sell_out)
+
+    with gr.Tab("📷 Diagnostic photo"):
+        gr.HTML(page_head("📷", "Diagnostic photo",
+                          "Photographiez une feuille ou un épi malade : l'IA décrit ce qu'elle "
+                          "voit, nos documents disent quoi faire, le conseiller confirme."))
+        with gr.Row(equal_height=False):
+            with gr.Column(scale=2, min_width=300):
+                diag_img = gr.Image(type="pil", sources=["upload", "webcam"],
+                                    label="Photo de la culture", height=320)
+                diag_crop = gr.Dropdown(DIAG_CROPS, value="", label="Culture (facultatif)")
+                diag_btn = gr.Button("🔎 Analyser la photo", variant="primary")
+            with gr.Column(scale=3, min_width=320):
+                diag_out = gr.HTML(DIAG_EMPTY)
+        diag_btn.click(diag_view, [diag_img, diag_crop, test_session], diag_out)
 
     with gr.Tab("🌱 Production"):
         gr.HTML(page_head("🌱", "Production agricole",

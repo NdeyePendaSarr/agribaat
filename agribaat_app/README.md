@@ -167,6 +167,16 @@ Les machines de 16 Go ou plus peuvent essayer les deux modèles plus gros, plus 
   résultats sont gardés dans `outputs/llm_cache.json` : une question déjà posée marche
   ensuite hors ligne (utile pour la démo).
 
+- **Diagnostic photo** (page « 📷 Diagnostic photo », `agribaat/diagnostic.py`, demande la
+  clé API Claude) : photo d'une feuille, d'une tige ou d'un épi (fichier ou caméra). Claude
+  dit si la photo est exploitable (sinon, comment la reprendre), décrit ce qu'il voit et
+  propose au plus 3 hypothèses (maladie, ravageur, carence, eau…) avec un niveau de
+  confiance, affichées comme **non vérifiées** ; une hypothèse ou une observation qui
+  contient un chiffre (dose, %) est écartée. La conduite à tenir vient seulement des
+  documents ISRA / ANACIM (rédaction vérifiée, comme pour l'Assistant) ; sans fiche, l'app le
+  dit et demande de ne pas traiter sans conseiller. Orientation vers le conseiller agricole
+  à chaque fois. La photo est réduite à 1 280 px et n'est pas gardée.
+
 - **Où vendre ?** (page « 🧭 Où vendre ? ») : pour un producteur d'une région, classe les
   marchés suivis par le PAM dans un rayon choisi (50 à 300 km) selon le prix net, c.-à-d. le
   dernier prix relevé moins le transport (FCFA par sac de 100 kg et par 100 km, valeur saisie

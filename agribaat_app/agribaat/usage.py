@@ -31,7 +31,9 @@ TOPICS = {"prix": "Prix des marchés", "production": "Production", "superficie":
           "rendement": "Production", "pluie": "Pluies (ANACIM)", "meteo": "Météo en direct",
           "variete": "Variétés", "conseil": "Conseils de saison",
           "technique": "Pratiques agricoles", "fiche": "Fiche d'une culture",
-          "salutation": "Salutation / aide", "": "Question non comprise"}
+          "salutation": "Salutation / aide", "vendre": "Où vendre",
+          "hors_sujet": "Hors sujet", "diagnostic": "Diagnostic photo",
+          "": "Question non comprise"}
 
 
 def _append(path: Path, fields: tuple[str, ...], row: dict) -> None:

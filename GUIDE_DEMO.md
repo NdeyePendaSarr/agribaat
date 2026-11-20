@@ -111,6 +111,7 @@ Les enregistrements restent sur la machine (ils ne sont pas envoyés sur GitHub)
 | 11 bis | Même page, ouvrir **🌱 Calendrier de semis**, choisir « Hivernage 2025 » | **Démarrage réel des pluies** : Kaffrine 02/08 → alerte semis tardif et variétés hâtives ; Saint-Louis : faux départ le 14/08 repéré ; grille des 14 régions |
 | 12 | Onglet **🗺️ Climat & cultures** | **Carte du Sénégal** : zone climatique de chaque région et cultures où son rendement dépasse la moyenne nationale (ex. Sédhiou : mil +74 %), variétés adaptées à la pluviométrie |
 | 12 bis | Menu **🧭 Où vendre ?** (arachide, Kaffrine), puis à l'Assistant en wolof : « Fan laa wara jaay sama dugub ci Kaolack ? » | **Marché le plus rentable après transport** (Ndoumbé Diop : +45 FCFA/kg, +4 500 FCFA par sac) et **meilleur mois** (septembre : +29 % par rapport à la récolte) ; bouger le curseur transport pour montrer que le conseil change |
+| 12 ter | Menu **📷 Diagnostic photo** (clé API nécessaire), envoyer la photo d'une feuille malade prise sur le terrain | L'IA **décrit ce qu'elle voit** et propose des **hypothèses non vérifiées** ; conseils tirés **uniquement des documents** ; orientation vers le conseiller. Répéter la veille avec la même photo (réponse gardée en cache) |
 
 Phrases pulaar et sereer relues et approuvées par Mouhameth et Seydina (18/11). La
 reconnaissance vocale pulaar reste expérimentale : pour la démo, préférer la question

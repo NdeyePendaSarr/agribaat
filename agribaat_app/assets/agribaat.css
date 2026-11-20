@@ -697,3 +697,22 @@ body.nav-open .nav-scrim { display: block; position: fixed; inset: 0; z-index: 9
   .sell-rank .hbar { grid-template-columns: minmax(0, 1.6fr) .7fr 80px; font-size: .8rem; gap: 6px; }
 }
 .achip.ai { background: #eef0fb; color: #3b3f8f; text-transform: none; font-weight: 700; border: 1px solid #d8dcf5; }
+
+/* 18. Diagnostic photo ----------------------------------------------------------------- */
+.diag-card { border-left: 5px solid var(--ag-rain); }
+.diag-card.ok { border-left-color: var(--ag-leaf); }
+.diag-card.alerte { border-left-color: var(--ag-clay); }
+.diag-card h5 { margin: 12px 0 6px; font-size: .95rem; color: var(--ag-forest); }
+.diag-card .achip.ai { display: inline-block; margin: 2px 0 4px; }
+.diag-obs { margin: 0 0 8px 18px; padding: 0; font-size: .9rem; line-height: 1.5; }
+.diag-hyp { display: flex; flex-direction: column; gap: 2px; padding: 9px 12px; margin: 6px 0; border-radius: 12px;
+            background: var(--ag-surface-2); border: 1px solid var(--ag-line); border-left: 4px solid var(--ag-gold); }
+.diag-hyp.elevee { border-left-color: var(--ag-clay); }
+.diag-hyp.faible { border-left-color: var(--ag-line); }
+.diag-hyp b { color: var(--ag-forest); }
+.diag-hyp span { font-size: .8rem; font-weight: 700; color: var(--ag-muted); }
+.diag-hyp small { font-size: .84rem; line-height: 1.4; }
+.diag-adv { margin-top: 10px; padding: 10px 12px; border-radius: 12px; background: var(--ag-leaf-50); }
+.diag-adv p { font-size: .9rem; line-height: 1.5; margin: 0 0 4px; }
+.block:has(.diag-card) { background: transparent !important; border: none !important;
+                         box-shadow: none !important; padding: 0 !important; }
