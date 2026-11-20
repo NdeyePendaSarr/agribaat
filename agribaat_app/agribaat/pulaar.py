@@ -95,6 +95,10 @@ T = {
     "meteo_sec": "Toɓo alaa e ndee yontere: yarnu ngesa maa sahaa kala.",
     "meteo_vent": "Henndu ina tiiɗi: wata a waɗ lekki.",
     "meteo_normal": "Alaa caɗeele asamaan e balɗe garooje ɗee.",
+    # --- Bulletin vocal et alertes (20/11) : BROUILLON, à faire relire par Mouhameth ---
+    "bulletin_intro": "Kabaruuji AgriBaat e {lieu}.",
+    "bulletin_fin": "AgriBaat: kabaruuji ɗii iwi ko e ANACIM, PAM e Open-Meteo.",
+    "alerte_intro": "Reentino, AgriBaat e {lieu}!",
 }
 
 WORDS = {"and": " e ", "days": "balɗe ", "to": " haa ", "up_to": ", haa ",

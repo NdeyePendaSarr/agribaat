@@ -54,13 +54,15 @@ SCENARIO = [
     ("7. En sereer, à l'écrit : la pluie à Mbour", "sereer", "ndoɓ no Mbour"),
     ("8. Météo en direct : prévisions à 7 jours et conseil dans la langue", "tab",
      "Météo en direct"),
-    ("9. Climat : quoi cultiver dans chaque région pour un fort rendement", "tab",
+    ("9. Bulletin vocal pour les radios et alertes climat aux abonnés", "tab",
+     "Bulletins & alertes"),
+    ("10. Climat : quoi cultiver dans chaque région pour un fort rendement", "tab",
      "Climat & cultures"),
-    ("10. Prix des marchés : prix moyen, marché le moins cher et le plus cher", "tab",
+    ("11. Prix des marchés : prix moyen, marché le moins cher et le plus cher", "tab",
      "Prix des marchés"),
-    ("11. Production : évolution nationale et par région", "tab", "Production"),
-    ("12. Conseils : variétés et pluies ANACIM", "tab", "Conseils"),
-    ("13. À propos : sources officielles, aucun chiffre inventé", "tab", "À propos"),
+    ("12. Production : évolution nationale et par région", "tab", "Production"),
+    ("13. Conseils : variétés et pluies ANACIM", "tab", "Conseils"),
+    ("14. À propos : sources officielles, aucun chiffre inventé", "tab", "À propos"),
 ]
 
 

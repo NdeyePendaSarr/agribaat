@@ -675,3 +675,44 @@ def test_weather_question_uses_the_forecast(kb, monkeypatch):
     ans = answer(q, kb)
     assert ans.found and ans.source.startswith("Open-Meteo") and "38 °C" in ans.text
     assert parse(["Il a plu combien à Mbour ?"], kb).intent == "pluie"  # le passé : ANACIM
+
+
+@needs_data
+def test_weekly_bulletin_in_three_languages(kb, monkeypatch):
+    """Bulletin : météo + prix du mil et de l'arachide, dans la langue choisie."""
+    from agribaat import bulletin, meteo
+
+    monkeypatch.setattr(meteo, "forecast", lambda region, force=False: _fake_forecast(
+        [15, 10, 5, 0, 0, 0, 0], 33))
+    for lang, opening in (("wo", "Xibaaru AgriBaat"), ("pul", "Kabaruuji AgriBaat"),
+                          ("srr", "Xibaar AgriBaat")):
+        b = bulletin.build("Kaolack", lang, kb)
+        titles = [s.title for s in b.sections]
+        assert titles[0].startswith("🌤️") and any("mil" in t for t in titles), lang
+        assert b.local.text.startswith(opening) and "FCFA" in b.local.text, lang
+    # « Saint-Louis » (météo) / « Saint Louis » (prix PAM) : les prix sont bien trouvés
+    assert len(bulletin.build("Saint-Louis", "wo", kb).sections) >= 2
+
+
+def test_alerts_subscribers_and_outbox(tmp_path, monkeypatch):
+    from agribaat import bulletin, meteo
+
+    monkeypatch.setattr(bulletin, "SUBSCRIBERS", tmp_path / "abonnes.csv")
+    monkeypatch.setattr(bulletin, "OUTBOX_DIR", tmp_path / "envois")
+    hot, calm = _fake_forecast([0] * 7, 38), _fake_forecast([0] * 7, 30)
+    hot.region, calm.region = "Kaolack", "Dakar"
+    monkeypatch.setattr(meteo, "all_forecasts", lambda force=False: {"Kaolack": hot,
+                                                                     "Dakar": calm})
+    alerts = bulletin.current_alerts()
+    assert [a.region for a in alerts] == ["Kaolack"]
+    assert bulletin.alert_text(alerts[0], "wo").text.startswith("Artu AgriBaat ci Kaolack")
+
+    bulletin.subscribe("GIE Ndimbal", "Organisation de producteurs", "Kaolack", "pul",
+                       "WhatsApp")
+    bulletin.subscribe("Radio Dakar", "Radio communautaire", "Dakar", "wo", "Radio")
+    assert len(bulletin.subscribers()) == 2
+    path, rows = bulletin.prepare_outbox()
+    assert path.exists() and len(rows) == 1  # seul l'abonné de Kaolack est en alerte
+    assert rows[0]["destinataire"] == "GIE Ndimbal" and "Reentino" in rows[0]["message"]
+    bulletin.unsubscribe(0)
+    assert [s["nom"] for s in bulletin.subscribers()] == ["Radio Dakar"]

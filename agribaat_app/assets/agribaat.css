@@ -591,6 +591,26 @@ body.nav-open .nav-scrim { display: block; position: fixed; inset: 0; z-index: 9
   .mt-temp { font-size: 2.4rem; }
 }
 
+/* 14. Bulletins vocaux & alertes ---------------------------------------------------- */
+.bl-card { border-left: 5px solid var(--ag-gold); }
+.bl-head { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+.bl-head > span { width: 46px; height: 46px; border-radius: 14px; display: flex; align-items: center;
+                  justify-content: center; font-size: 1.5rem; background: var(--ag-gold-50); }
+.bl-head h4 { margin: 0; }
+.bl-head small { color: var(--ag-muted); font-weight: 600; }
+.bl-sec { padding: 10px 12px; margin: 8px 0; background: var(--ag-surface-2); border-radius: 12px;
+          border: 1px solid var(--ag-line); }
+.bl-sec h5 { margin: 0 0 4px; font-size: .82rem; font-weight: 800; color: var(--ag-forest);
+             text-transform: uppercase; letter-spacing: .04em; }
+.bl-local { margin: 0 0 4px; font-weight: 700; color: var(--ag-forest); line-height: 1.5; }
+.bl-fr { margin: 0; font-size: .86rem; color: var(--ag-muted); line-height: 1.45; }
+.al-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 8px; margin-top: 10px; }
+.al-reg { display: flex; flex-direction: column; gap: 4px; padding: 10px 12px; border-radius: 12px;
+          background: linear-gradient(90deg, var(--ag-clay-50), #fff 70%); border: 1px solid #f1d3c4;
+          border-left: 4px solid var(--ag-clay); }
+.al-reg b { color: var(--ag-forest); font-size: .92rem; }
+.al-reg span { font-size: .8rem; font-weight: 700; color: var(--ag-clay); }
+
 /* 11. Accessibilité : mouvement réduit ------------------------------------------- */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }

@@ -144,6 +144,13 @@ Les machines de 16 Go ou plus peuvent essayer les deux modèles plus gros, plus 
   dernières prévisions (outputs/meteo_cache.json) sont utilisées, avec leur date.
   Phrases météo locales : brouillon à faire relire (wolof.py, pulaar.py).
 
+- **Bulletins vocaux & alertes** (page « Bulletins & alertes ») : bulletin audio de la semaine
+  par région et par langue (météo + prix du mil et de l'arachide + sources), enregistré dans
+  `outputs/bulletins/` pour une radio communautaire ou un groupe WhatsApp ; régions en alerte
+  (forte pluie, chaleur sèche, vent fort, récoltes) ; abonnés (OP, radio, producteur) gardés
+  localement avec leur accord ; messages d'alerte préparés dans `outputs/envois/`. L'envoi réel
+  par SMS / WhatsApp demande un compte opérateur (Africa's Talking, Twilio…), à brancher.
+
 Produits : mil, sorgho, maïs, riz, arachide, niébé, oignon, manioc, fonio.
 
 ### Enrichir le vocabulaire des langues locales (sans toucher au code)

@@ -104,6 +104,10 @@ T = {
     "meteo_sec": "Du am taw ci ayu-bés bii: ndoxal sa tool saa su nekk.",
     "meteo_vent": "Ngelaw li dafa bari: bul def garab.",
     "meteo_normal": "Amul benn jafe-jafe ci asamaan bi ci fan yii di ñëw.",
+    # --- Bulletin vocal et alertes (20/11) : BROUILLON, à faire relire ---
+    "bulletin_intro": "Xibaaru AgriBaat ci {lieu}.",
+    "bulletin_fin": "AgriBaat: xibaar yi jóge nañu ci ANACIM, PAM ak Open-Meteo.",
+    "alerte_intro": "Artu AgriBaat ci {lieu}!",
 }
 
 # Petits mots utilisés pour assembler les listes et les fiches variétés.

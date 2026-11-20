@@ -79,6 +79,10 @@ T = {
     # « pluie_lieu ». Les phrases de conseil sereer restent à écrire par Seydina. ---
     "meteo_resume": "No fan 7 ({lieu}): ndoɓ {mm}, {tmax}.",
     "meteo_resume_sec": "No fan 7 ({lieu}): {tmax}.",
+    # --- Bulletin et alertes (20/11) : BROUILLON, à faire relire par Seydina ---
+    "bulletin_intro": "Xibaar AgriBaat no {lieu}.",
+    "bulletin_fin": "AgriBaat: ANACIM, PAM, Open-Meteo.",
+    "alerte_intro": "AgriBaat no {lieu}:",
 }
 
 WORDS = {"and": " na ", "days": "fan ", "to": "–", "up_to": ", haa ",

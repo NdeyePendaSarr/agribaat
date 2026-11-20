@@ -17,7 +17,7 @@ from agribaat.answers import CATALOGUE, fmt_month, fmt_number, fmt_period, place
 from agribaat.knowledge import KnowledgeBase
 from agribaat.knowledge import decade_end
 from agribaat.lexicon import PRODUCT_BY_KEY, PRODUCTS
-from agribaat import carte, labo, langues, meteo, models, warmup
+from agribaat import bulletin, carte, labo, langues, meteo, models, warmup
 from agribaat.carte import SenegalMap
 from agribaat.charts import area_chart
 from agribaat.pipeline import Assistant, Result
@@ -204,6 +204,7 @@ def hero_html() -> str:
 def nav_items() -> list[tuple[str, str, str]]:
     """(texte de l'onglet, icône, libellé du menu), dans l'ordre des onglets."""
     items = [("Assistant", "🎙️", "Assistant vocal"), ("Météo en direct", "🌤️", "Météo en direct"),
+             ("Bulletins & alertes", "📻", "Bulletins & alertes"),
              ("Climat & cultures", "🗺️", "Climat & cultures"),
              ("Prix des marchés", "📈", "Prix des marchés"), ("Production", "🌱", "Production")]
     items += [("Conseils", "🌦️", "Conseils de saison")] if ADVICE_READY else []
@@ -685,6 +686,93 @@ def meteo_listen(region: str, lang: str):
     return labo.synthesize(langue.labo_key, text)
 
 
+# ---------------------------------------------------------------- bulletins & alertes
+SUB_TYPES = ["Organisation de producteurs", "Radio communautaire", "Producteur", "Conseiller"]
+SUB_CHANNELS = ["WhatsApp", "SMS", "Appel vocal", "Radio"]
+OUTBOX_COLS = ["Destinataire", "Canal", "Contact", "Région", "Langue", "Message (langue locale)",
+               "Message (français)"]
+
+
+def on_bulletin(region: str, lang: str):
+    """Script du bulletin + fichier audio (wolof, pulaar). Sereer : texte seulement."""
+    b = bulletin.build(region or "Kaolack", lang, kb)
+    langue = langues.get(lang)
+    blocks = "".join(
+        f'<div class="bl-sec"><h5>{html.escape(s.title)}</h5>'
+        f'<p class="bl-local">« {html.escape(s.local.text if s.local else "")} »</p>'
+        f'<p class="bl-fr">{html.escape(s.fr)}</p></div>' for s in b.sections)
+    script = (f'<div class="mt-card bl-card"><div class="bl-head"><span>📻</span><div><h4>'
+              f"Bulletin AgriBaat · {carte.label(b.region)}</h4><small>{b.made:%d/%m/%Y} · "
+              f"{langue.label}</small></div></div>{blocks}"
+              '<div class="draft">Phrases d’ouverture, de clôture et de météo en brouillon : '
+              "à faire relire par un locuteur natif. Les phrases de prix sont déjà relues."
+              "</div></div>")
+    audio = None
+    if VOICE_READY and langue.voice_out:
+        path = bulletin.record(b)
+        audio = str(path) if path else None
+    return script, audio
+
+
+def alerts_html() -> str:
+    alerts = bulletin.current_alerts()
+    if not alerts:
+        return ('<div class="mt-card"><h4>✅ Aucune alerte en cours</h4><p>Les prévisions des '
+                "7 prochains jours ne déclenchent aucune alerte.</p></div>")
+    cards = "".join(
+        f'<div class="al-reg"><b>{carte.label(a.region)}</b>'
+        + "".join(f'<span title="{html.escape(x.text)}">{x.icon} {html.escape(x.title)}</span>'
+                  for x in a.advices) + "</div>" for a in alerts)
+    return (f'<div class="mt-card"><h4>🚨 {len(alerts)} région(s) en alerte</h4>'
+            f'<div class="al-grid">{cards}</div><div class="src-note">Prévisions Open-Meteo, '
+            "règles de conseil de la page Météo en direct.</div></div>")
+
+
+def subscribers_table():
+    rows = bulletin.subscribers()
+    return pd.DataFrame([{"Nom": r["nom"], "Type": r["type"], "Région": carte.label(r["region"]),
+                          "Langue": langues.get(r["langue"]).label, "Canal": r["canal"],
+                          "Inscrit le": r["inscrit_le"]} for r in rows],
+                        columns=["Nom", "Type", "Région", "Langue", "Canal", "Inscrit le"])
+
+
+def sub_choices():
+    return gr.Dropdown(choices=[(f"{r['nom']} · {carte.label(r['region'])}", i)
+                                for i, r in enumerate(bulletin.subscribers())], value=None)
+
+
+def on_subscribe(nom, kind, region, lang, canal, contact, consent):
+    if not (nom or "").strip():
+        gr.Warning("Indiquez un nom (personne, OP ou radio).")
+    elif not consent:
+        gr.Warning("L’accord de la personne est nécessaire pour l’inscrire.")
+    else:
+        bulletin.subscribe(nom, kind, region, lang, canal, contact or "")
+        gr.Info(f"{nom.strip()} est inscrit(e) aux alertes.")
+    return subscribers_table(), sub_choices()
+
+
+def on_unsubscribe(index):
+    if index is not None:
+        bulletin.unsubscribe(int(index))
+    return subscribers_table(), sub_choices()
+
+
+def on_outbox():
+    path, rows = bulletin.prepare_outbox()
+    if not rows:
+        return ('<div class="mt-card"><b>Aucun message à envoyer</b><p>Aucun abonné ne se trouve '
+                "dans une région en alerte.</p></div>"), pd.DataFrame(columns=OUTBOX_COLS)
+    note = (f'<div class="mt-card"><b>📤 {len(rows)} message(s) prêt(s)</b><p>Fichier : '
+            f"<code>outputs/envois/{path.name}</code>. Envoi réel : à brancher sur un "
+            "opérateur SMS / WhatsApp (Africa’s Talking, Twilio…) avec vos propres clés."
+            "</p></div>")
+    return note, pd.DataFrame(rows).rename(columns={
+        "destinataire": "Destinataire", "canal": "Canal", "contact": "Contact",
+        "region": "Région", "langue": "Langue", "message": "Message (langue locale)",
+        "message_fr": "Message (français)"})
+
+
 # ---------------------------------------------------------------- carte climat
 SN_MAP = SenegalMap(kb.regional, kb.varieties, kb.rain)
 MAP_MODES = [("🌾 Cultures à fort rendement", "best"), ("🌦️ Zones climatiques", "zones"),
@@ -1021,6 +1109,59 @@ with gr.Blocks(title="AgriBaat", css=CSS, theme=THEME, js=APP_JS) as demo:
         mt_refresh.click(lambda r, l: meteo_view(r, l, force=True), [mt_region, mt_lang], mt_out)
         mt_listen.click(meteo_listen, [mt_region, mt_lang], mt_audio)
         demo.load(meteo_view, [mt_region, mt_lang], mt_out)
+
+    with gr.Tab("📻 Bulletins & alertes"):
+        gr.HTML(page_head("📻", "Bulletins vocaux & alertes climat",
+                          "Un bulletin audio par région et par langue, prêt à diffuser à la "
+                          "radio ou sur WhatsApp, et des alertes préparées pour les abonnés."))
+        with gr.Accordion("📻 Bulletin vocal de la semaine", open=True):
+            with gr.Row(elem_classes="toolbar"):
+                bl_region = gr.Dropdown(MAP_REGIONS, value="Kaolack", label="Région")
+                bl_lang = gr.Radio(METEO_LANGS, value="wo", label="Langue")
+                bl_go = gr.Button("🎙️ Générer le bulletin", variant="primary", scale=0,
+                                  min_width=190)
+            with gr.Row(equal_height=False):
+                with gr.Column(scale=3, min_width=320):
+                    bl_script = gr.HTML('<div class="mt-card"><p>Choisissez une région et une '
+                                        "langue, puis « Générer le bulletin ». La lecture à "
+                                        "voix haute peut prendre une à deux minutes.</p></div>")
+                with gr.Column(scale=2, min_width=260):
+                    bl_audio = gr.Audio(label="Bulletin audio (à télécharger et diffuser)",
+                                        type="filepath", visible=VOICE_READY)
+            bl_go.click(on_bulletin, [bl_region, bl_lang], [bl_script, bl_audio])
+        with gr.Accordion("🚨 Alertes climat", open=True):
+            al_now = gr.HTML()
+            with gr.Row(equal_height=False):
+                with gr.Column(scale=2, min_width=280):
+                    gr.HTML('<div class="sn-sub">Inscrire un abonné</div>')
+                    sub_name = gr.Textbox(label="Nom (personne, OP ou radio)")
+                    sub_kind = gr.Dropdown(SUB_TYPES, value=SUB_TYPES[0], label="Type")
+                    sub_region = gr.Dropdown(MAP_REGIONS, value="Kaolack", label="Région")
+                    sub_lang = gr.Radio(METEO_LANGS, value="wo", label="Langue")
+                    sub_canal = gr.Radio(SUB_CHANNELS, value="WhatsApp", label="Canal")
+                    sub_contact = gr.Textbox(label="Contact (facultatif)",
+                                             placeholder="numéro ou nom du groupe")
+                    sub_ok = gr.Checkbox(label="La personne a donné son accord pour recevoir "
+                                               "les alertes")
+                    sub_btn = gr.Button("➕ Inscrire", variant="primary")
+                with gr.Column(scale=3, min_width=320):
+                    gr.HTML('<div class="sn-sub">Abonnés</div>')
+                    sub_table = gr.Dataframe(interactive=False, max_height=280)
+                    with gr.Row():
+                        sub_pick = gr.Dropdown(label="Retirer un abonné", choices=[], scale=3)
+                        sub_del = gr.Button("Retirer", variant="secondary", scale=1)
+                    al_send = gr.Button("📤 Préparer les messages d’alerte", variant="primary")
+                    al_note = gr.HTML()
+                    al_outbox = gr.Dataframe(interactive=False, max_height=280, wrap=True)
+            gr.HTML('<div class="src-note">Les abonnés sont enregistrés uniquement sur cet '
+                    "ordinateur (outputs/abonnes.csv), avec leur accord. Rien n’est envoyé "
+                    "automatiquement.</div>")
+            sub_btn.click(on_subscribe, [sub_name, sub_kind, sub_region, sub_lang, sub_canal,
+                                         sub_contact, sub_ok], [sub_table, sub_pick])
+            sub_del.click(on_unsubscribe, sub_pick, [sub_table, sub_pick])
+            al_send.click(on_outbox, None, [al_note, al_outbox])
+        demo.load(lambda: (alerts_html(), subscribers_table(), sub_choices()), None,
+                  [al_now, sub_table, sub_pick])
 
     with gr.Tab("🗺️ Climat & cultures"):
         gr.HTML(page_head("🗺️", "Quoi cultiver, et où ?",
