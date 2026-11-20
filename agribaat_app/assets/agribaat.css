@@ -38,92 +38,126 @@
   --ab-mint: var(--ag-leaf-50); --ab-line: var(--ag-line);
 }
 
-/* 2. Page --------------------------------------------------------------------- */
+/* 2. Coquille de l'application : menu latéral + espace de travail -------------- */
+:root { --ag-side: 256px; --ag-bg: #f3f5f1; }
 html { scroll-behavior: smooth; overflow-x: hidden; }
-body, gradio-app, .gradio-container, .gradio-container > .main, .app, .contain {
-  background: transparent !important;
-}
+body, gradio-app { background: var(--ag-bg) !important; }
+.gradio-container, .gradio-container > .main, .app, .contain { background: transparent !important; }
 body { color: var(--ag-ink); }
 .gradio-container, .gradio-container * { font-family: var(--ag-font); }
 .gradio-container {
-  max-width: 1200px !important; width: 100% !important; min-width: 0 !important;
-  margin: auto; padding-bottom: 40px !important;
+  max-width: none !important; width: auto !important; min-width: 0 !important;
+  /* Gradio réécrit les règles des media queries qui visent ce conteneur : la marge du menu
+     est donc calculée sans media query (256 px au-delà de 900 px de large, 0 en dessous). */
+  margin: 0 0 0 max(0px, min(var(--ag-side), (100vw - 900px) * 1000)) !important;
+  padding: 0 max(12px, min(28px, (100vw - 900px) * 1000)) 40px !important;
 }
+.gradio-container > .main, .gradio-container .contain { max-width: 1240px; margin: 0 auto; }
+main.app, .gradio-container .wrap:has(> .contain), .gradio-container .contain { min-width: 0 !important; width: 100% !important; }
+.gradio-container .wrap:has(> .contain), main.app { padding-left: 0 !important; padding-right: 0 !important; }
 .gradio-container .row > *, .gradio-container .column, .gradio-container .block,
 .gradio-container .form { min-width: 0; }
 footer { display: none !important; }
 ::selection { background: var(--ag-gold); color: var(--ag-forest); }
+#sidenav-host, #topbar-host { padding: 0 !important; border: none !important; background: transparent !important;
+                              box-shadow: none !important; min-height: 0 !important; }
 
-/* 3. Navigation : barre collante en pilules ------------------------------------ */
-.tab-wrapper, [role=tablist] {
-  position: sticky; top: 8px; z-index: 50;
+/* Menu latéral */
+.sidenav {
+  position: fixed; inset: 0 auto 0 0; width: var(--ag-side); z-index: 100;
+  display: flex; flex-direction: column; gap: 4px; padding: 22px 16px 18px;
+  background: linear-gradient(180deg, #0e3b2c 0%, #0b2f23 100%); color: #e4efe8;
+  box-shadow: 4px 0 24px rgba(14, 59, 44, .18); overflow-y: auto;
 }
-[role=tablist] {
-  display: flex; gap: 4px; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none;
-  background: rgba(255, 255, 255, .94); border: 1px solid var(--ag-line);
-  border-radius: 999px; padding: 5px !important; margin: 14px 0 16px !important;
-  box-shadow: var(--ag-shadow);
-}
-[role=tablist]::-webkit-scrollbar { display: none; }
-[role=tablist] button {
-  flex: 0 0 auto; white-space: nowrap; border: none !important; border-radius: 999px !important;
-  padding: 9px 16px !important; font-weight: 600; font-size: .92rem; color: var(--ag-muted) !important;
-  background: transparent !important; transition: background .2s var(--ag-ease), color .2s;
-}
-[role=tablist] button:hover { background: var(--ag-leaf-50) !important; color: var(--ag-forest) !important; }
-[role=tablist] button[aria-selected=true] {
-  background: var(--ag-forest) !important; color: #fff !important;
-  box-shadow: 0 4px 12px rgba(14, 59, 44, .25);
-}
-[role=tablist] button[aria-selected=true]::after { display: none !important; }
-/* Menu « ⋯ » (onglets qui ne tiennent pas sur un petit écran) */
-.overflow-menu > button { width: 42px; height: 42px; border-radius: 50% !important; background: #fff !important;
-                          border: 1px solid var(--ag-line) !important; box-shadow: var(--ag-shadow); color: var(--ag-forest); }
-.overflow-dropdown { background: #fff !important; border: 1px solid var(--ag-line) !important; border-radius: 16px !important;
-                     box-shadow: var(--ag-shadow-lg) !important; padding: 6px !important; min-width: 210px; }
-.overflow-dropdown button { display: block; width: 100%; text-align: left; padding: 11px 12px !important;
-                            border-radius: 10px !important; font-weight: 600; color: var(--ag-forest); }
-.overflow-dropdown button:hover { background: var(--ag-leaf-50) !important; }
+.sidenav .brand { display: flex; align-items: center; gap: 12px; padding: 4px 8px 18px;
+                  border-bottom: 1px solid rgba(255, 255, 255, .08); margin-bottom: 8px; }
+.sidenav .logo { width: 44px; height: 44px; border-radius: 14px; display: flex; align-items: center;
+                 justify-content: center; font-size: 1.5rem; background: var(--ag-gold);
+                 box-shadow: 0 6px 16px rgba(227, 165, 43, .35); }
+.sidenav .brand b { display: block; color: #fff; font-size: 1.2rem; font-weight: 800; letter-spacing: -.01em; }
+.sidenav .brand small { color: #9fc3ae; font-size: .76rem; }
+.side-sec { font-size: .68rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase;
+            color: #7fa792; padding: 14px 10px 6px; }
+.sidenav nav { display: flex; flex-direction: column; gap: 3px; }
+.side-link { display: flex; align-items: center; gap: 12px; padding: 11px 12px; border-radius: 12px;
+             color: #cfe1d6 !important; text-decoration: none !important; font-weight: 600; font-size: .93rem;
+             transition: background .18s var(--ag-ease), color .18s, transform .18s var(--ag-ease); position: relative; }
+.side-link .sl-ico { width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center;
+                     justify-content: center; background: rgba(255, 255, 255, .06); font-size: 1.05rem; flex: 0 0 auto; }
+.side-link span { color: inherit !important; }
+.side-link:hover { background: rgba(255, 255, 255, .07); color: #fff !important; transform: translateX(2px); }
+.side-link.active { background: #fff; color: var(--ag-forest) !important; box-shadow: 0 6px 18px rgba(0, 0, 0, .18); }
+.side-link.active .sl-ico { background: var(--ag-gold-50); }
+.side-link.active::before { content: ""; position: absolute; left: -16px; top: 10px; bottom: 10px; width: 4px;
+                            border-radius: 0 4px 4px 0; background: var(--ag-gold); }
+.side-langs { display: flex; flex-wrap: wrap; gap: 6px; padding: 2px 8px; }
+.side-langs span { font-size: .74rem; font-weight: 700; color: #e4efe8; background: rgba(255, 255, 255, .07);
+                   border: 1px solid rgba(255, 255, 255, .1); border-radius: 999px; padding: 4px 10px; }
+.side-foot { margin-top: auto; display: flex; flex-direction: column; gap: 2px; padding: 14px;
+             border-radius: 14px; background: rgba(227, 165, 43, .12); border: 1px solid rgba(227, 165, 43, .3); }
+.side-foot b { color: var(--ag-gold); font-size: .85rem; }
+.side-foot span { color: #fff; font-size: .82rem; font-weight: 600; }
+.side-foot small { color: #9fc3ae; font-size: .72rem; line-height: 1.4; margin-top: 4px; }
+.nav-scrim { display: none; }
+/* Tiroir ouvert (téléphone) : hors media query, car Gradio réécrit les sélecteurs « body ». */
+body.nav-open .sidenav { transform: none !important; }
+body.nav-open .nav-scrim { display: block; position: fixed; inset: 0; z-index: 90; background: rgba(10, 30, 22, .45); }
+
+/* Barre du haut */
+#topbar-host { position: sticky; top: 0; z-index: 40; }
+#topbar-host .html-container, #sidenav-host .html-container, #topbar-host .prose { padding: 0 !important; overflow: visible !important; }
+.topbar { display: flex; align-items: center; gap: 14px; margin: 14px 0 18px; padding: 12px 18px;
+          background: rgba(255, 255, 255, .92); border: 1px solid var(--ag-line); border-radius: var(--ag-radius);
+          box-shadow: var(--ag-shadow-sm); }
+.topbar .crumb { font-size: .9rem; color: var(--ag-muted); }
+.topbar .crumb span { margin: 0 6px; color: #b8b2a3; }
+.topbar .crumb b { color: var(--ag-forest); font-weight: 800; font-size: 1.05rem; }
+.topbar .tb-right { margin-left: auto; display: flex; gap: 8px; }
+.tb-pill { font-size: .78rem; font-weight: 700; color: var(--ag-forest); background: #fff;
+           border: 1px solid var(--ag-line); border-radius: 999px; padding: 6px 12px; white-space: nowrap; }
+.tb-pill.on { color: var(--ag-leaf-600); background: var(--ag-leaf-50); border-color: var(--ag-leaf-100); }
+.nav-toggle { display: none; width: 40px; height: 40px; border-radius: 12px; border: 1px solid var(--ag-line);
+              background: #fff; font-size: 1.2rem; color: var(--ag-forest); cursor: pointer; }
+
+/* Onglets Gradio : moteur caché, piloté par le menu latéral (mesure conservée hors écran) */
+.tab-wrapper { position: fixed !important; left: -10000px !important; top: 0; width: 1600px !important;
+               height: 1px; overflow: hidden; }
+/* Les pages ne s'élargissent jamais au-delà de l'écran : les tableaux défilent dans leur cadre */
+.tabs, .tabitem { min-width: 0 !important; max-width: 100%; }
+.tabitem table:not(.vtable) { display: block; max-width: 100%; overflow-x: auto; }
 .tabitem { border: none !important; padding: 0 !important; background: transparent !important;
            animation: ag-enter .35s var(--ag-ease); }
 @keyframes ag-enter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 
-/* 4. En-tête : bannière photo -------------------------------------------------- */
-.block:has(#hero), .prose:has(#hero) {
-  background: transparent !important; border: none !important; box-shadow: none !important;
-  padding: 0 !important;
-}
-#hero {
-  position: relative; overflow: hidden; min-height: 290px; display: flex; align-items: flex-end;
-  border-radius: var(--ag-radius-lg); margin-top: 6px;
-  background: linear-gradient(95deg, rgba(14, 59, 44, .88) 0%, rgba(14, 59, 44, .58) 40%,
-                              rgba(14, 59, 44, .05) 72%);
-}
-#hero .hero-art, #hero .hero-veil { display: none; }
-#hero .hero-text { position: relative; padding: 26px 32px 22px; max-width: 640px; }
-#hero .event {
-  display: inline-flex; align-items: center; gap: 6px; font-size: .75rem; font-weight: 700;
-  letter-spacing: .04em; text-transform: uppercase; color: var(--ag-forest);
-  background: var(--ag-gold); border-radius: 999px; padding: 4px 12px; margin-bottom: 10px;
-}
-#hero .event::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--ag-forest); }
-#hero h1 {
-  color: #fff; font-size: 2.6rem; font-weight: 800; letter-spacing: -.02em; margin: 0;
-  text-shadow: 0 2px 14px rgba(0, 0, 0, .35);
-}
-#hero .tag { display: block; background: none; padding: 0; border-radius: 0;
-             color: #fdf4e1; font-weight: 600; font-size: 1.05rem; margin: 2px 0 16px;
-             text-shadow: 0 1px 8px rgba(0, 0, 0, .4); }
-#hero .figs { display: flex; flex-wrap: wrap; gap: 10px; }
-#hero .fig {
-  display: flex; flex-direction: column; min-width: 112px; padding: 8px 14px;
-  background: rgba(255, 255, 255, .16); border: 1px solid rgba(255, 255, 255, .32);
-  border-radius: 14px; transition: transform .2s var(--ag-ease), background .2s;
-}
-#hero .fig:hover { transform: translateY(-2px); background: rgba(255, 255, 255, .24); }
-#hero .fig b { color: #fff; font-size: 1.08rem; font-weight: 800; white-space: nowrap; }
-#hero .fig small { color: #d9f2c9; font-size: .74rem; }
-#hero .src { color: rgba(255, 255, 255, .75); font-size: .74rem; margin: 14px 0 0; }
+/* 3. Accueil : bienvenue + tuiles ---------------------------------------------- */
+.block:has(#hero), .prose:has(#hero) { background: transparent !important; border: none !important;
+                                        box-shadow: none !important; padding: 0 !important; }
+.dash-head { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 16px; margin-bottom: 16px; }
+.dash-head .welcome { position: relative; min-height: 230px; border-radius: var(--ag-radius-lg);
+                      padding: 26px 28px; display: flex; flex-direction: column; justify-content: flex-end;
+                      background-color: var(--ag-forest); background-size: cover; background-position: center 30%;
+                      box-shadow: var(--ag-shadow-lg); overflow: hidden; }
+.dash-head .event { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; font-size: .72rem;
+                    font-weight: 800; letter-spacing: .05em; text-transform: uppercase; color: var(--ag-forest);
+                    background: var(--ag-gold); border-radius: 999px; padding: 4px 12px; margin-bottom: 10px; }
+.dash-head h1 { color: #fff; font-size: 2.4rem; font-weight: 800; letter-spacing: -.02em; margin: 0;
+                text-shadow: 0 2px 14px rgba(0, 0, 0, .35); }
+.dash-head .tag { display: block; background: none; padding: 0; color: #fdf4e1; font-weight: 600; font-size: 1.02rem;
+                  margin: 4px 0 10px; text-shadow: 0 1px 8px rgba(0, 0, 0, .4); }
+.dash-head .src { color: rgba(255, 255, 255, .78); font-size: .76rem; margin: 0; }
+.dash-head .tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.tile { display: flex; align-items: center; gap: 14px; background: #fff; border: 1px solid var(--ag-line);
+        border-radius: var(--ag-radius); padding: 16px; box-shadow: var(--ag-shadow-sm);
+        transition: transform .2s var(--ag-ease), box-shadow .2s; }
+.tile:hover { transform: translateY(-3px); box-shadow: var(--ag-shadow); }
+.tile .t-ico { width: 48px; height: 48px; border-radius: 14px; display: flex; align-items: center; justify-content: center;
+               font-size: 1.45rem; flex: 0 0 auto; }
+.tile b { display: block; white-space: nowrap; font-size: 1.15rem; font-weight: 800; color: var(--ag-forest); letter-spacing: -.01em; line-height: 1.2; }
+.tile small { color: var(--ag-muted); font-size: .8rem; font-weight: 600; }
+.tile.gold .t-ico { background: var(--ag-gold-50); }
+.tile.rain .t-ico { background: var(--ag-rain-50); }
+.tile.leaf .t-ico { background: var(--ag-leaf-50); }
+.tile.forest .t-ico { background: #e7eeea; }
 
 /* 5. Composants communs -------------------------------------------------------- */
 /* En-tête de page (chaque onglet) */
@@ -144,6 +178,9 @@ footer { display: none !important; }
 .toolbar { background: rgba(255, 255, 255, .96) !important; border: 1px solid var(--ag-line) !important;
            border-radius: var(--ag-radius) !important; padding: 10px 12px !important;
            box-shadow: var(--ag-shadow-sm); gap: 10px !important; margin-bottom: 12px; }
+/* Filtres : passent à la ligne sur petit écran au lieu d'élargir la page */
+.toolbar { flex-wrap: wrap !important; }
+.toolbar > * { flex: 1 1 160px !important; min-width: 0 !important; }
 
 /* Blocs Gradio : surfaces blanches homogènes */
 .gradio-container .block { border-color: var(--ag-line) !important; border-radius: var(--ag-radius) !important; }
@@ -228,8 +265,8 @@ footer { display: none !important; }
 #lang-toggle { padding: 0 !important; background: transparent !important; border: none !important; }
 #lang-toggle .wrap { gap: 4px; flex-wrap: wrap; justify-content: flex-end; background: rgba(255, 255, 255, .94);
                      border: 1px solid var(--ag-line); border-radius: 999px; padding: 4px; }
-#lang-toggle label { border: none !important; border-radius: 999px !important; font-weight: 700; font-size: .88rem;
-                     padding: 8px 14px !important; background: transparent !important; color: var(--ag-muted) !important;
+#lang-toggle label { border: none !important; border-radius: 999px !important; font-weight: 700; font-size: .84rem;
+                     padding: 7px 11px !important; background: transparent !important; color: var(--ag-muted) !important;
                      transition: background .2s var(--ag-ease), color .2s; cursor: pointer; }
 #lang-toggle label:hover { color: var(--ag-forest) !important; background: var(--ag-leaf-50) !important; }
 #lang-toggle label.selected { background: var(--ag-leaf) !important; color: #fff !important;
@@ -382,21 +419,30 @@ footer { display: none !important; }
 .about ul { margin: 6px 0 0 18px; }
 .about li { margin: 3px 0; }
 
-/* 10. Téléphone ------------------------------------------------------------------ */
+/* 10. Tablette et téléphone -------------------------------------------------------- */
+@media (max-width: 1100px) {
+  .dash-head { grid-template-columns: 1fr; }
+}
+@media (max-width: 900px) {
+  /* Le menu latéral devient un tiroir, ouvert par le bouton ☰ de la barre du haut. */
+  .sidenav { transform: translateX(-105%); transition: transform .28s var(--ag-ease); width: 280px; }
+  .side-link.active::before { display: none; }
+  .nav-toggle { display: inline-flex; align-items: center; justify-content: center; }
+  .topbar { margin: 10px 0 12px; padding: 8px 10px; }
+}
 @media (max-width: 640px) {
-  .gradio-container { padding: 0 10px 30px !important; }
-  #hero { min-height: 200px; border-radius: 18px;
-          background: linear-gradient(180deg, rgba(14, 59, 44, .1) 0%, rgba(14, 59, 44, .88) 72%); }
-  #hero .hero-text { padding: 14px 16px 14px; }
-  #hero .event { display: none; }
-  #hero h1 { font-size: 1.6rem; }
-  #hero .tag { font-size: .86rem; margin-bottom: 10px; }
-  #hero .fig { min-width: 0; padding: 6px 10px; }
-  #hero .fig b { font-size: .9rem; }
-  #hero .fig:nth-child(n+3), #hero .src { display: none; }
-  [role=tablist] { top: 4px; margin: 10px 0 12px !important; padding: 4px !important; }
-  /* mêmes tailles pour la mesure cachée de Gradio : plus d'onglets tiennent à l'écran */
-  .tab-wrapper .tab-container button { padding: 7px 10px !important; font-size: .8rem !important; }
+  .topbar .tb-pill:not(.on) { display: none; }
+  .topbar .crumb { font-size: .82rem; }
+  .dash-head .welcome { min-height: 170px; padding: 18px; }
+  .dash-head .event { display: none; }
+  .dash-head h1 { font-size: 1.6rem; }
+  .dash-head .tag { font-size: .86rem; }
+  .dash-head .src { display: none; }
+  .dash-head .tiles { gap: 8px; }
+  .tile { padding: 10px; gap: 10px; }
+  .tile .t-ico { width: 38px; height: 38px; font-size: 1.15rem; border-radius: 11px; }
+  .tile b { font-size: 1rem; }
+  .tile small { font-size: .72rem; }
   .page-head { padding: 10px 12px; }
   .page-head .ph-ico { width: 38px; height: 38px; font-size: 1.2rem; }
   .page-head h2 { font-size: 1.05rem; }

@@ -140,10 +140,9 @@ CSS = (ASSETS / "agribaat.css").read_text(encoding="utf-8")
 BACKGROUND = ASSETS / "fond_agricole.webp"
 if BACKGROUND.exists():
     _bg = "data:image/webp;base64," + base64.b64encode(BACKGROUND.read_bytes()).decode()
-    # Photo vive en haut (bannière), voile sable en bas pour un contenu calme et lisible.
-    CSS += ("body::before {content: \"\"; position: fixed; inset: 0; z-index: -1; background:"
-            " linear-gradient(180deg, rgba(247,242,232,0) 0%, rgba(247,242,232,.25) 40%,"
-            " rgba(247,242,232,.85) 100%), url(" + _bg + ") center 30% / cover no-repeat;}")
+    # La photo habille la carte de bienvenue du tableau de bord.
+    CSS += (".dash-head .welcome {background-image: linear-gradient(100deg, rgba(14,59,44,.92)"
+            " 0%, rgba(14,59,44,.62) 45%, rgba(14,59,44,.08) 80%), url(" + _bg + ");}")
 
 
 # ---------------------------------------------------------------- en-tête
@@ -154,31 +153,68 @@ def page_head(icon: str, title: str, subtitle: str) -> str:
 
 
 def _hero_figures() -> list[str]:
-    """Chiffres du jour, tirés des vraies données (mêmes calculs que l'Assistant)."""
+    """Tuiles « chiffres du jour », tirées des vraies données (mêmes calculs que l'Assistant)."""
     from agribaat.answers import answer
     from agribaat.nlu import parse
 
+    def tile(icon: str, value: str, label: str, tone: str) -> str:
+        return (f'<div class="tile {tone}"><div class="t-ico">{icon}</div><div>'
+                f"<b>{html.escape(value)}</b><small>{html.escape(label)}</small></div></div>")
+
     out = []
-    for question, label in (("Quel est le prix du mil à Kaolack ?", "Mil · Kaolack"),
-                            ("Il a plu combien à Mbour ?", "Pluie · Mbour")):
+    for question, label, tone in (("Quel est le prix du mil à Kaolack ?", "Prix du mil · Kaolack",
+                                   "gold"),
+                                  ("Il a plu combien à Mbour ?", "Dernière pluie · Mbour", "rain")):
         hl = answer(parse([question], kb), kb).highlight
         if hl is not None:
-            out.append(f'<span class="fig"><b>{hl.icon} {html.escape(hl.value)} '
-                       f'{html.escape(hl.unit)}</b><small>{label}</small></span>')
-    out.append(f'<span class="fig"><b>📍 {N_MARKETS}</b><small>marchés suivis</small></span>')
-    out.append('<span class="fig"><b>🗣️ 3</b><small>langues locales</small></span>')
+            out.append(tile(hl.icon, f"{hl.value} {hl.unit}", label, tone))
+    out.append(tile("📍", str(N_MARKETS), "marchés suivis", "leaf"))
+    out.append(tile("🗣️", "3", "langues locales", "forest"))
     return out
 
 
 def hero_html() -> str:
-    figures = "".join(_hero_figures())
-    return ('<div id="hero">'
-            '<div class="hero-text"><span class="event">PAS Challenge 2026</span>'
+    """Accueil du tableau de bord : carte de bienvenue (photo) + tuiles de chiffres."""
+    return ('<div id="hero" class="dash-head"><div class="welcome">'
+            '<span class="event">PAS Challenge 2026</span>'
             '<h1>🌾 AgriBaat</h1>'
             '<p class="tag">Assistant agricole vocal · wolof, pulaar, sereer</p>'
-            f'<div class="figs">{figures}</div>'
             f'<p class="src">Données officielles : PAM · ANACIM · FAOSTAT · DAPSA · '
-            f'relevé de {fmt_month(LAST_DATE)}</p></div></div>')
+            f'relevé de {fmt_month(LAST_DATE)}</p></div>'
+            f'<div class="tiles">{"".join(_hero_figures())}</div></div>')
+
+
+# Navigation : menu latéral (le contenu reste dans des onglets Gradio, cachés, que le
+# menu pilote par JavaScript : les tests et la démo automatique fonctionnent toujours).
+def nav_items() -> list[tuple[str, str, str]]:
+    """(texte de l'onglet, icône, libellé du menu), dans l'ordre des onglets."""
+    items = [("Assistant", "🎙️", "Assistant vocal"), ("Climat & cultures", "🗺️", "Climat & cultures"),
+             ("Prix des marchés", "📈", "Prix des marchés"), ("Production", "🌱", "Production")]
+    items += [("Conseils", "🌦️", "Conseils de saison")] if ADVICE_READY else []
+    items += [("Labo langues", "🧪", "Labo langues")] if VOICE_READY else []
+    return items + [("À propos", "ℹ️", "À propos")]
+
+
+def sidebar_html() -> str:
+    links = "".join(
+        f'<a href="#" class="side-link{" active" if i == 0 else ""}" data-tab="{tab}">'
+        f'<span class="sl-ico">{icon}</span><span>{html.escape(label)}</span></a>'
+        for i, (tab, icon, label) in enumerate(nav_items()))
+    return ('<aside class="sidenav"><div class="brand"><div class="logo">🌾</div><div>'
+            '<b>AgriBaat</b><small>Assistant agricole vocal</small></div></div>'
+            f'<div class="side-sec">Navigation</div><nav>{links}</nav>'
+            '<div class="side-sec">Langues</div><div class="side-langs">'
+            '<span>Wolof</span><span>Pulaar</span><span>Sereer</span><span>Français</span></div>'
+            '<div class="side-foot"><b>PAS Challenge 2026</b><span>Équipe SMART AGRO</span>'
+            '<small>Aucun chiffre inventé : chaque réponse cite sa source officielle.</small>'
+            '</div></aside><div class="nav-scrim"></div>')
+
+
+def topbar_html() -> str:
+    return ('<header class="topbar"><button class="nav-toggle" aria-label="Menu">☰</button>'
+            '<div class="crumb">AgriBaat <span>/</span> <b class="tb-page">Assistant vocal</b></div>'
+            f'<div class="tb-right"><span class="tb-pill">📅 Données : {fmt_month(LAST_DATE)}</span>'
+            '<span class="tb-pill on">● Hors ligne prêt</span></div></header>')
 
 
 def mode_html() -> str:
@@ -723,21 +759,51 @@ THEME = gr.themes.Soft(
 
 # Thème clair imposé, comme la maquette : sans cela, un système en mode sombre
 # (Ubuntu, Windows) affichait l'app en sombre et les cartes claires devenaient illisibles.
-FORCE_LIGHT = """
+APP_JS = """
 () => {
   const url = new URL(window.location);
   if (url.searchParams.get("__theme") !== "light") {
     url.searchParams.set("__theme", "light");
     window.location.replace(url.href);
+    return;
   }
+  // Menu latéral : chaque lien sélectionne l'onglet correspondant (caché).
+  const sync = () => {
+    const sel = document.querySelector('[role=tablist] button[aria-selected=true]');
+    const name = sel ? sel.innerText : "";
+    let label = "";
+    document.querySelectorAll(".side-link").forEach(a => {
+      const on = name.includes(a.dataset.tab);
+      a.classList.toggle("active", on);
+      if (on) label = a.innerText.trim();
+    });
+    const page = document.querySelector(".tb-page");
+    if (page && label) page.textContent = label;
+  };
+  document.addEventListener("click", e => {
+    if (e.target.closest(".nav-toggle")) { document.body.classList.toggle("nav-open"); return; }
+    if (e.target.closest(".nav-scrim")) { document.body.classList.remove("nav-open"); return; }
+    const a = e.target.closest(".side-link");
+    if (!a) return;
+    e.preventDefault();
+    const btn = [...document.querySelectorAll("[role=tablist] button, .overflow-dropdown button")]
+      .find(b => b.innerText.includes(a.dataset.tab));
+    if (btn) btn.click();
+    document.body.classList.remove("nav-open");
+    window.scrollTo({top: 0, behavior: "smooth"});
+    setTimeout(sync, 60);
+  });
+  setInterval(sync, 400);
 }
 """
 
-with gr.Blocks(title="AgriBaat", css=CSS, theme=THEME, js=FORCE_LIGHT) as demo:
-    gr.HTML(hero_html())
+with gr.Blocks(title="AgriBaat", css=CSS, theme=THEME, js=APP_JS) as demo:
+    gr.HTML(sidebar_html(), elem_id="sidenav-host")
+    gr.HTML(topbar_html(), elem_id="topbar-host")
     history = gr.State([])
 
     with gr.Tab("🎙️ Assistant"):
+        gr.HTML(hero_html())
         with gr.Row(elem_id="status-row", equal_height=True):
             with gr.Column(scale=4, min_width=240):
                 mode_banner = gr.HTML(mode_html())
