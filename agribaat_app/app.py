@@ -5,7 +5,9 @@ from __future__ import annotations
 import base64
 import html
 import importlib.util
+import hmac
 import logging
+import os
 import time
 import urllib.parse
 from datetime import date
@@ -826,6 +828,40 @@ def sell_view(product: str, region: str, transport: float, radius: int):
     return card, rank, season
 
 
+# ---------------------------------------------------------------- espace équipe
+# En ligne, les abonnés (contacts), l'export du journal et les sessions de test sont
+# réservés à l'équipe : mot de passe dans la variable AGRIBAAT_TEAM_PASSWORD (secret du
+# Space). Sans cette variable (ordinateur de l'équipe), rien n'est verrouillé.
+TEAM_PASSWORD = os.getenv("AGRIBAAT_TEAM_PASSWORD", "")
+LOCKED = bool(TEAM_PASSWORD)
+
+
+def check_team_password(password: str) -> bool:
+    return LOCKED and hmac.compare_digest((password or "").encode(), TEAM_PASSWORD.encode())
+
+
+def team_only(fn, n_outputs: int):
+    """L'action ne s'exécute que si l'espace équipe est déverrouillé (vérifié côté serveur :
+    les composants cachés restent appelables par l'API, d'où ce contrôle)."""
+    def wrapper(team_ok, *args):
+        if LOCKED and not team_ok:
+            gr.Warning("Réservé à l'équipe : déverrouillez l'espace équipe.")
+            skip = gr.skip() if hasattr(gr, "skip") else gr.update()
+            return skip if n_outputs == 1 else (skip,) * n_outputs
+        return fn(*args)
+    wrapper.__name__ = fn.__name__
+    return wrapper
+
+
+def team_banner(ok: bool) -> str:
+    if not LOCKED:
+        return ""
+    if ok:
+        return '<div class="src-note">🔓 Espace équipe déverrouillé pour cette session.</div>'
+    return ('<div class="src-note">🔒 Abonnés, export et sessions de test : réservés à '
+            "l'équipe.</div>")
+
+
 # ---------------------------------------------------------------- diagnostic photo
 DIAG_CROPS = [("Je ne sais pas / autre", "")] + [
     (lbl, lbl.lower()) for lbl in ("Mil", "Sorgho", "Maïs", "Riz", "Arachide", "Niébé", "Oignon",
@@ -1335,6 +1371,7 @@ with gr.Blocks(title="AgriBaat", css=CSS, theme=THEME, js=APP_JS) as demo:
     history = gr.State([])
     test_session = gr.State(None)  # test terrain en cours : {"code", "profil", "sexe"}
     last_event = gr.State(None)  # identifiant de la dernière question (pour l'avis)
+    team_ok = gr.State(False)  # espace équipe déverrouillé (en ligne seulement)
 
     with gr.Tab("🎙️ Assistant"):
         gr.HTML(hero_html())
@@ -1463,7 +1500,11 @@ with gr.Blocks(title="AgriBaat", css=CSS, theme=THEME, js=APP_JS) as demo:
             bl_go.click(on_bulletin, [bl_region, bl_lang], [bl_script, bl_audio])
         with gr.Accordion("🚨 Alertes climat", open=True):
             al_now = gr.HTML()
-            with gr.Row(equal_height=False):
+            with gr.Row(visible=LOCKED, elem_classes="toolbar") as bl_lock_row:
+                bl_pwd = gr.Textbox(label="🔒 Mot de passe équipe", type="password", scale=3)
+                bl_unlock = gr.Button("Déverrouiller", variant="secondary", scale=1)
+            bl_team = gr.HTML(team_banner(False))
+            with gr.Row(equal_height=False, visible=not LOCKED) as bl_team_row:
                 with gr.Column(scale=2, min_width=280):
                     gr.HTML('<div class="sn-sub">Inscrire un abonné</div>')
                     sub_name = gr.Textbox(label="Nom (personne, OP ou radio)")
@@ -1488,18 +1529,28 @@ with gr.Blocks(title="AgriBaat", css=CSS, theme=THEME, js=APP_JS) as demo:
             gr.HTML('<div class="src-note">Les abonnés sont enregistrés uniquement sur cet '
                     "ordinateur (outputs/abonnes.csv), avec leur accord. Rien n’est envoyé "
                     "automatiquement.</div>")
-            sub_btn.click(on_subscribe, [sub_name, sub_kind, sub_region, sub_lang, sub_canal,
-                                         sub_contact, sub_ok], [sub_table, sub_pick])
-            sub_del.click(on_unsubscribe, sub_pick, [sub_table, sub_pick])
-            al_send.click(on_outbox, None, [al_note, al_outbox])
-        demo.load(lambda: (alerts_html(), subscribers_table(), sub_choices()), None,
-                  [al_now, sub_table, sub_pick])
+            sub_btn.click(team_only(on_subscribe, 2),
+                          [team_ok, sub_name, sub_kind, sub_region, sub_lang, sub_canal,
+                           sub_contact, sub_ok], [sub_table, sub_pick])
+            sub_del.click(team_only(on_unsubscribe, 2), [team_ok, sub_pick], [sub_table, sub_pick])
+            al_send.click(team_only(on_outbox, 2), [team_ok], [al_note, al_outbox])
+
+        def load_alerts(ok):
+            if LOCKED and not ok:  # contacts des abonnés : jamais envoyés au navigateur
+                return alerts_html(), None, gr.update(choices=[])
+            return alerts_html(), subscribers_table(), sub_choices()
+        demo.load(load_alerts, team_ok, [al_now, sub_table, sub_pick])
 
     with gr.Tab("📊 Impact"):
         gr.HTML(page_head("📊", "Impact & tests terrain",
                           "Ce que les utilisateurs demandent, ce qu'ils comprennent, et le "
                           "temps gagné. Journal anonyme : ni texte, ni voix, ni nom."))
-        with gr.Accordion("🧪 Session de test terrain", open=True):
+        with gr.Row(visible=LOCKED, elem_classes="toolbar") as imp_lock_row:
+            imp_pwd = gr.Textbox(label="🔒 Mot de passe équipe", type="password", scale=3)
+            imp_unlock = gr.Button("Déverrouiller", variant="secondary", scale=1)
+        imp_team = gr.HTML(team_banner(False))
+        with gr.Accordion("🧪 Session de test terrain", open=True,
+                          visible=not LOCKED) as ts_box:
             with gr.Row(elem_classes="toolbar"):
                 ts_code = gr.Textbox(label="Code du participant", placeholder="P1, P2…")
                 ts_profil = gr.Dropdown(PROFILES, value=PROFILES[0], label="Profil")
@@ -1509,7 +1560,8 @@ with gr.Blocks(title="AgriBaat", css=CSS, theme=THEME, js=APP_JS) as demo:
                 ts_start = gr.Button("▶️ Démarrer la session", variant="primary")
                 ts_stop = gr.Button("⏹️ Terminer la session", variant="secondary")
             ts_banner = gr.HTML(session_banner(None))
-            ts_start.click(on_session_start, [ts_code, ts_profil, ts_sexe, ts_commune],
+            ts_start.click(team_only(on_session_start, 2),
+                           [team_ok, ts_code, ts_profil, ts_sexe, ts_commune],
                            [test_session, ts_banner])
             ts_stop.click(lambda: (None, session_banner(None)), None, [test_session, ts_banner])
         with gr.Row(elem_classes="toolbar"):
@@ -1517,7 +1569,7 @@ with gr.Blocks(title="AgriBaat", css=CSS, theme=THEME, js=APP_JS) as demo:
                                  value="terrain", label="Afficher", elem_id="imp-scope")
             imp_refresh = gr.Button("🔄 Actualiser", variant="secondary", scale=0, min_width=130)
             imp_export = gr.Button("⬇️ Exporter (CSV)", variant="secondary", scale=0,
-                                   min_width=150)
+                                   min_width=150, visible=not LOCKED)
         imp_kpis = gr.HTML()
         imp_field = gr.HTML()
         imp_bars = gr.HTML()
@@ -1525,8 +1577,22 @@ with gr.Blocks(title="AgriBaat", css=CSS, theme=THEME, js=APP_JS) as demo:
         imp_out = [imp_kpis, imp_bars, imp_field]
         imp_scope.change(impact_view, imp_scope, imp_out)
         imp_refresh.click(impact_view, imp_scope, imp_out)
-        imp_export.click(impact_export, imp_scope, imp_file)
+        imp_export.click(team_only(impact_export, 1), [team_ok, imp_scope], imp_file)
         demo.load(impact_view, imp_scope, imp_out)
+
+        def unlock(password):
+            ok = check_team_password(password)
+            if LOCKED and not ok:
+                gr.Warning("Mot de passe incorrect.")
+            show = gr.update(visible=ok or not LOCKED)
+            hide = gr.update(visible=LOCKED and not ok)
+            subs = (subscribers_table(), sub_choices()) if ok else (None, gr.update(choices=[]))
+            return (ok, team_banner(ok), team_banner(ok), show, show, show, hide, hide, "", "",
+                    *subs)
+        unlock_out = [team_ok, bl_team, imp_team, bl_team_row, ts_box, imp_export,
+                      bl_lock_row, imp_lock_row, bl_pwd, imp_pwd, sub_table, sub_pick]
+        bl_unlock.click(unlock, bl_pwd, unlock_out)
+        imp_unlock.click(unlock, imp_pwd, unlock_out)
 
     with gr.Tab("🗺️ Climat & cultures"):
         gr.HTML(page_head("🗺️", "Quoi cultiver, et où ?",
@@ -1685,5 +1751,13 @@ with gr.Blocks(title="AgriBaat", css=CSS, theme=THEME, js=APP_JS) as demo:
     gr.api(api_demander, api_name="demander")
 
 if __name__ == "__main__":
+    # En ligne : journal d'impact récupéré puis sauvegardé dans un dépôt privé (sauvegarde.py).
+    from agribaat import sauvegarde
+
+    sauvegarde.seed_caches()
+    if sauvegarde.start():
+        import atexit
+
+        atexit.register(sauvegarde.backup)
     # pwa : sur téléphone, « Ajouter à l'écran d'accueil » installe AgriBaat comme une appli.
     demo.launch(pwa=True)

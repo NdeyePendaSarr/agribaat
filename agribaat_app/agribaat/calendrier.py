@@ -25,7 +25,7 @@ import config
 from .carte import REGION_ZONE, label
 from .meteo import CITIES
 
-OUT = config.APP_DIR / "outputs"
+OUT = config.OUTPUTS_DIR
 FORECAST_API = "https://api.open-meteo.com/v1/forecast"
 ARCHIVE_API = "https://archive-api.open-meteo.com/v1/archive"
 ONSET_MM, ONSET_DAYS, DRY_SPELL, CHECK_DAYS = 20.0, 3, 7, 30

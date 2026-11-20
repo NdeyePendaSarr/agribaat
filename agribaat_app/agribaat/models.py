@@ -294,7 +294,7 @@ def split_sentences(text: str, max_chars: int = 70) -> list[str]:
 
 # Plafond de durée générée (en multiple de la longueur du texte) : coupe les dérapages.
 MAX_LEN_RATIO = 12.0
-CACHE_DIR = config.APP_DIR / "outputs" / "cache"
+CACHE_DIR = config.OUTPUTS_DIR / "cache"
 
 
 def _cache_path(text: str) -> Path:

@@ -18,10 +18,14 @@ import pandas as pd
 
 import config
 
-OUT = config.APP_DIR / "outputs"
+OUT = config.OUTPUTS_DIR
 EVENTS = OUT / "journal_usage.csv"
 FEEDBACK = OUT / "journal_avis.csv"
-FIELD_SHEET = config.APP_DIR.parent / "test_terrain" / "resultats_test_terrain.csv"
+FIELD_SHEET = next((p for p in (config.APP_DIR.parent / "test_terrain" / "resultats_test_terrain.csv",
+                                 config.APP_DIR / "test_terrain" / "resultats_test_terrain.csv")
+                    if p.exists()),
+                   config.APP_DIR.parent / "test_terrain" / "resultats_test_terrain.csv")
+# (en ligne, deploy_space.py copie la feuille dans agribaat_app/test_terrain/)
 
 EVENT_FIELDS = ("id", "horodatage", "canal", "langue", "sujet", "trouve", "temps_s",
                 "session", "profil", "sexe")

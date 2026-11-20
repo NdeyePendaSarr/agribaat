@@ -38,8 +38,8 @@ import config
 
 APP_URL = "http://127.0.0.1:7860/?__theme=light"
 PORT = 9333
-OUT = config.APP_DIR / "outputs" / "demo_secours.html"
-VIDEO = config.APP_DIR / "outputs" / "demo_agribaat.webm"
+OUT = config.OUTPUTS_DIR / "demo_secours.html"
+VIDEO = config.OUTPUTS_DIR / "demo_agribaat.webm"
 
 # (titre affiché, action, argument)
 SCENARIO = [

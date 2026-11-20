@@ -14,7 +14,7 @@ import traceback
 import config
 from agribaat import models
 
-OUT = config.APP_DIR / "outputs"
+OUT = config.OUTPUTS_DIR
 
 
 def step(name: str, fn):

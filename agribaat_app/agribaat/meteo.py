@@ -19,7 +19,7 @@ from pathlib import Path
 import config
 
 API = "https://api.open-meteo.com/v1/forecast"
-CACHE = config.APP_DIR / "outputs" / "meteo_cache.json"
+CACHE = config.OUTPUTS_DIR / "meteo_cache.json"
 MAX_AGE_S = 3600  # prévisions rafraîchies au plus une fois par heure
 
 # Chefs-lieux de région : (latitude, longitude).

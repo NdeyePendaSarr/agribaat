@@ -28,14 +28,19 @@ import json
 import os
 import re
 import threading
+from datetime import date
 from dataclasses import dataclass, field
 from pathlib import Path
 
 import config
 
 MODEL = os.environ.get("AGRIBAAT_LLM_MODEL", "claude-opus-5-5")
-CACHE = config.APP_DIR / "outputs" / "llm_cache.json"
+CACHE = config.OUTPUTS_DIR / "llm_cache.json"
 TIMEOUT = 25.0  # secondes : au-delà, on répond sans le LLM
+# Plafond d'appels par jour (app publique : protège la clé). Les réponses déjà en cache
+# restent servies au-delà ; les nouvelles questions sont traitées sans le LLM.
+DAILY_MAX = int(os.environ.get("AGRIBAAT_LLM_DAILY_MAX", "300"))
+QUOTA = config.OUTPUTS_DIR / "llm_quota.json"
 INTENTS = ("prix", "vendre", "production", "superficie", "rendement", "variete", "pluie",
            "meteo", "conseil", "technique", "salutation", "hors_sujet")
 TOPICS = ("semis", "recolte", "ravageurs", "previsions", "elevage", "eau", "aucun")
@@ -61,7 +66,7 @@ def enabled() -> bool:
 def status() -> str:
     if not enabled():
         return "désactivé (pas de clé API)"
-    return f"actif ({MODEL})" + (f" · dernière erreur : {_status['last_error']}"
+    return f"actif ({MODEL}, {calls_today()}/{DAILY_MAX} appels aujourd'hui)" + (f" · dernière erreur : {_status['last_error']}"
                                  if _status["last_error"] else "")
 
 
@@ -94,7 +99,7 @@ def _cached(key: str, compute):
         cache = _load_cache()
         if key in cache:
             return cache[key]
-    if not enabled():
+    if not enabled() or not _take_quota():
         return None
     value = compute()
     if value is not None:
@@ -104,6 +109,26 @@ def _cached(key: str, compute):
             CACHE.parent.mkdir(parents=True, exist_ok=True)
             CACHE.write_text(json.dumps(cache, ensure_ascii=False, indent=1), encoding="utf-8")
     return value
+
+
+def calls_today() -> int:
+    try:
+        data = json.loads(QUOTA.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return 0
+    return int(data.get(str(date.today()), 0))
+
+
+def _take_quota() -> bool:
+    """Compte un appel ; False si le plafond du jour est atteint."""
+    with _lock:
+        used = calls_today()
+        if used >= DAILY_MAX:
+            _status["last_error"] = f"plafond du jour atteint ({DAILY_MAX} appels)"
+            return False
+        QUOTA.parent.mkdir(parents=True, exist_ok=True)
+        QUOTA.write_text(json.dumps({str(date.today()): used + 1}), encoding="utf-8")
+    return True
 
 
 def _ask_json(system: str, user, schema: dict, max_tokens: int = 2000) -> dict | None:

@@ -731,6 +731,7 @@ def _private_usage_journal(tmp_path, monkeypatch):
 
     monkeypatch.setenv("AGRIBAAT_LLM", "0")
     monkeypatch.setattr(llm, "CACHE", tmp_path / "llm_cache.json")
+    monkeypatch.setattr(llm, "QUOTA", tmp_path / "llm_quota.json")
 
 
 def test_usage_journal_is_anonymous_and_counts_field_tests():
@@ -1055,3 +1056,71 @@ def test_photo_diagnosis_page(monkeypatch):
     out = app.diag_view(img, "mil")
     assert "Mildiou du mil" in out and "non vérifiées" in out and "conseiller agricole" in out
     assert "Pas de fiche" in out  # documents muets : on ne conseille pas de traitement
+
+
+def test_llm_daily_cap(monkeypatch):
+    from agribaat import llm
+
+    calls = _fake_llm(monkeypatch, [{"intention": "prix", "culture": "mil", "lieu": "",
+                                     "annee": 0, "sujet": "aucun", "question_fr": "a"}] * 5)
+    monkeypatch.setattr(llm, "DAILY_MAX", 2)
+    assert llm.understand("question un", "Wolof") and llm.understand("question deux", "Wolof")
+    assert llm.understand("question trois", "Wolof") is None and len(calls) == 2
+    assert llm.understand("question un", "Wolof") is not None  # en cache : toujours servie
+    assert "plafond" in llm.status()
+
+
+def test_team_space_locks_sensitive_actions(monkeypatch):
+    import app
+
+    monkeypatch.setattr(app, "LOCKED", True)
+    monkeypatch.setattr(app, "TEAM_PASSWORD", "secret-equipe")
+    assert app.check_team_password("secret-equipe") and not app.check_team_password("x")
+    ran = []
+    guarded = app.team_only(lambda *a: ran.append(a) or ("ok", "ok"), 2)
+    guarded(False, "nom")  # verrouillé : l'action ne s'exécute pas
+    assert ran == []
+    assert guarded(True, "nom") == ("ok", "ok") and ran == [("nom",)]
+    monkeypatch.setattr(app, "LOCKED", False)
+    assert guarded(False, "x") == ("ok", "ok")  # ordinateur de l'équipe : rien de verrouillé
+
+
+def test_backup_sends_only_changed_files(tmp_path, monkeypatch):
+    import config
+    from agribaat import sauvegarde
+
+    assert sauvegarde.backup() == []  # sans secrets : rien
+    monkeypatch.setenv("AGRIBAAT_BACKUP_REPO", "equipe/agribaat-journal")
+    monkeypatch.setenv("HF_TOKEN", "hf_test")
+    monkeypatch.setattr(config, "OUTPUTS_DIR", tmp_path)
+    monkeypatch.setattr(sauvegarde, "_sent", {})
+    (tmp_path / "journal_usage.csv").write_text("id;sujet\n1;prix\n", encoding="utf-8")
+
+    class FakeApi:
+        sent = []
+
+        def upload_file(self, **kw):
+            assert kw["repo_type"] == "dataset" and kw["repo_id"] == "equipe/agribaat-journal"
+            self.sent.append(kw["path_in_repo"])
+    api = FakeApi()
+    assert sauvegarde.backup(api) == ["journal_usage.csv"]
+    assert sauvegarde.backup(api) == []  # inchangé : pas de nouvel envoi
+    (tmp_path / "journal_usage.csv").write_text("id;sujet\n1;prix\n2;meteo\n", encoding="utf-8")
+    assert sauvegarde.backup(api) == ["journal_usage.csv"] and len(api.sent) == 2
+
+
+def test_seed_caches_never_overwrite(tmp_path, monkeypatch):
+    import config
+    from agribaat import sauvegarde
+
+    app_dir, out = tmp_path / "app", tmp_path / "out"
+    (app_dir / "seed_cache" / "cache").mkdir(parents=True)
+    (app_dir / "seed_cache" / "cache" / "a.wav").write_bytes(b"seed")
+    (app_dir / "seed_cache" / "llm_cache.json").write_text("{}", encoding="utf-8")
+    (out).mkdir()
+    (out / "llm_cache.json").write_text('{"x": 1}', encoding="utf-8")
+    monkeypatch.setattr(config, "APP_DIR", app_dir)
+    monkeypatch.setattr(config, "OUTPUTS_DIR", out)
+    assert sauvegarde.seed_caches() == 1
+    assert (out / "cache" / "a.wav").read_bytes() == b"seed"
+    assert (out / "llm_cache.json").read_text(encoding="utf-8") == '{"x": 1}'

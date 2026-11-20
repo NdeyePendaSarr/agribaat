@@ -26,7 +26,7 @@ from .answers import answer
 from .carte import label
 from .nlu import Query
 
-OUT = config.APP_DIR / "outputs"
+OUT = config.OUTPUTS_DIR
 BULLETIN_DIR = OUT / "bulletins"
 SUBSCRIBERS = OUT / "abonnes.csv"
 OUTBOX_DIR = OUT / "envois"

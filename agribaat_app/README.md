@@ -37,6 +37,37 @@ pytest                     :: tests du moteur de réponses
 L'étape 2 affiche un tableau OK / ERREUR. Si une ligne est en ERREUR, l'app
 démarre quand même en mode dégradé (réponse en français, sans audio).
 
+## Mise en ligne (Hugging Face Spaces)
+
+Gratuit : 16 Go de mémoire, 2 cœurs, adresse publique `https://huggingface.co/spaces/…`.
+
+1. Créer un compte Hugging Face et un jeton d'accès **Write** (Settings > Access Tokens).
+2. Dans PowerShell, dans `agribaat_app` (les valeurs ne vont dans aucun fichier) :
+   ```powershell
+   $env:HF_TOKEN = "hf_..."
+   $env:ANTHROPIC_API_KEY = "sk-ant-..."       # facultatif : IA générative
+   $env:AGRIBAAT_TEAM_PASSWORD = "..."         # obligatoire en ligne
+   python deploy_space.py mon-compte/agribaat --avec-caches --sauvegarde mon-compte/agribaat-journal
+   ```
+3. Suivre la construction dans l'onglet « Logs » du Space (5 à 10 min, puis ≈ 6 Go de
+   modèles téléchargés au premier lancement).
+
+Protections en ligne :
+- **Espace équipe** (`AGRIBAAT_TEAM_PASSWORD`) : sans le mot de passe, la liste des abonnés
+  (contacts) n'est jamais envoyée au navigateur, et l'inscription, l'export du journal et
+  les sessions de test terrain sont refusés côté serveur.
+- **Plafond de l'IA** : `AGRIBAAT_LLM_DAILY_MAX` appels par jour (300 par défaut) ; au-delà,
+  réponses sans l'IA (le cache reste servi). L'état s'affiche dans « À propos ».
+- **Journal d'impact conservé** : le disque d'un Space gratuit est effacé à chaque
+  redémarrage. Deux solutions : `--sauvegarde` (dépôt de données **privé**, gratuit :
+  récupération au démarrage, envoi toutes les 10 min et à l'arrêt, `agribaat/sauvegarde.py`)
+  ou le stockage persistant payant du Space (`/data`, utilisé automatiquement).
+- `--avec-caches` envoie les voix et réponses de l'IA déjà calculées (`seed_cache/`) : les
+  questions de la démo répondent vite dès le premier jour.
+
+Limites : sur le processeur gratuit, une question vocale nouvelle prend 30 s à 2 min ; un
+Space gratuit s'endort après 48 h sans visite (il redémarre à la visite suivante).
+
 ## API (pour une appli mobile, un serveur vocal, WhatsApp…)
 
 L'app expose une API JSON `demander(question, langue)` ; `langue` = `fr`, `wo`, `pul` ou `srr`.

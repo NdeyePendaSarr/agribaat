@@ -12,6 +12,20 @@ APP_DIR = Path(__file__).resolve().parent
 RAW_DATA_DIR = Path(os.getenv("AGRIBAAT_RAW_DATA", APP_DIR.parent / "data_agribaat"))
 PROCESSED_DIR = Path(os.getenv("AGRIBAAT_PROCESSED", APP_DIR / "data" / "processed"))
 
+# Fichiers produits par l'app (journal d'usage, avis, abonnés, bulletins, caches).
+# En ligne (Hugging Face Spaces), le disque du conteneur est effacé à chaque redémarrage :
+# avec le stockage persistant, /data est conservé et utilisé automatiquement.
+def _outputs_dir() -> Path:
+    if os.getenv("AGRIBAAT_OUTPUTS"):
+        return Path(os.environ["AGRIBAAT_OUTPUTS"])
+    persistent = Path("/data")
+    if persistent.is_dir() and os.access(persistent, os.W_OK):
+        return persistent / "agribaat"
+    return APP_DIR / "outputs"
+
+
+OUTPUTS_DIR = _outputs_dir()
+
 # Modèles pré-entraînés (aucun entraînement). Téléchargés au premier lancement.
 # ASR par défaut : Wolof-HuBERT (94 M de paramètres, ~0,4 Go, quelques secondes sur CPU).
 # Sur une machine de 16 Go, alternatives plus précises mais bien plus lourdes :
