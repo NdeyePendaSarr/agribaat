@@ -17,7 +17,8 @@ from agribaat.answers import CATALOGUE, fmt_month, fmt_number, fmt_period, place
 from agribaat.knowledge import KnowledgeBase
 from agribaat.knowledge import decade_end
 from agribaat.lexicon import PRODUCT_BY_KEY, PRODUCTS
-from agribaat import labo, langues, warmup
+from agribaat import carte, labo, langues, warmup
+from agribaat.carte import SenegalMap
 from agribaat.pipeline import Assistant, Result
 
 # Windows : quand le navigateur recharge la page, asyncio journalise une « erreur »
@@ -382,7 +383,7 @@ body, .gradio-container, gradio-app {background: #f7f1e3 !important;}
 #hero .figs {display: flex; flex-wrap: wrap; gap: 10px;}
 #hero .fig {display: flex; flex-direction: column; background: rgba(255,255,255,.14);
             border: 1px solid rgba(255,255,255,.28); border-radius: 14px; padding: 7px 13px;
-            backdrop-filter: blur(3px); min-width: 108px;}
+            min-width: 108px;}
 #hero .fig b {color: #fff; font-size: 1.05rem; white-space: nowrap;}
 #hero .fig small {color: #d9f99d; font-size: .74rem; letter-spacing: .02em;}
 #hero .src {color: rgba(255,255,255,.72); font-size: .74rem; margin: 12px 0 0;}
@@ -435,23 +436,51 @@ body, gradio-app, .gradio-container, .gradio-container > .main, .app, .contain,
 #hero .hero-text {max-width: 620px;}
 #hero h1, #hero .tag {text-shadow: 0 2px 12px rgba(0,0,0,.55);}
 .block:has(> #hero), .block:has(#hero), .prose:has(#hero) {background: transparent !important;
-    border: none !important; box-shadow: none !important; backdrop-filter: none !important;}
+    border: none !important; box-shadow: none !important;}
 @media (max-width: 640px) {
   #hero {min-height: 210px; background: linear-gradient(180deg, rgba(8,40,18,.15) 0%,
                                                          rgba(8,40,18,.82) 70%) !important;}
 }
 /* Panneaux translucides */
 .gradio-container .block, #mic-card, .answer, .ex-card, .gradio-container .tabitem {
-    background: rgba(255,253,248,.86) !important; backdrop-filter: blur(6px);}
+    background: rgba(255,253,248,.9) !important;}
 .gradio-container .tabitem {border-radius: 18px; padding: 10px !important;
     background: rgba(255,253,248,.38) !important;}
 [role=tablist] {background: rgba(255,253,248,.9); border-radius: 14px; padding: 2px 6px;}
 .ex-title {background: rgba(255,253,248,.9); border-radius: 999px; padding: 4px 12px;
            width: fit-content;}
-.mode {backdrop-filter: blur(4px);}
 .mode.ok {background: rgba(236,252,203,.92);}
 .mode.text {background: rgba(254,243,199,.92);}
 """.replace("__BG__", _bg)
+
+CSS += """
+/* Carte du Sénégal : climat et cultures */
+.sn-intro {background: rgba(255,253,248,.92); border-radius: 14px; padding: 10px 14px;
+           font-size: .95rem; border-left: 5px solid #ca8a04;}
+.sn-wrap {background: rgba(255,253,248,.95); border-radius: 18px; padding: 10px;
+          border: 1px solid #eadfc6;}
+.sn-map {width: 100%; height: auto; display: block;}
+.sn-map .reg {transition: opacity .15s; cursor: pointer;}
+.sn-map .reg:hover {opacity: .78;}
+.sn-map .lbl {font-size: 13px; font-weight: 700; fill: #1f2937; text-anchor: middle;
+              paint-order: stroke; stroke: rgba(255,255,255,.85); stroke-width: 3px;
+              pointer-events: none;}
+.sn-legend {display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 8px 4px 2px;
+            font-size: .82rem;}
+.sn-legend i {display: inline-block; width: 14px; height: 14px; border-radius: 4px;
+              margin-right: 5px; vertical-align: -2px; border: 1px solid rgba(0,0,0,.15);}
+.sn-card {background: #fffdf8; border-radius: 18px; padding: 14px 16px;
+          border: 1px solid #eadfc6; border-left: 5px solid var(--ab-green);}
+.sn-card h3 {margin: 0 0 8px;}
+.sn-zone {border-left: 6px solid; padding: 6px 10px; background: #fefce8; border-radius: 8px;
+          font-weight: 600; font-size: .92rem;}
+.sn-obs {font-size: .85rem; margin-top: 6px; color: var(--body-text-color-subdued);}
+.sn-sub {font-size: .78rem; font-weight: 800; text-transform: uppercase; letter-spacing: .05em;
+         margin: 12px 0 4px; color: #713f12;}
+.sn-card ul {margin: 0; padding-left: 4px; list-style: none;}
+.sn-card li {margin: 8px 0; font-size: .95rem;}
+.sn-var {font-size: .82rem; color: var(--body-text-color-subdued); margin-top: 2px;}
+"""
 
 
 # ---------------------------------------------------------------- en-tête
@@ -862,6 +891,24 @@ def _span(lo, hi, unit: str = "") -> str:
     return (f"{lo:g}" if lo == hi else f"{lo:g}–{hi:g}") + unit
 
 
+# ---------------------------------------------------------------- carte climat
+SN_MAP = SenegalMap(kb.regional, kb.varieties, kb.rain)
+MAP_MODES = [("🌾 Cultures à fort rendement", "best"), ("🌦️ Zones climatiques", "zones"),
+             ("Rendement du mil", "mil"), ("Rendement de l'arachide", "arachide"),
+             ("Rendement du maïs", "mais"), ("Rendement du riz", "riz"),
+             ("Rendement du sorgho", "sorgho"), ("Rendement du niébé", "niebe")]
+MAP_REGIONS = [(carte.label(r), r) for r in sorted(carte.REGION_ZONE, key=carte.label)]
+
+
+def map_view(mode: str, region: str | None) -> str:
+    return f'<div class="sn-wrap">{SN_MAP.svg(mode, region)}{SN_MAP.legend(mode)}</div>'
+
+
+def on_map(mode: str, region: str):
+    region = region or "Kaolack"
+    return map_view(mode or "best", region), SN_MAP.region_card(region)
+
+
 def variety_table(crop: str, cycle: str, drought: bool) -> str:
     """Catalogue des variétés en tableau HTML (nom en gras, usages en badges)."""
     df = kb.variety_list(crop, cycle=None if cycle == "tous" else cycle, drought=drought,
@@ -1095,6 +1142,21 @@ with gr.Blocks(title="AgriBaat", css=CSS, theme=THEME, js=FORCE_LIGHT) as demo:
         txt.submit(on_text, [txt, lang, history], outputs)
         for i, button in enumerate(example_buttons):  # un clic pose la question
             button.click(lambda lg, h, i=i: on_example(i, lg, h), [lang, history], outputs)
+
+    with gr.Tab("🗺️ Climat & cultures"):
+        gr.HTML('<div class="sn-intro"><b>Quoi cultiver, et où ?</b> Pour chaque région : sa '
+                "zone climatique et les cultures où son rendement dépasse la moyenne "
+                "nationale. Survolez une région pour le détail.</div>")
+        with gr.Row(equal_height=False):
+            with gr.Column(scale=3, min_width=300):
+                map_html = gr.HTML(map_view("best", "Kaolack"))
+            with gr.Column(scale=2, min_width=260):
+                map_mode = gr.Radio(MAP_MODES, value="best", label="Afficher",
+                                    elem_id="map-mode")
+                map_region = gr.Dropdown(MAP_REGIONS, value="Kaolack", label="Région")
+                map_card = gr.HTML(SN_MAP.region_card("Kaolack"))
+        map_mode.change(on_map, [map_mode, map_region], [map_html, map_card])
+        map_region.change(on_map, [map_mode, map_region], [map_html, map_card])
 
     with gr.Tab("📈 Prix des marchés"):
         with gr.Row():

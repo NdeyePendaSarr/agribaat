@@ -593,3 +593,21 @@ def test_search_stems_word_families():
     assert stem("irriguer") == stem("irrigation")
     assert stem("oignons") == stem("oignon")
     assert stem("conseil") != stem("conserver")
+
+
+@needs_data
+def test_senegal_map_regions_and_best_crops(kb):
+    """Carte : 14 régions dessinées, cultures classées par rendement relatif."""
+    from agribaat.carte import REGION_ZONE, SenegalMap
+
+    m = SenegalMap(kb.regional, kb.varieties, kb.rain)
+    assert set(m.shapes) == set(REGION_ZONE)
+    svg = m.svg("best", "Kaolack")
+    assert svg.count("<path") == 14 and "Kaolack" in svg
+    for mode in ("zones", "mil", "arachide"):
+        assert m.svg(mode).count("<path") == 14
+    best = m.best_crops("Sedhiou")
+    assert best and best[0].ratio > 1 and best == sorted(best, key=lambda s: -s.ratio)
+    card = m.region_card("Kaolack")
+    assert "Climat : zone" in card and "kg/ha" in card and "DAPSA" in card
+    assert "Aucune culture au-dessus" in m.region_card("Dakar")

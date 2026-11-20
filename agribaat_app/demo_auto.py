@@ -52,11 +52,13 @@ SCENARIO = [
      "Quand récolter l'arachide ?"),
     ("6. En pulaar : le prix du mil à Kaolack", "example", "coggu gawri e Kawlak"),
     ("7. En sereer, à l'écrit : la pluie à Mbour", "sereer", "ndoɓ no Mbour"),
-    ("8. Prix des marchés : prix moyen, marché le moins cher et le plus cher", "tab",
+    ("8. Climat : quoi cultiver dans chaque région pour un fort rendement", "tab",
+     "Climat & cultures"),
+    ("9. Prix des marchés : prix moyen, marché le moins cher et le plus cher", "tab",
      "Prix des marchés"),
-    ("9. Production : évolution nationale et par région", "tab", "Production"),
-    ("10. Conseils : variétés et pluies ANACIM", "tab", "Conseils"),
-    ("11. À propos : sources officielles, aucun chiffre inventé", "tab", "À propos"),
+    ("10. Production : évolution nationale et par région", "tab", "Production"),
+    ("11. Conseils : variétés et pluies ANACIM", "tab", "Conseils"),
+    ("12. À propos : sources officielles, aucun chiffre inventé", "tab", "À propos"),
 ]
 
 
@@ -201,12 +203,13 @@ def audio_link(br: Browser) -> str | None:
 
 START_REC_JS = """(async () => {
   const stream = await navigator.mediaDevices.getDisplayMedia({
-    video: {frameRate: 25, width: 1920, height: 1080}, audio: true,
+    video: {frameRate: 20, width: 1280, height: 720}, audio: true,
     preferCurrentTab: true, selfBrowserSurface: 'include', systemAudio: 'include'});
-  const type = ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm']
+  // VP8 d'abord : VP9 sature un PC à 2 cœurs, au point de bloquer la page filmée.
+  const type = ['video/webm;codecs=vp8,opus', 'video/webm;codecs=vp9,opus', 'video/webm']
     .find(t => MediaRecorder.isTypeSupported(t));
   window.__chunks = [];
-  const rec = new MediaRecorder(stream, {mimeType: type, videoBitsPerSecond: 3000000});
+  const rec = new MediaRecorder(stream, {mimeType: type, videoBitsPerSecond: 2500000});
   rec.ondataavailable = e => { if (e.data.size) window.__chunks.push(e.data); };
   rec.start(1000);
   window.__rec = rec; window.__stream = stream;
@@ -279,7 +282,11 @@ def run(headless: bool, film: bool = False) -> None:
                 else:
                     lang = EXAMPLE_LANG.get(arg, "Français")
                     br.js(CLICK_BY_TEXT_JS % (json.dumps("#lang-toggle label"), json.dumps(lang)))
-                    time.sleep(1)
+                    # Les questions types changent avec la langue : attendre que la carte
+                    # voulue soit affichée avant de cliquer.
+                    wait_for(br, "[...document.querySelectorAll('button.ex-card')].some("
+                                 f"b => b.innerText.includes({json.dumps(arg)}))", 30)
+                    time.sleep(0.5)
                     br.js(CLICK_BY_TEXT_JS % (json.dumps("button.ex-card"), json.dumps(arg)))
                 wait_for(br, f"(s => s.includes('Français :') && s !== {json.dumps(before)})"
                              f"({ANSWER_SIG})")
