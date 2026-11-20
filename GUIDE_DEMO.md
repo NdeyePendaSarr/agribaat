@@ -18,7 +18,7 @@
    les réponses vocales) ; filmer l'écran pendant ce temps avec **Win + Alt + R** (Xbox
    Game Bar, vidéo dans `Vidéos\Captures`) ou l'enregistreur d'écran d'Ubuntu.
    Encore plus simple : `python demo_auto.py --filmer` : Chrome filme lui-même l'onglet,
-   voix comprise, dans `outputs/demo_agribaat.webm` (environ 4 min, 20 Mo).
+   voix comprise, dans `outputs/demo_agribaat.webm` (17 étapes, environ 5 min, 14 Mo ; la photo du diagnostic se change dans le SCENARIO de `demo_auto.py`).
 5. **IA générative (facultatif)** : avant `python app.py`, mettre la clé API Claude de
    l'équipe dans la fenêtre PowerShell : `$env:ANTHROPIC_API_KEY="sk-ant-..."` (ne jamais
    l'écrire dans un fichier du dépôt). La page « À propos » affiche « État : actif ».

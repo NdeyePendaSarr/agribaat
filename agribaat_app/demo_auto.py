@@ -52,18 +52,40 @@ SCENARIO = [
      "Quand récolter l'arachide ?"),
     ("6. En pulaar : le prix du mil à Kaolack", "example", "coggu gawri e Kawlak"),
     ("7. En sereer, à l'écrit : la pluie à Mbour", "sereer", "ndoɓ no Mbour"),
-    ("8. Météo en direct : prévisions à 7 jours et conseil dans la langue", "tab",
+    ("8. Question libre : l'IA rédige à partir des documents ISRA, chiffres vérifiés",
+     "ask", "Comment lutter contre le striga dans le mil ?"),
+    ("9. Météo en direct : prévisions à 7 jours et conseil dans la langue", "tab",
      "Météo en direct"),
-    ("9. Bulletin vocal pour les radios et alertes climat aux abonnés", "tab",
+    ("10. Calendrier de semis : le vrai démarrage des pluies (hivernage 2025)", "scroll",
+     ".cal-card"),
+    ("11. Où vendre ? Le marché le plus rentable après transport, et le bon mois", "tab",
+     "Où vendre"),
+    ("12. Diagnostic photo : l'IA décrit, les documents conseillent, le conseiller confirme",
+     "photo", str(config.APP_DIR / "assets" / "fond_agricole.webp")),
+    ("13. Bulletin vocal pour les radios et alertes climat aux abonnés", "tab",
      "Bulletins & alertes"),
-    ("10. Climat : quoi cultiver dans chaque région pour un fort rendement", "tab",
+    ("14. Climat : quoi cultiver dans chaque région pour un fort rendement", "tab",
      "Climat & cultures"),
-    ("11. Prix des marchés : prix moyen, marché le moins cher et le plus cher", "tab",
+    ("15. Prix des marchés : prix moyen, marché le moins cher et le plus cher", "tab",
      "Prix des marchés"),
-    ("12. Production : évolution nationale et par région", "tab", "Production"),
-    ("13. Conseils : variétés et pluies ANACIM", "tab", "Conseils"),
-    ("14. À propos : sources officielles, aucun chiffre inventé", "tab", "À propos"),
+    ("16. Impact : chaque question comptée, sans nom ni voix, pour les tests terrain", "tab",
+     "Impact"),
+    ("17. À propos : sources officielles, IA sous contrôle, aucun chiffre inventé", "tab",
+     "À propos"),
 ]
+
+# Défilement jusqu'à un élément (scrollIntoView ne suffit pas toujours avec Gradio).
+SCROLL_TO_JS = """((sel, off) => {
+  const e = document.querySelector(sel); if (!e) return false;
+  window.scrollTo(0, e.getBoundingClientRect().top + window.scrollY - off); return true;
+})(%s, %d)"""
+
+# Ouvre une page par le menu latéral (comme un utilisateur ; les derniers onglets Gradio
+# sont dans un menu « … » caché, introuvable par les boutons d'onglet).
+SIDE_LINK_JS = """(t => {
+  const a = [...document.querySelectorAll('.side-link')].find(x => x.dataset.tab === t);
+  if (a) a.click(); return !!a;
+})(%s)"""
 
 
 # Langue à sélectionner en haut pour chaque question type (français par défaut).
@@ -267,8 +289,7 @@ def run(headless: bool, film: bool = False) -> None:
                 br.js("window.scrollTo(0, 0)")
                 time.sleep(3)
             elif action in ("example", "sereer"):
-                br.js(CLICK_BY_TEXT_JS % (json.dumps("button[role=tab]"),
-                                          json.dumps("Assistant")))
+                br.js(SIDE_LINK_JS % json.dumps("Assistant"))
                 time.sleep(0.5)
                 if action == "sereer":
                     br.js(CLICK_BY_TEXT_JS % (json.dumps("#lang-toggle label"),
@@ -306,10 +327,54 @@ def run(headless: bool, film: bool = False) -> None:
                     if link:
                         audio = httpx.get(link, timeout=30).content
             elif action == "tab":
-                br.js(CLICK_BY_TEXT_JS % (json.dumps("button[role=tab]"), json.dumps(arg)))
+                br.js(SIDE_LINK_JS % json.dumps(arg))
                 time.sleep(4)
                 br.js("window.scrollTo(0, 0)")
                 time.sleep(1)
+            elif action == "scroll":  # même page, plus bas (ex. calendrier de semis)
+                wait_for(br, f"!!document.querySelector({json.dumps(arg)})", 60)
+                time.sleep(1.5)
+                br.js(SCROLL_TO_JS % (json.dumps(arg), 120))
+                time.sleep(2)
+            elif action == "ask":  # question écrite libre (IA sous contrôle), en français
+                br.js(SIDE_LINK_JS % json.dumps("Assistant"))
+                time.sleep(0.5)
+                br.js(CLICK_BY_TEXT_JS % (json.dumps("#lang-toggle label"),
+                                          json.dumps("Français")))
+                time.sleep(1)
+                br.js("""(() => { const box = document.querySelector('textarea[placeholder^="Ex."]');
+                  if (box && !box.offsetParent) [...document.querySelectorAll('.label-wrap')]
+                    .find(e => e.innerText.includes('mode clavier'))?.click(); })()""")
+                time.sleep(1)
+                br.js("""(t => {
+                  const box = document.querySelector('textarea[placeholder^="Ex."]');
+                  box.scrollIntoView({block: 'center'});
+                  const set = Object.getOwnPropertyDescriptor(
+                    HTMLTextAreaElement.prototype, 'value').set;
+                  set.call(box, t); box.dispatchEvent(new Event('input', {bubbles: true}));
+                })(%s)""" % json.dumps(arg))
+                time.sleep(1.5)
+                br.js(CLICK_BY_TEXT_JS % (json.dumps("button"), json.dumps("Envoyer")))
+                wait_for(br, f"(s => s.includes('Français :') && s !== {json.dumps(before)})"
+                             f"({ANSWER_SIG})", 90)
+                time.sleep(1.5)  # la carte réponse finit de s'afficher avant de défiler
+                br.js(SCROLL_TO_JS % (json.dumps(".answer"), 90))
+                time.sleep(2)
+            elif action == "photo":  # diagnostic photo : envoi d'une image puis analyse
+                br.js(SIDE_LINK_JS % json.dumps("Diagnostic photo"))
+                time.sleep(2)
+                br.call("DOM.enable")
+                root = br.call("DOM.getDocument", depth=-1, pierce=True)["root"]["nodeId"]
+                for node in br.call("DOM.querySelectorAll", nodeId=root,
+                                    selector="input[type=file]")["nodeIds"]:
+                    attrs = " ".join(br.call("DOM.getAttributes", nodeId=node)["attributes"])
+                    if "image/*" in attrs:
+                        br.call("DOM.setFileInputFiles", nodeId=node, files=[arg])
+                time.sleep(4)
+                br.js(CLICK_BY_TEXT_JS % (json.dumps("button"), json.dumps("Analyser la photo")))
+                wait_for(br, "!!document.querySelector('.diag-card.ok, .diag-card.alerte')", 120)
+                br.js("window.scrollTo(0, 0)")
+                time.sleep(2)
             shot = br.screenshot()
             duration = _duration(audio) if audio else 0
             slides.append({"title": title, "png": shot, "audio": audio})
