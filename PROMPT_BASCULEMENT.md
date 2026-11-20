@@ -1,5 +1,9 @@
 # Prompt de bascule — reprendre AgriBaat sur un autre PC
 
+> **Passation du 20/11/2026 : Seydina Wade reprend le projet sur son PC** (Ndeye Penda
+> Sarr ne peut pas continuer). Dernière version : branche `main` sur GitHub, commit
+> « Démo automatique : question libre à l'IA… » ou plus récent.
+
 > Mode d'emploi : sur le nouveau PC, suivre d'abord la partie « Avant d'ouvrir Claude »,
 > puis ouvrir Claude Code dans le dossier `AGRIBAAT` et coller **tout le bloc « Prompt à
 > coller »** comme premier message. Aucune clé ni mot de passe ne figure dans ce fichier :
@@ -8,14 +12,16 @@
 ## Avant d'ouvrir Claude (sur le nouveau PC, 16 Go de RAM)
 
 1. Installer **Git**, **Python 3.12** (cocher « Add to PATH ») et **Google Chrome**.
-2. Récupérer le code :
+2. Récupérer le code (si GitHub refuse l'accès, Ndeye doit d'abord ajouter Seydina comme
+   collaborateur : dépôt > Settings > Collaborators) :
    ```powershell
    git clone https://github.com/NdeyePendaSarr/agribaat.git AGRIBAAT
    cd AGRIBAAT
    ```
-3. Copier depuis l'ancien PC (clé USB ou disque), **hors Git** :
-   - `agribaat_app/outputs/` (43 Mo) : voix déjà calculées (`cache/`), réponses de l'IA
-     (`llm_cache.json`), archives météo des hivernages, bulletins, journal d'usage ;
+3. Récupérer auprès de Ndeye (Drive, WeTransfer ou clé USB), **hors Git** :
+   - `agribaat_app/outputs/` (≈ 60 Mo) : voix déjà calculées (`cache/`), réponses de l'IA
+     (`llm_cache.json`), archives météo des hivernages, bulletins, journal d'usage, et la
+     vidéo de démo `demo_agribaat.webm` + la démo hors ligne `demo_secours.html` ;
    - facultatif : `data_agribaat/` (37 Go de données brutes) — seulement pour refaire
      les tables avec `prepare_data.py` ; l'app n'en a pas besoin (tables traitées
      versionnées dans `agribaat_app/data/processed/`).
@@ -32,8 +38,9 @@ moi avant de coder.
 QUI ET QUOI
 - AgriBaat : assistant agricole vocal (wolof, pulaar, sereer, français) pour les
   producteurs du Sénégal, présenté au PAS Challenge 2026 (SALTIS), thème agriculture,
-  équipe SMART AGRO. Je suis Ndeye Penda Sarr (front-end + synthèse vocale).
-  Finale prévue le 10 décembre 2026 à Dakar.
+  équipe SMART AGRO. Je suis Seydina Wade (compréhension, base de connaissances, sereer) ;
+  je reprends le travail de Ndeye Penda Sarr (front-end + synthèse vocale), qui ne peut
+  plus continuer. Finale prévue le 10 décembre 2026 à Dakar.
 - App Gradio 5.50 : agribaat_app/app.py (tableau de bord avec menu latéral ; les onglets
   Gradio sont cachés et pilotés par JavaScript). Moteur dans agribaat_app/agribaat/.
 - Principe non négociable : aucun chiffre inventé. Chaque réponse vient des tables
@@ -56,8 +63,8 @@ INSTALLATION SUR CE PC (à faire avec moi, dans AGRIBAAT)
 - cd agribaat_app ; ..\.venv_win\Scripts\python -m pytest -q   (attendu : 134 tests OK)
 - ..\.venv_win\Scripts\python check_models.py   (télécharge et teste les modèles de voix)
 - Lancement : $env:PYTHONIOENCODING="utf-8" ; ..\.venv_win\Scripts\python app.py
-  -> http://127.0.0.1:7860 . Pour l'IA : $env:ANTHROPIC_API_KEY="..." avant (je te la
-  donnerai ; ne l'écris nulle part). Sans clé, l'app marche comme avant.
+  -> http://127.0.0.1:7860 . Pour l'IA : $env:ANTHROPIC_API_KEY="..." avant (clé de
+  l'équipe, transmise en privé ; ne l'écris nulle part). Sans clé, l'app marche comme avant.
 
 CE QUI EST FAIT (voir git log)
 - Assistant vocal wolof (ASR Wolof-HuBERT, voix SpeechT5), pulaar (Labo : Wav2vec2-fula,
@@ -74,6 +81,10 @@ CE QUI EST FAIT (voir git log)
   cache outputs/llm_cache.json ; plafond AGRIBAAT_LLM_DAILY_MAX (300/jour).
 - Diagnostic photo (agribaat/diagnostic.py) : Claude décrit, hypothèses NON VÉRIFIÉES
   sans chiffres, conseils uniquement depuis les documents, orientation conseiller ANCAR.
+- Dossier AgriBaat_Dossier_PAS_2026_v2.docx mis à jour le 20/11 (toutes les fonctions
+  ci-dessus) ; parties surlignées en jaune laissées à l'équipe.
+- Revue finale de l'interface faite (ordinateur + mobile) ; démo refilmée le 20/11
+  (demo_auto.py --filmer : 17 étapes, 4 min 49 s, dans outputs/).
 - Préparation de la mise en ligne : deploy_space.py (Hugging Face Spaces), espace équipe
   (AGRIBAAT_TEAM_PASSWORD : abonnés/export/sessions verrouillés côté serveur), sauvegarde
   du journal vers un dépôt Hugging Face privé (agribaat/sauvegarde.py), dossier de
@@ -82,7 +93,7 @@ CE QUI EST FAIT (voir git log)
 CE QUI RESTE, DANS CET ORDRE
 1. Installer et vérifier sur ce PC (tests, check_models, lancement, une question vocale
    wolof et une pulaar).
-2. Mettre en ligne : j'aurai créé le compte Hugging Face et un jeton Write ; lancer
+2. Mettre en ligne : créer le compte Hugging Face de l'équipe et un jeton Write ; lancer
    python deploy_space.py <compte>/agribaat --avec-caches --sauvegarde <compte>/agribaat-journal
    avec HF_TOKEN, ANTHROPIC_API_KEY et AGRIBAAT_TEAM_PASSWORD en variables d'environnement ;
    suivre les logs du Space, puis tester l'adresse publique (texte, voix, espace équipe
@@ -90,14 +101,11 @@ CE QUI RESTE, DANS CET ORDRE
 3. Ligne WhatsApp vocale / téléphone (après la mise en ligne) : passerelle vers l'API
    JSON existante (gr.api « demander », voir README « API ») ; demande un compte
    opérateur (Twilio ou Africa's Talking) : me demander avant toute inscription.
-4. Mettre à jour le dossier AgriBaat_Dossier_PAS_2026_v2.docx (il ne parle pas encore du
-   calendrier, d'Où vendre ?, de l'IA sous contrôle, du diagnostic photo, de la mise en
-   ligne) en respectant la grille d'évaluation ; garder les parties surlignées en jaune
-   pour l'équipe.
-5. Revue finale de l'interface (4 nouvelles pages), puis mise à jour de GUIDE_DEMO.md.
-6. EN DERNIER : refilmer la démo (python demo_auto.py --filmer ; VP8 1280 px), avec la
-   clé active ; la veille, reposer les questions libres et la photo du scénario pour
-   remplir les caches.
+4. Dans le dossier docx : ajouter l'adresse publique du Space et, après les tests terrain,
+   les vrais résultats (section 10, jamais de chiffres inventés).
+5. Quand l'équipe a la photo d'une vraie feuille malade : la mettre à l'étape 12 du
+   SCENARIO de demo_auto.py, puis refilmer (python demo_auto.py --filmer, clé active ;
+   la veille, rejouer le scénario pour remplir les caches).
 
 CÔTÉ ÉQUIPE (à me rappeler, pas à faire à ma place)
 - Vérifier l'inscription d'AgriBaat sur la plateforme SALTIS (absente de la liste vue).
