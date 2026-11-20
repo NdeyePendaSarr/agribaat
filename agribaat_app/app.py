@@ -133,390 +133,24 @@ EXAMPLE_LABELS = {lang: [_example_label(q, lang, t) for q, t in cards]
 WARMUP = (warmup.start(assistant, [(t, LANG_CODES[l]) for t, l in WARM_QUESTIONS])
           if VOICE_READY else warmup.WarmupStatus(state="désactivé"))
 
-CSS = """
-/* Le conteneur suit la largeur de l'écran : sans cela, sur un écran étroit (< 700 px),
-   la barre d'onglets l'élargissait et le contenu était coupé à droite. */
-.gradio-container {max-width: 1180px !important; margin: auto; width: 100% !important;
-                   min-width: 0 !important;}
-.gradio-container .row > *, .gradio-container .column, .gradio-container .block,
-.gradio-container .form {min-width: 0;}
-[role=tablist] {overflow-x: auto; flex-wrap: nowrap; scrollbar-width: thin;}
-[role=tablist] button {flex: 0 0 auto; white-space: nowrap;}
-footer {display: none !important;}
-html, body {overflow-x: hidden;}
-
-#hero {background: linear-gradient(135deg, #14532d 0%, #3f6212 55%, #a16207 100%);
-       color: #fff; border-radius: 20px; padding: 26px 30px; margin-bottom: 4px;}
-#hero h1 {color: #fff; font-size: 2.2rem; margin: 0; letter-spacing: -0.5px;}
-#hero .tag {color: #ecfccb; margin: 4px 0 16px 0; font-size: 1.05rem;}
-#hero .chips {display: flex; flex-wrap: wrap; gap: 8px;}
-#hero .chip {background: rgba(255,255,255,.16); border: 1px solid rgba(255,255,255,.25);
-             border-radius: 999px; padding: 4px 12px; font-size: .88rem; color: #fff;}
-
-.mode {border-radius: 12px; padding: 10px 14px; font-size: .92rem; margin: 2px 0;}
-.mode.ok {background: #dcfce7; color: #14532d;}
-.mode.text {background: #fef3c7; color: #78350f;}
-
-.card {border: 1px solid var(--border-color-primary); border-radius: 16px;
-       padding: 18px 20px; background: var(--block-background-fill);}
-.card .lbl {font-size: .78rem; text-transform: uppercase; letter-spacing: .06em;
-            color: var(--body-text-color-subdued); margin-bottom: 6px;}
-.card .wo {font-size: 1.35rem; line-height: 1.45; font-weight: 600; margin-bottom: 12px;}
-.card .fr {font-size: 1.08rem; line-height: 1.55;}
-.card .empty {color: var(--body-text-color-subdued); font-style: italic;}
-.badges {display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px;}
-.badge {font-size: .8rem; border-radius: 999px; padding: 3px 10px;
-        background: var(--background-fill-secondary); color: var(--body-text-color);}
-.badge.src {background: #dcfce7; color: #14532d;}
-.badge.miss {background: #fee2e2; color: #7f1d1d;}
-.heard {font-size: .92rem; margin-bottom: 12px; padding: 8px 10px; border-radius: 8px;
-         background: var(--background-fill-secondary); color: var(--body-text-color);}
-.hint {font-size: .85rem; color: var(--body-text-color-subdued);}
-.warn {margin-top: 12px; font-size: .85rem; color: #92400e; background: #fffbeb;
-       border-left: 3px solid #f59e0b; padding: 8px 10px; border-radius: 6px;}
-
-.kpis {display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px;}
-.kpi {border: 1px solid var(--border-color-primary); border-radius: 14px; padding: 14px 16px;
-      background: var(--block-background-fill);}
-.kpi .k {font-size: .78rem; color: var(--body-text-color-subdued); text-transform: uppercase;
-         letter-spacing: .05em;}
-.kpi .v {font-size: 1.55rem; font-weight: 700; margin-top: 4px;}
-.kpi .s {font-size: .85rem; color: var(--body-text-color-subdued); margin-top: 2px;}
-.bad {color: #b91c1c;} .good {color: #15803d;}
-
-#ask-voice button {font-size: 1.05rem;}
-.hist {font-size: .9rem;}
-
-/* Téléphone : en-tête compact, cartes de chiffres sur deux colonnes, textes lisibles. */
-@media (max-width: 640px) {
-  #hero {padding: 18px 16px; border-radius: 14px;}
-  #hero h1 {font-size: 1.6rem;}
-  #hero .tag {font-size: .95rem; margin-bottom: 10px;}
-  #hero .chip {font-size: .78rem; padding: 3px 9px;}
-  .kpis {grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px;}
-  .kpi {padding: 10px 12px;}
-  .kpi .v {font-size: 1.2rem;}
-  .card {padding: 14px;}
-  .card .wo {font-size: 1.15rem;}
-  #ask-voice button {min-height: 52px;}  /* gros bouton micro, facile à toucher */
-}
-
-/* ===================== Refonte visuelle (maquette PAS Challenge) ===================== */
-:root {--ab-green: #15803d; --ab-green-d: #14532d; --ab-mint: #ecfdf5; --ab-line: #d1fae5;
-       --ab-amber: #b45309; --ab-red: #dc2626;}
-#hero {position: relative;}
-#hero .event {position: absolute; top: 20px; right: 22px; background: rgba(0,0,0,.22);
-              border: 1px solid rgba(255,255,255,.3); color: #fef3c7; font-size: .8rem;
-              font-weight: 600; padding: 4px 12px; border-radius: 999px;}
-#hero .event::before {content: "●"; color: #4ade80; margin-right: 6px;}
-@media (max-width: 640px) {#hero .event {position: static; display: inline-block;
-                                          margin-bottom: 8px;}}
-
-/* Bandeau d'état + choix de langue */
-#status-row {align-items: stretch; gap: 10px;}
-#status-row .mode {height: 100%; display: flex; align-items: center; margin: 0;}
-#lang-toggle {padding: 0 !important; background: transparent !important; border: none !important;}
-#lang-toggle .wrap {gap: 6px; flex-wrap: wrap; justify-content: flex-end;}
-#lang-toggle label {border-radius: 10px !important; font-weight: 600; padding: 8px 12px !important;
-                    border: 1px solid var(--border-color-primary) !important;}
-#lang-toggle label.selected {background: var(--ab-green) !important; color: #fff !important;
-                             border-color: var(--ab-green) !important;}
-#lang-toggle input {display: none;}
-
-/* Carte micro : grand cercle rouge */
-#mic-card {border: 1px solid var(--ab-line); border-radius: 18px; background:
-           linear-gradient(180deg, #f0fdf4 0%, var(--block-background-fill) 60%);
-           padding: 18px 16px 8px; text-align: center;}
-#mic-card .mic-title {font-size: 1.25rem; font-weight: 700; margin: 4px 0 2px;}
-#mic-card .mic-sub {font-size: .9rem; color: var(--body-text-color-subdued);}
-#mic {border: none !important; background: transparent !important; box-shadow: none !important;}
-#mic .controls {flex-direction: column; align-items: center; gap: 10px;}
-#mic .record-button, #mic .stop-button, #mic .stop-button-paused {
-    width: 124px !important; height: 124px !important; border-radius: 50% !important;
-    margin: 14px auto 6px !important; padding: 0 !important; font-size: 0 !important;
-    align-items: center; justify-content: center;  /* affichage géré par Gradio */
-    background: radial-gradient(circle at 35% 30%, #f87171, #b91c1c 70%) !important;
-    border: 4px solid #fde68a !important; color: #fff !important;
-    box-shadow: 0 0 0 12px rgba(220,38,38,.12), 0 0 0 24px rgba(220,38,38,.06);
-    transition: transform .15s ease;}
-#mic .record-button:hover {transform: scale(1.04);}
-#mic .record-button::before {content: "🎙️"; font-size: 44px; line-height: 1;
-    background: none !important; width: auto !important; height: auto !important;
-    margin: 0 !important; border-radius: 0 !important;}  /* remplace le point vert Gradio */
-#mic .stop-button::before, #mic .stop-button-paused::before {
-    content: "■"; font-size: 40px; color: #fff; line-height: 1; animation: none !important;
-    background: none !important; width: auto !important; height: auto !important;
-    margin: 0 !important; border-radius: 0 !important;}
-#mic .stop-button {animation: ab-pulse 1.4s ease-in-out infinite;}
-#mic .record-icon, #mic .pinger, #mic .dot, #mic .hidden,
-#mic .pause-button, #mic .resume-button {display: none !important;}
-@keyframes ab-pulse {0%, 100% {box-shadow: 0 0 0 10px rgba(220,38,38,.18), 0 0 0 22px rgba(220,38,38,.08);}
-                     50% {box-shadow: 0 0 0 18px rgba(220,38,38,.25), 0 0 0 34px rgba(220,38,38,.10);}}
-#mic-card .hint {display: block; margin: 4px 0 6px;}
-
-/* Carte réponse « chiffre vérifié » */
-.answer {border: 1px solid var(--ab-line); border-radius: 18px; padding: 16px 18px;
-         background: var(--block-background-fill);}
-.ans-head {display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px;
-           margin-bottom: 12px;}
-.achip {font-size: .74rem; font-weight: 700; letter-spacing: .03em; border-radius: 6px;
-        padding: 4px 9px; text-transform: uppercase;}
-.achip.ok {background: var(--ab-green-d); color: #fff;}
-.achip.miss {background: #fee2e2; color: #991b1b;}
-.achip.src {background: #fef3c7; color: #92400e; text-transform: none; font-weight: 600;
-           border: 1px solid #fde68a;}
-.kpi-box {display: flex; align-items: center; justify-content: space-between; gap: 12px;
-          border: 1px solid var(--border-color-primary); border-radius: 14px; padding: 12px 14px;
-          margin-bottom: 12px;}
-.kpi-box .k {font-size: .74rem; text-transform: uppercase; letter-spacing: .05em;
-             color: var(--body-text-color-subdued); font-weight: 600;}
-.kpi-box .big {font-size: 2rem; font-weight: 800; color: var(--ab-green-d); line-height: 1.15;
-               margin: 2px 0;}
-.kpi-box .big small {font-size: 1.05rem; font-weight: 700;}
-.kpi-box .s {font-size: .82rem; color: var(--body-text-color-subdued);}
-.kpi-box .ico {font-size: 1.9rem; background: var(--ab-mint); border: 1px solid var(--ab-line);
-               border-radius: 12px; width: 56px; height: 56px; display: flex;
-               align-items: center; justify-content: center; flex: 0 0 auto;}
-.pill {font-size: .78rem; font-weight: 700; border-radius: 999px; padding: 2px 8px;
-       vertical-align: middle; margin-left: 6px;}
-.pill.up {background: #dcfce7; color: #166534;} .pill.down {background: #fee2e2; color: #991b1b;}
-.wo-quote {font-size: 1rem; font-weight: 600; line-height: 1.45; margin-bottom: 6px;}
-.draft {font-size: .85rem; color: #8a5a00; background: #fff6e0; border-radius: 8px; padding: 4px 10px; margin-bottom: 8px; display: inline-block;}
-.fr-line {font-size: .92rem; color: var(--body-text-color-subdued); line-height: 1.5;}
-/* Orientation vers un conseiller (quand l'assistant n'a pas la réponse) */
-.orient {margin-top: 12px; font-size: .9rem; line-height: 1.45; border-radius: 10px;
-         padding: 10px 12px; background: var(--ab-mint); border: 1px solid var(--ab-line);}
-/* Partage WhatsApp (relais des organisations de producteurs) */
-.share {display: inline-flex; align-items: center; gap: 6px; margin-top: 12px;
-        font-size: .85rem; font-weight: 700; text-decoration: none !important;
-        color: #fff !important; background: #1f9d55; border-radius: 999px; padding: 7px 14px;}
-.share:hover {background: #15803d;}
-
-/* Questions types illustrées */
-.ex-title {font-size: .8rem; font-weight: 800; letter-spacing: .05em; text-transform: uppercase;
-           margin: 14px 0 6px;}
-.ex-card {white-space: pre-line !important; text-align: left !important; display: block !important;
-          line-height: 1.3 !important; min-height: 0; border-radius: 12px !important;
-          border: 1px solid var(--border-color-primary) !important;
-          color: var(--body-text-color) !important; background: var(--block-background-fill) !important;
-          padding: 10px 12px !important; font-weight: 600 !important; font-size: .9rem !important;}
-.ex-card:hover {border-color: var(--ab-green) !important; background: var(--ab-mint) !important;}
-
-/* Barres horizontales (production par région, pluie par région) */
-.hbars {border: 1px solid var(--ab-line); border-radius: 16px; padding: 14px 16px;
-        background: var(--block-background-fill);}
-.hbars h4 {margin: 0 0 10px; font-size: .95rem;}
-.hbar {display: grid; grid-template-columns: 110px 1fr 86px; align-items: center; gap: 10px;
-       margin: 6px 0; font-size: .86rem;}
-.hbar .n {font-weight: 600; text-align: right; overflow: hidden; text-overflow: ellipsis;
-          white-space: nowrap;}
-.hbar .track {display: block; background: var(--background-fill-secondary); border-radius: 999px;
-              height: 12px; overflow: hidden;}
-.hbar .fill {display: block; height: 100%; border-radius: 999px;
-             background: linear-gradient(90deg, #15803d, #34d399);}
-.hbar .v {font-weight: 700; font-variant-numeric: tabular-nums;}
-.hbars .note {font-size: .78rem; color: var(--body-text-color-subdued); margin-top: 8px;}
-
-/* Tableau des variétés */
-.vtable {width: 100%; border-collapse: separate; border-spacing: 0; font-size: .86rem;
-         border: 1px solid var(--border-color-primary); border-radius: 14px; overflow: hidden;}
-.vtable th {background: var(--background-fill-secondary); text-align: left; font-size: .72rem;
-            text-transform: uppercase; letter-spacing: .05em; padding: 10px 12px;}
-.vtable td {padding: 12px; border-top: 1px solid var(--border-color-primary); vertical-align: top;}
-.vtable th, .vtable td {border-left: none !important; border-right: none !important;
-                        border-bottom: none !important;}
-.vtable thead th {border-top: none !important;}
-.vtable td.name {font-weight: 800; color: var(--ab-green-d); white-space: nowrap;}
-.vtable td.num {white-space: nowrap; font-variant-numeric: tabular-nums;}
-.tag {display: inline-block; font-size: .72rem; font-weight: 700; border-radius: 999px;
-      padding: 2px 9px; margin: 1px 2px 1px 0;}
-.tag.huilerie {background: #fef3c7; color: #92400e;}
-.tag.confiserie {background: #dbeafe; color: #1e40af;}
-.vscroll {overflow-x: auto;}
-.src-note {font-size: .8rem; color: var(--body-text-color-subdued); margin-top: 6px;}
-
-/* À propos */
-.about h3 {margin: 6px 0 10px;}
-.about .pipe {border: 1px solid var(--ab-line); background: var(--ab-mint); border-radius: 14px;
-              padding: 14px 16px; margin: 16px 0;}
-.about .pipe b {color: var(--ab-green-d);}
-.about ul {margin: 6px 0 0 18px;}
-.about li {margin: 3px 0;}
-@media (max-width: 640px) {
-  .kpi-box .big {font-size: 1.6rem;}
-  .hbar {grid-template-columns: 84px 1fr 70px;}
-  #mic .record-button, #mic .stop-button {width: 104px !important; height: 104px !important;}
-  /* Le micro doit être visible sans défiler : en-tête réduit à l'essentiel. */
-  #hero {padding: 14px 16px;}
-  #hero .event {display: none;}
-  #hero h1 {font-size: 1.45rem;}
-  #hero .tag {font-size: .84rem; margin: 2px 0 8px;}
-  #hero .chip:nth-child(n+3) {display: none;}
-  /* Langues : grille 2 x 2 bien alignée au lieu d'une ligne qui déborde. */
-  #lang-toggle .wrap {display: grid !important; grid-template-columns: 1fr 1fr; gap: 6px;}
-  #lang-toggle label {justify-content: center; padding: 10px 8px !important;}
-  /* Questions types : deux par ligne, plus compactes. */
-  .ex-row {flex-wrap: wrap !important; gap: 8px !important;}
-  .ex-row > * {flex: 1 1 calc(50% - 8px) !important; min-width: 0 !important;}
-  .ex-card {font-size: .8rem !important; padding: 8px 10px !important;}
-}
-
-/* ===================== Ambiance agricole : terre, champs, mil ===================== */
-body, .gradio-container, gradio-app {background: #f7f1e3 !important;}
-.gradio-container {background:
-    radial-gradient(circle at 12% -10%, rgba(253,230,138,.55), transparent 42%),
-    radial-gradient(circle at 95% 0%, rgba(187,247,208,.5), transparent 38%),
-    #f7f1e3 !important;}
-
-/* En-tête : paysage dessiné + voile vert pour la lisibilité du texte */
-#hero {position: relative; overflow: hidden; padding: 0; min-height: 214px; border-radius: 22px;
-       background: #14532d; box-shadow: 0 10px 30px rgba(20,83,45,.18);}
-#hero .hero-art {position: absolute; inset: 0; width: 100%; height: 100%;}
-#hero .hero-veil {position: absolute; inset: 0;
-    background: linear-gradient(90deg, rgba(20,83,45,.96) 0%, rgba(20,83,45,.86) 34%,
-                rgba(20,83,45,.25) 62%, rgba(20,83,45,0) 80%);}
-#hero .hero-text {position: relative; padding: 24px 30px 18px; max-width: 640px;}
-#hero .event {position: static; display: inline-block; margin-bottom: 8px;
-              background: rgba(253,230,138,.18); border-color: rgba(253,230,138,.5);}
-#hero h1 {font-size: 2.4rem; text-shadow: 0 2px 10px rgba(0,0,0,.25);}
-#hero .tag {color: #fef3c7; font-weight: 600; margin: 2px 0 14px;}
-#hero .figs {display: flex; flex-wrap: wrap; gap: 10px;}
-#hero .fig {display: flex; flex-direction: column; background: rgba(255,255,255,.14);
-            border: 1px solid rgba(255,255,255,.28); border-radius: 14px; padding: 7px 13px;
-            min-width: 108px;}
-#hero .fig b {color: #fff; font-size: 1.05rem; white-space: nowrap;}
-#hero .fig small {color: #d9f99d; font-size: .74rem; letter-spacing: .02em;}
-#hero .src {color: rgba(255,255,255,.72); font-size: .74rem; margin: 12px 0 0;}
-
-/* Cartes : blanches, ombre douce, liseré vert */
-#mic-card, .answer {background: #fffdf8 !important; border: 1px solid #eadfc6 !important;
-                    box-shadow: 0 6px 18px rgba(120,90,30,.08);}
-.answer {border-left: 5px solid var(--ab-green) !important;}
-.kpi-box {background: linear-gradient(135deg, #f0fdf4, #fefce8); border-color: #d9f99d !important;}
-.kpi-box .ico {background: #fef3c7; border-color: #fde68a;}
-.ex-title {color: #713f12; display: flex; align-items: center; gap: 6px;}
-.ex-title::before {content: "🌾";}
-.ex-card {background: #fffdf8 !important; border-color: #eadfc6 !important;}
-.ex-card:hover {background: #f0fdf4 !important; border-color: var(--ab-green) !important;
-                transform: translateY(-1px); box-shadow: 0 4px 12px rgba(21,128,61,.12);}
-[role=tablist] button[aria-selected=true] {color: var(--ab-green-d) !important;
-    border-bottom: 3px solid #ca8a04 !important; font-weight: 700;}
-.mode.ok {background: #ecfccb; color: #365314;}
-
-@media (max-width: 640px) {
-  #hero {min-height: 0; border-radius: 16px;}
-  #hero .hero-veil {background: linear-gradient(90deg, rgba(20,83,45,.95) 0%,
-                    rgba(20,83,45,.8) 60%, rgba(20,83,45,.45) 100%);}
-  #hero .hero-text {padding: 14px 16px 12px;}
-  #hero h1 {font-size: 1.5rem;}
-  #hero .tag {margin-bottom: 8px;}
-  #hero .fig {min-width: 0; padding: 5px 9px;}
-  #hero .fig b {font-size: .9rem;}
-  #hero .fig:nth-child(n+3), #hero .src {display: none;}
-}
-"""
-
-# Photo de fond (assets/fond_agricole.webp) : plein écran, fixe, intégrée à la page
-# (aucun fichier à servir, marche hors ligne). Les blocs deviennent des panneaux
-# translucides pour que la photo occupe le plus d'espace possible.
-BACKGROUND = Path(__file__).with_name("assets") / "fond_agricole.webp"
+# Système de design : une seule feuille de style (assets/agribaat.css), plus la photo
+# de fond intégrée à la page (aucun fichier à servir, marche hors ligne).
+ASSETS = Path(__file__).with_name("assets")
+CSS = (ASSETS / "agribaat.css").read_text(encoding="utf-8")
+BACKGROUND = ASSETS / "fond_agricole.webp"
 if BACKGROUND.exists():
     _bg = "data:image/webp;base64," + base64.b64encode(BACKGROUND.read_bytes()).decode()
-    CSS += """
-body::before {content: ""; position: fixed; inset: 0; z-index: -1;
-    background: linear-gradient(180deg, rgba(10,40,20,.18), rgba(10,40,20,.32)),
-                url(__BG__) center 30% / cover no-repeat;}
-body, gradio-app, .gradio-container, .gradio-container > .main, .app, .contain,
-.gradio-container .wrap.default {background: transparent !important;}
-/* En-tête : une bannière où la photo se voit (texte lisible à gauche, visages à droite) */
-#hero {background: linear-gradient(90deg, rgba(8,40,18,.78) 0%, rgba(8,40,18,.5) 38%,
-                                   rgba(8,40,18,0) 68%) !important;
-       box-shadow: none; min-height: 300px; display: flex; align-items: flex-end;}
-#hero .hero-art, #hero .hero-veil {display: none;}
-#hero .hero-text {max-width: 620px;}
-#hero h1, #hero .tag {text-shadow: 0 2px 12px rgba(0,0,0,.55);}
-.block:has(> #hero), .block:has(#hero), .prose:has(#hero) {background: transparent !important;
-    border: none !important; box-shadow: none !important;}
-@media (max-width: 640px) {
-  #hero {min-height: 210px; background: linear-gradient(180deg, rgba(8,40,18,.15) 0%,
-                                                         rgba(8,40,18,.82) 70%) !important;}
-}
-/* Panneaux translucides */
-.gradio-container .block, #mic-card, .answer, .ex-card, .gradio-container .tabitem {
-    background: rgba(255,253,248,.9) !important;}
-.gradio-container .tabitem {border-radius: 18px; padding: 10px !important;
-    background: rgba(255,253,248,.38) !important;}
-[role=tablist] {background: rgba(255,253,248,.9); border-radius: 14px; padding: 2px 6px;}
-.ex-title {background: rgba(255,253,248,.9); border-radius: 999px; padding: 4px 12px;
-           width: fit-content;}
-.mode.ok {background: rgba(236,252,203,.92);}
-.mode.text {background: rgba(254,243,199,.92);}
-""".replace("__BG__", _bg)
-
-CSS += """
-/* Carte du Sénégal : climat et cultures */
-.sn-intro {background: rgba(255,253,248,.92); border-radius: 14px; padding: 10px 14px;
-           font-size: .95rem; border-left: 5px solid #ca8a04;}
-.sn-wrap {background: rgba(255,253,248,.95); border-radius: 18px; padding: 10px;
-          border: 1px solid #eadfc6;}
-.sn-map {width: 100%; height: auto; display: block;}
-.sn-map .reg {transition: opacity .15s; cursor: pointer;}
-.sn-map .reg:hover {opacity: .78;}
-.sn-map .lbl {font-size: 13px; font-weight: 700; fill: #1f2937; text-anchor: middle;
-              paint-order: stroke; stroke: rgba(255,255,255,.85); stroke-width: 3px;
-              pointer-events: none;}
-.sn-legend {display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 8px 4px 2px;
-            font-size: .82rem;}
-.sn-legend i {display: inline-block; width: 14px; height: 14px; border-radius: 4px;
-              margin-right: 5px; vertical-align: -2px; border: 1px solid rgba(0,0,0,.15);}
-.sn-card {background: #fffdf8; border-radius: 18px; padding: 14px 16px;
-          border: 1px solid #eadfc6; border-left: 5px solid var(--ab-green);}
-.sn-card h3 {margin: 0 0 8px;}
-.sn-zone {border-left: 6px solid; padding: 6px 10px; background: #fefce8; border-radius: 8px;
-          font-weight: 600; font-size: .92rem;}
-.sn-obs {font-size: .85rem; margin-top: 6px; color: var(--body-text-color-subdued);}
-.sn-sub {font-size: .78rem; font-weight: 800; text-transform: uppercase; letter-spacing: .05em;
-         margin: 12px 0 4px; color: #713f12;}
-.sn-card ul {margin: 0; padding-left: 4px; list-style: none;}
-.sn-card li {margin: 8px 0; font-size: .95rem;}
-.sn-var {font-size: .82rem; color: var(--body-text-color-subdued); margin-top: 2px;}
-"""
+    # Photo vive en haut (bannière), voile sable en bas pour un contenu calme et lisible.
+    CSS += ("body::before {content: \"\"; position: fixed; inset: 0; z-index: -1; background:"
+            " linear-gradient(180deg, rgba(247,242,232,0) 0%, rgba(247,242,232,.25) 40%,"
+            " rgba(247,242,232,.85) 100%), url(" + _bg + ") center 30% / cover no-repeat;}")
 
 
 # ---------------------------------------------------------------- en-tête
-# Paysage agricole dessiné en SVG (aucune image à télécharger : marche hors ligne) :
-# ciel d'aube, soleil, collines, champ en rangs, mil mûr au premier plan, baobab.
-_MILLET = "".join(
-    f'<g transform="translate({x},{y}) scale({s})"><path d="M0 0 Q2 -40 0 -78" '
-    f'stroke="#6b4f12" stroke-width="2.4" fill="none"/>'
-    f'<ellipse cx="1" cy="-92" rx="5.5" ry="17" fill="#a16207"/>'
-    f'<path d="M0 -30 Q-14 -40 -22 -36 M0 -46 Q14 -56 22 -52" stroke="#4d7c0f" '
-    f'stroke-width="2.2" fill="none"/></g>'
-    for x, y, s in ((700, 236, 1.0), (735, 240, 1.15), (770, 234, .9), (805, 242, 1.2),
-                    (845, 238, 1.0), (1135, 240, 1.1), (1170, 236, .95)))
-HERO_SVG = f"""<svg class="hero-art" viewBox="0 0 1200 240" preserveAspectRatio="xMidYMid slice"
- aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
-<defs>
- <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
-  <stop offset="0" stop-color="#fde68a"/><stop offset=".6" stop-color="#fcd34d"/>
-  <stop offset="1" stop-color="#f59e0b"/></linearGradient>
- <radialGradient id="sun"><stop offset="0" stop-color="#fffbeb"/>
-  <stop offset=".45" stop-color="#fef3c7" stop-opacity=".9"/>
-  <stop offset="1" stop-color="#fde68a" stop-opacity="0"/></radialGradient>
- <pattern id="rows" width="26" height="12" patternUnits="userSpaceOnUse"
-  patternTransform="skewX(-35)"><rect width="26" height="12" fill="#65a30d"/>
-  <rect width="26" height="4" fill="#4d7c0f"/></pattern>
-</defs>
-<rect width="1200" height="240" fill="url(#sky)"/>
-<circle cx="980" cy="88" r="95" fill="url(#sun)"/><circle cx="980" cy="88" r="34" fill="#fffbeb"/>
-<path d="M0 150 Q160 110 330 140 T700 128 T1000 136 T1200 122 V240 H0Z" fill="#a3b763"/>
-<path d="M0 178 Q220 140 480 168 T900 160 T1200 166 V240 H0Z" fill="url(#rows)"/>
-<path d="M0 210 Q260 188 560 206 T1200 198 V240 H0Z" fill="#ca8a04"/>
-<g fill="#3f3a1d"><path d="M1052 205 C1050 170 1046 150 1040 132 L1062 132 C1060 150 1058 172 1062 205Z"/>
- <ellipse cx="1024" cy="122" rx="30" ry="14"/><ellipse cx="1060" cy="112" rx="36" ry="17"/>
- <ellipse cx="1094" cy="124" rx="26" ry="12"/></g>
-{_MILLET}
-</svg>"""
+def page_head(icon: str, title: str, subtitle: str) -> str:
+    """En-tête commun à chaque onglet : icône, titre, une phrase d'explication."""
+    return (f'<div class="page-head"><div class="ph-ico">{icon}</div><div>'
+            f"<h2>{html.escape(title)}</h2><p>{html.escape(subtitle)}</p></div></div>")
 
 
 def _hero_figures() -> list[str]:
@@ -538,7 +172,7 @@ def _hero_figures() -> list[str]:
 
 def hero_html() -> str:
     figures = "".join(_hero_figures())
-    return ('<div id="hero">' + HERO_SVG + '<div class="hero-veil"></div>'
+    return ('<div id="hero">'
             '<div class="hero-text"><span class="event">PAS Challenge 2026</span>'
             '<h1>🌾 AgriBaat</h1>'
             '<p class="tag">Assistant agricole vocal · wolof, pulaar, sereer</p>'
@@ -1068,8 +702,24 @@ def api_demander(question: str, langue: str = "fr") -> dict:
 
 
 # ---------------------------------------------------------------- interface
-THEME = gr.themes.Soft(primary_hue="green", secondary_hue="amber",
-                       font=[gr.themes.GoogleFont("Inter"), "sans-serif"])
+# Thème Gradio aligné sur le système de design (assets/agribaat.css).
+THEME = gr.themes.Soft(
+    primary_hue="green", secondary_hue="amber", neutral_hue="stone",
+    radius_size=gr.themes.sizes.radius_lg,
+    font=[gr.themes.GoogleFont("Plus Jakarta Sans"), gr.themes.GoogleFont("Inter"),
+          "system-ui", "sans-serif"],
+).set(
+    body_background_fill="#f7f2e8", body_text_color="#17231d",
+    block_background_fill="#ffffff", block_border_color="#e7dfcf", block_radius="16px",
+    block_label_text_color="#0e3b2c", block_title_text_color="#0e3b2c",
+    input_background_fill="#ffffff", input_border_color="#e7dfcf",
+    input_border_color_focus="#1e7b4f",
+    button_primary_background_fill="#1e7b4f", button_primary_background_fill_hover="#0e3b2c",
+    button_primary_text_color="#ffffff",
+    checkbox_background_color_selected="#1e7b4f", checkbox_border_color_selected="#1e7b4f",
+    color_accent="#1e7b4f", color_accent_soft="#eaf5ee",
+    loader_color="#1e7b4f", slider_color="#1e7b4f",
+)
 
 # Thème clair imposé, comme la maquette : sans cela, un système en mode sombre
 # (Ubuntu, Windows) affichait l'app en sombre et les cartes claires devenaient illisibles.
@@ -1144,9 +794,9 @@ with gr.Blocks(title="AgriBaat", css=CSS, theme=THEME, js=FORCE_LIGHT) as demo:
             button.click(lambda lg, h, i=i: on_example(i, lg, h), [lang, history], outputs)
 
     with gr.Tab("🗺️ Climat & cultures"):
-        gr.HTML('<div class="sn-intro"><b>Quoi cultiver, et où ?</b> Pour chaque région : sa '
-                "zone climatique et les cultures où son rendement dépasse la moyenne "
-                "nationale. Survolez une région pour le détail.</div>")
+        gr.HTML(page_head("🗺️", "Quoi cultiver, et où ?",
+                          "Zone climatique de chaque région et cultures où son rendement "
+                          "dépasse la moyenne nationale. Survolez une région pour le détail."))
         with gr.Row(equal_height=False):
             with gr.Column(scale=3, min_width=300):
                 map_html = gr.HTML(map_view("best", "Kaolack"))
@@ -1159,7 +809,10 @@ with gr.Blocks(title="AgriBaat", css=CSS, theme=THEME, js=FORCE_LIGHT) as demo:
         map_region.change(on_map, [map_mode, map_region], [map_html, map_card])
 
     with gr.Tab("📈 Prix des marchés"):
-        with gr.Row():
+        gr.HTML(page_head("📈", "Prix des marchés",
+                          f"Prix de détail relevés par le PAM sur {N_MARKETS} marchés : "
+                          "tendance, marché le moins cher et le plus cher."))
+        with gr.Row(elem_classes="toolbar"):
             dd_product = gr.Dropdown(PRICE_PRODUCTS, value="mil", label="Produit")
             dd_region = gr.Dropdown(PRICE_REGIONS, value=ALL, label="Région")
             dd_market = gr.Dropdown([("Tous les marchés", ALL)], value=ALL, label="Marché")
@@ -1175,7 +828,10 @@ with gr.Blocks(title="AgriBaat", css=CSS, theme=THEME, js=FORCE_LIGHT) as demo:
         demo.load(on_price_filters, price_filters, [dd_market, kpis, chart, table])
 
     with gr.Tab("🌱 Production"):
-        with gr.Row():
+        gr.HTML(page_head("🌱", "Production agricole",
+                          "Production, superficie et rendement : évolution nationale "
+                          "(FAOSTAT) et comparaison des régions (DAPSA)."))
+        with gr.Row(elem_classes="toolbar"):
             dd_sp = gr.Dropdown(STAT_PRODUCTS, value="arachide", label="Culture")
             dd_ind = gr.Dropdown(INDICATORS, value="production", label="Indicateur")
         stat_cards = gr.HTML()
@@ -1192,8 +848,11 @@ with gr.Blocks(title="AgriBaat", css=CSS, theme=THEME, js=FORCE_LIGHT) as demo:
 
     if ADVICE_READY:
         with gr.Tab("🌦️ Conseils"):
+            gr.HTML(page_head("🌦️", "Conseils de saison",
+                              "Variétés du catalogue ouest-africain, pluies et "
+                              "recommandations des bulletins de l'ANACIM."))
             with gr.Accordion("Variétés recommandées (inscrites au Sénégal)", open=True):
-                with gr.Row():
+                with gr.Row(elem_classes="toolbar"):
                     dd_vcrop = gr.Dropdown(VARIETY_CROPS, value="arachide", label="Culture")
                     dd_cycle = gr.Dropdown(CYCLES, value="tous", label="Cycle")
                     cb_drought = gr.Checkbox(label="Tolérante à la sécheresse")
@@ -1219,9 +878,9 @@ with gr.Blocks(title="AgriBaat", css=CSS, theme=THEME, js=FORCE_LIGHT) as demo:
 
     if VOICE_READY:
         with gr.Tab("🧪 Labo langues"):
-            gr.Markdown("Essayez les modèles publics existants pour les **autres langues "
-                        "du projet**. Phase expérimentale : à faire juger par des "
-                        "locuteurs natifs.")
+            gr.HTML(page_head("🧪", "Labo langues",
+                              "Modèles publics de reconnaissance et de synthèse vocale pour "
+                              "les autres langues du projet. Phase expérimentale."))
             lab_lang = gr.Radio([(l.label, k) for k, l in labo.LANGUAGES.items()],
                                 value="pulaar", label="Langue")
             lab_status = gr.Markdown(LAB_STATUS["pulaar"])
@@ -1242,6 +901,8 @@ with gr.Blocks(title="AgriBaat", css=CSS, theme=THEME, js=FORCE_LIGHT) as demo:
             lab_btn.click(on_lab_speak, [lab_lang, lab_text], lab_audio)
 
     with gr.Tab("ℹ️ À propos"):
+        gr.HTML(page_head("ℹ️", "À propos d'AgriBaat",
+                          "Sources officielles, fonctionnement et limites connues."))
         gr.HTML(ABOUT_HTML)
 
     # API JSON : POST /gradio_api/call/demander, ou gradio_client (voir README).
