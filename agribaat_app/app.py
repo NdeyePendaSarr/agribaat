@@ -1002,15 +1002,15 @@ def on_outbox():
     path, rows = bulletin.prepare_outbox()
     if not rows:
         return ('<div class="mt-card"><b>Aucun message à envoyer</b><p>Aucun abonné ne se trouve '
-                "dans une région en alerte.</p></div>"), pd.DataFrame(columns=OUTBOX_COLS)
+                "dans une région en alerte.</p></div>"), gr.update(visible=False)
     note = (f'<div class="mt-card"><b>📤 {len(rows)} message(s) prêt(s)</b><p>Fichier : '
             f"<code>outputs/envois/{path.name}</code>. Envoi réel : à brancher sur un "
             "opérateur SMS / WhatsApp (Africa’s Talking, Twilio…) avec vos propres clés."
             "</p></div>")
-    return note, pd.DataFrame(rows).rename(columns={
+    return note, gr.update(visible=True, value=pd.DataFrame(rows).rename(columns={
         "destinataire": "Destinataire", "canal": "Canal", "contact": "Contact",
         "region": "Région", "langue": "Langue", "message": "Message (langue locale)",
-        "message_fr": "Message (français)"})
+        "message_fr": "Message (français)"}))
 
 
 # ---------------------------------------------------------------- impact
@@ -1028,7 +1028,7 @@ def impact_view(scope: str):
     who = "pendant les tests terrain" if scope == "terrain" else "depuis le début"
     if s["questions"] == 0:
         empty = (f'<div class="mt-card"><h4>Aucune question enregistrée {who}</h4><p>'
-                 "Démarrez une session de test ci-dessous, puis faites poser des questions "
+                 "Démarrez une session de test ci-dessus, puis faites poser des questions "
                  "dans l'Assistant vocal.</p></div>")
         return empty, "", impact_field()
     tiles = [
@@ -1326,7 +1326,9 @@ APP_JS = """
   }
   // Menu latéral : chaque lien sélectionne l'onglet correspondant (caché).
   const sync = () => {
-    const sel = document.querySelector('[role=tablist] button[aria-selected=true]');
+    // Les derniers onglets passent dans le menu « … » de Gradio (pas d'aria-selected).
+    const sel = document.querySelector('[role=tablist] button[aria-selected=true]')
+             || document.querySelector('.overflow-dropdown button.selected');
     const name = sel ? sel.innerText : "";
     let label = "";
     document.querySelectorAll(".side-link").forEach(a => {
@@ -1525,7 +1527,8 @@ with gr.Blocks(title="AgriBaat", css=CSS, theme=THEME, js=APP_JS) as demo:
                         sub_del = gr.Button("Retirer", variant="secondary", scale=1)
                     al_send = gr.Button("📤 Préparer les messages d’alerte", variant="primary")
                     al_note = gr.HTML()
-                    al_outbox = gr.Dataframe(interactive=False, max_height=280, wrap=True)
+                    al_outbox = gr.Dataframe(interactive=False, max_height=280, wrap=True,
+                                             visible=False)
             gr.HTML('<div class="src-note">Les abonnés sont enregistrés uniquement sur cet '
                     "ordinateur (outputs/abonnes.csv), avec leur accord. Rien n’est envoyé "
                     "automatiquement.</div>")
@@ -1712,7 +1715,8 @@ with gr.Blocks(title="AgriBaat", css=CSS, theme=THEME, js=APP_JS) as demo:
                 with gr.Row(equal_height=False):
                     with gr.Column(scale=3, min_width=260):
                         rain_chart = gr.HTML()
-                    advice_md = gr.Markdown()
+                    with gr.Column(scale=2, min_width=260):
+                        advice_md = gr.Markdown(elem_classes="advice-card")
                 with gr.Accordion("Détail par localité", open=False):
                     rain_table = gr.Dataframe(interactive=False, max_height=320)
                 dd_decade.change(on_rain, dd_decade, [rain_chart, rain_table, advice_md])

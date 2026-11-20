@@ -68,7 +68,9 @@ footer { display: none !important; }
   display: flex; flex-direction: column; gap: 4px; padding: 22px 16px 18px;
   background: linear-gradient(180deg, #0e3b2c 0%, #0b2f23 100%); color: #e4efe8;
   box-shadow: 4px 0 24px rgba(14, 59, 44, .18); overflow-y: auto;
+  scrollbar-width: none;  /* 12 pages : défilement possible, sans barre qui rétrécit le menu */
 }
+.sidenav::-webkit-scrollbar { display: none; }
 .sidenav .brand { display: flex; align-items: center; gap: 12px; padding: 4px 8px 18px;
                   border-bottom: 1px solid rgba(255, 255, 255, .08); margin-bottom: 8px; }
 .sidenav .logo { width: 44px; height: 44px; border-radius: 14px; display: flex; align-items: center;
@@ -78,11 +80,11 @@ footer { display: none !important; }
 .sidenav .brand small { color: #9fc3ae; font-size: .76rem; }
 .side-sec { font-size: .68rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase;
             color: #7fa792; padding: 14px 10px 6px; }
-.sidenav nav { display: flex; flex-direction: column; gap: 3px; }
-.side-link { display: flex; align-items: center; gap: 12px; padding: 11px 12px; border-radius: 12px;
+.sidenav nav { display: flex; flex-direction: column; gap: 2px; }
+.side-link { display: flex; align-items: center; gap: 12px; padding: 8px 12px; border-radius: 12px;
              color: #cfe1d6 !important; text-decoration: none !important; font-weight: 600; font-size: .93rem;
              transition: background .18s var(--ag-ease), color .18s, transform .18s var(--ag-ease); position: relative; }
-.side-link .sl-ico { width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center;
+.side-link .sl-ico { width: 32px; height: 32px; border-radius: 10px; display: flex; align-items: center;
                      justify-content: center; background: rgba(255, 255, 255, .06); font-size: 1.05rem; flex: 0 0 auto; }
 .side-link span { color: inherit !important; }
 .side-link:hover { background: rgba(255, 255, 255, .07); color: #fff !important; transform: translateX(2px); }
@@ -716,3 +718,24 @@ body.nav-open .nav-scrim { display: block; position: fixed; inset: 0; z-index: 9
 .diag-adv p { font-size: .9rem; line-height: 1.5; margin: 0 0 4px; }
 .block:has(.diag-card) { background: transparent !important; border: none !important;
                          box-shadow: none !important; padding: 0 !important; }
+
+
+/* 19. Revue finale ---------------------------------------------------------------------- */
+/* Bloc HTML vide (bannière sans objet, graphique pas encore calculé) : pas de bande blanche. */
+.block:has(> .html-container > .prose:empty) { display: none !important; }
+/* Recommandations ANACIM (page Conseils) dans une carte, comme le reste de l'app. */
+.advice-card { padding: 16px 18px !important; }
+.advice-card > *, .advice-card .prose { background: transparent !important; border: none !important;
+                                        box-shadow: none !important; }
+.advice-card ul, .advice-card ol { padding-left: 18px !important; margin-left: 0 !important; }
+.advice-card li { margin: 4px 0; font-size: .9rem; line-height: 1.45; }
+/* Menu latéral sur un écran peu haut : on garde la navigation, on retire le superflu. */
+@media (max-height: 960px) {
+  .side-sec:has(+ .side-langs), .side-langs { display: none !important; }
+  .side-foot small { display: none !important; }
+  .sidenav .brand { padding-bottom: 12px !important; }
+}
+@media (max-height: 820px) {
+  .side-foot { display: none !important; }
+  .side-link { padding: 6px 12px !important; }
+}
