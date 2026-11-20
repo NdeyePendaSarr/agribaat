@@ -248,6 +248,7 @@ def numbers(text: str) -> set[str]:
 class Synthesis:
     text: str
     sources: list[str] = field(default_factory=list)
+    answered: bool = True  # False : les passages ne répondent pas à la question
 
 
 def check(answer: str, passages: list[str]) -> str | None:
@@ -269,8 +270,10 @@ def synthesize(question_fr: str, passages) -> Synthesis | None:
     blocks = "\n\n".join(f"[{i}] ({p.source})\n{p.text}" for i, p in enumerate(passages, 1))
     data = _cached(_key("synthese", MODEL, question_fr, blocks), lambda: _ask_json(
         SYNTH_SYSTEM, f"Passages :\n{blocks}\n\nQuestion : {question_fr}", SYNTH_SCHEMA))
-    if not isinstance(data, dict) or not data.get("repond"):
+    if not isinstance(data, dict):
         return None
+    if data.get("repond") is False:  # Claude juge que les documents ne répondent pas
+        return Synthesis("", [], answered=False)
     used = [i for i in data.get("passages_utilises", []) if isinstance(i, int)
             and 1 <= i <= len(passages)]
     if not used:

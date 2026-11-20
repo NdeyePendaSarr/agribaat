@@ -978,3 +978,36 @@ def test_llm_disabled_without_key(monkeypatch):
     monkeypatch.delenv("ANTHROPIC_AUTH_TOKEN", raising=False)
     monkeypatch.setenv("AGRIBAAT_LLM", "auto")
     assert not llm.enabled() and llm.understand("dugub", "Wolof") is None
+
+
+@needs_data
+def test_llm_intent_beats_a_guessed_product_sheet_and_admits_no_answer(kb, monkeypatch):
+    """« Mon arachide jaunit » : pas une fiche de prix. Si les documents ne répondent pas
+    (avis de Claude), on le dit au lieu d'afficher un extrait hors sujet."""
+    from agribaat.pipeline import Assistant
+
+    bot = Assistant(kb, speak=False)
+    q = "Mon arachide jaunit, qu'est-ce que je dois faire ?"
+    assert bot.ask_text(q, "fr").intent == "fiche"  # mots-clés seuls : fiche devinée
+    _fake_llm(monkeypatch, [
+        {"intention": "technique", "culture": "arachide", "lieu": "", "annee": 0,
+         "sujet": "aucun", "question_fr": "Mon arachide jaunit, que faire ?"},
+        {"repond": False, "reponse": "", "passages_utilises": []}])
+    res = bot.ask_text(q, "fr")
+    assert res.intent == "technique" and res.llm == "comprehension"
+    assert "FCFA" not in res.answer_fr and not res.highlight
+    assert not res.found and "information fiable" in res.answer_fr  # -> conseiller agricole
+
+
+@needs_data
+def test_llm_off_topic_question_is_declined(kb, monkeypatch):
+    """« coupe du monde » : « monde » ressemble à « soñde » (récolte, pulaar) ; sans LLM on
+    garde l'ancien comportement, avec le LLM on répond poliment « hors sujet »."""
+    from agribaat.pipeline import Assistant
+
+    q = "Qui a gagné la coupe du monde ?"
+    assert parse([q], kb).intent_fuzzy
+    _fake_llm(monkeypatch, [{"intention": "hors_sujet", "culture": "aucun", "lieu": "",
+                             "annee": 0, "sujet": "aucun", "question_fr": q}])
+    res = Assistant(kb, speak=False).ask_text(q, "fr")
+    assert res.intent == "hors_sujet" and not res.found and "agriculture" in res.answer_fr

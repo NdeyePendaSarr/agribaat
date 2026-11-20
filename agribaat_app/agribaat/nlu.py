@@ -40,6 +40,7 @@ class Query:
     topic: str | None = None  # semis | recolte | ravageurs | ... (conseils)
     text: str = ""  # question normalisée (recherche de passages)
     intent_guessed: bool = False  # intention déduite par défaut (aucun mot-clé)
+    intent_fuzzy: bool = False  # mot-clé reconnu à une lettre près seulement
     focus: str = ""  # sens reconnu seulement (produit + notions), en français
 
     @property
@@ -144,6 +145,7 @@ def parse(texts: list[str], kb: KnowledgeBase) -> Query:
         for intent in ORDER:
             if any(_close(k, words) for k in INTENT_KEYWORDS[intent]):
                 q.intent = intent
+                q.intent_fuzzy = True  # « monde » ~ « soñde » : à confirmer (llm.py)
                 break
 
     # « Où vendre ? » (fr), « fan laa wara jaay » (wo), « toy mi yeeyata » (pulaar,

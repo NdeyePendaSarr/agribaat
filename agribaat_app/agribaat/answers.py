@@ -535,6 +535,29 @@ def _technique_answer(q: Query, kb: KnowledgeBase) -> Answer:
                   wo.render("pas_de_stat", produit=wo.word("this")))
 
 
+def off_topic_answer(lang=None) -> Answer:
+    """Question sans rapport avec l'agriculture (jugée par le LLM) : on le dit poliment."""
+    def build():
+        return Answer("Je réponds seulement aux questions sur l'agriculture au Sénégal. "
+                      + HELP_TEXT, None, False, wo.render("aide"))
+    if lang is not None:
+        with wo.using(lang):
+            return build()
+    return build()
+
+
+def no_reliable_answer(lang=None) -> Answer:
+    """« Pas d'information fiable » (phrases déjà relues), dans la langue demandée."""
+    def build():
+        return Answer("Je n'ai pas encore d'information fiable sur ce sujet dans mes documents "
+                      "(ISRA, ANACIM).", None, False,
+                      wo.render("pas_de_stat", produit=wo.word("this")))
+    if lang is not None:
+        with wo.using(lang):
+            return build()
+    return build()
+
+
 def answer(q: Query, kb: KnowledgeBase, lang=None) -> Answer:
     """Répond à une requête analysée (français + langue locale, mêmes chiffres).
 

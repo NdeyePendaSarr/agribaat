@@ -14,7 +14,7 @@ import numpy as np
 
 import config
 from . import labo, langues, llm, models
-from .answers import answer
+from .answers import answer, no_reliable_answer, off_topic_answer
 from .knowledge import KnowledgeBase
 from .nlu import parse
 
@@ -141,12 +141,17 @@ class Assistant:
         """
         excerpt = (ans.source or "").endswith("(extrait)")
         weak = (not ans.found or excerpt or query.intent is None or query.intent_guessed
-                or query.intent == "fiche")
+                or query.intent_fuzzy or query.intent == "fiche")
         if not weak or query.intent == "salutation":
             return query, ans
         start = time.perf_counter()
         question = res.question_wo or res.question_fr
         u = llm.understand(question, langue.label if from_local else "Français")
+        if (u is not None and u.intent == "hors_sujet" and query.product is None
+                and (query.intent_fuzzy or query.intent_guessed or not ans.found or excerpt)):
+            res.llm = "comprehension"
+            res.timings["llm"] = round(time.perf_counter() - start, 2)
+            return dataclasses.replace(query, intent="hors_sujet"), off_topic_answer(langue.module)
         if u is not None and u.intent not in ("hors_sujet", "salutation"):
             q2 = parse([u.question_fr, u.place, res.question_wo], self.kb)
             q2 = dataclasses.replace(
@@ -154,7 +159,11 @@ class Assistant:
                 product=u.product or q2.product, year=u.year or q2.year,
                 topic=u.topic or q2.topic)
             ans2 = answer(q2, self.kb, langue.module)
-            better = ans2.found and (not ans.found or excerpt or ans2.highlight is not None)
+            # Intention seulement devinée (fiche de la culture) : l'intention comprise par
+            # Claude l'emporte (« mon arachide jaunit » n'est pas une question de prix).
+            guessed = query.intent_guessed or query.intent in (None, "fiche")
+            better = guessed or (ans2.found and (not ans.found or excerpt
+                                                 or ans2.highlight is not None))
             if better:
                 query, ans, excerpt = q2, ans2, (ans2.source or "").endswith("(extrait)")
                 res.llm = "comprehension"
@@ -163,10 +172,21 @@ class Assistant:
             question_fr = res.question_fr or (u.question_fr if u else "") or question
             passages = self.kb.search_many(query.text, 3)
             syn = llm.synthesize(question_fr, passages)
-            if syn is not None:
+            if syn is not None and not syn.answered:
+                # Les passages trouvés ne répondent pas : on le dit plutôt que de montrer
+                # un extrait hors sujet (l'app oriente alors vers le conseiller agricole).
+                ans = no_reliable_answer(langue.module)
+                res.llm = res.llm or "comprehension"
+            elif syn is not None:
                 ans = dataclasses.replace(
                     ans, text=syn.text, found=True,
                     source=" ; ".join(syn.sources) + " · rédigé par l'IA, chiffres vérifiés")
                 res.llm = "synthese"
+        elif (res.llm == "comprehension" and query.intent == "technique" and query.topic is None
+              and ans.highlight is None):
+            # Question de pratique comprise par Claude, aucun document précis : les conseils
+            # ANACIM du moment (récolte, ravageurs…) seraient hors sujet (« mon arachide
+            # jaunit ») ; on le dit et l'app oriente vers le conseiller agricole.
+            ans = no_reliable_answer(langue.module)
         res.timings["llm"] = round(time.perf_counter() - start, 2)
         return query, ans
