@@ -696,3 +696,4 @@ body.nav-open .nav-scrim { display: block; position: fixed; inset: 0; z-index: 9
 @media (max-width: 640px) {
   .sell-rank .hbar { grid-template-columns: minmax(0, 1.6fr) .7fr 80px; font-size: .8rem; gap: 6px; }
 }
+.achip.ai { background: #eef0fb; color: #3b3f8f; text-transform: none; font-weight: 700; border: 1px solid #d8dcf5; }

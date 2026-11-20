@@ -726,6 +726,11 @@ def _private_usage_journal(tmp_path, monkeypatch):
 
     monkeypatch.setattr(usage, "EVENTS", tmp_path / "journal_usage.csv")
     monkeypatch.setattr(usage, "FEEDBACK", tmp_path / "journal_avis.csv")
+    # Ni appel réseau ni écriture dans le vrai cache du LLM pendant les tests.
+    from agribaat import llm
+
+    monkeypatch.setenv("AGRIBAAT_LLM", "0")
+    monkeypatch.setattr(llm, "CACHE", tmp_path / "llm_cache.json")
 
 
 def test_usage_journal_is_anonymous_and_counts_field_tests():
@@ -895,3 +900,81 @@ def test_month_chart_marks_best_month_and_harvest():
     svg = month_bars({m: (8.0 if m == 9 else -6.0 if m in (11, 12) else 0.5) for m in range(1, 13)},
                      best=9, harvest=(11, 12), title="Quand vendre", source="test")
     assert "vendre ici" in svg and "récolte" in svg and "sept. : +8,0 %" in svg
+
+
+# ---------------------------------------------------------------- LLM sous contrôle
+def _fake_llm(monkeypatch, replies):
+    """Remplace l'appel à Claude : `replies` = liste de réponses JSON, dans l'ordre."""
+    from agribaat import llm
+
+    calls = []
+
+    def fake(system, user, schema, max_tokens=2000):
+        calls.append(user)
+        return replies.pop(0) if replies else None
+    monkeypatch.setenv("AGRIBAAT_LLM", "1")
+    monkeypatch.setattr(llm, "_ask_json", fake)
+    return calls
+
+
+def test_llm_guard_rejects_invented_numbers():
+    from agribaat import llm
+
+    passages = ["Semer à 80 cm entre les lignes, 1 200 kg par hectare, cycle de 90 jours."]
+    assert llm.check("Semez à 80 cm ; comptez 90 jours.", passages) is None
+    assert llm.check("On obtient 1 200 kg par hectare.", passages) is None
+    assert "150" in llm.check("Mettez 150 kg d'engrais.", passages)
+    assert llm.check("", passages) == "réponse vide"
+    assert llm.numbers("2,50 et 3 000") == {"2.5", "3000"}
+
+
+@needs_data
+def test_llm_understanding_feeds_the_normal_engine(kb, monkeypatch):
+    """Question que les mots-clés ne comprennent pas : Claude remplit le formulaire, les
+    chiffres viennent des tables (même prix que la question classique)."""
+    from agribaat.pipeline import Assistant
+
+    calls = _fake_llm(monkeypatch, [{
+        "intention": "prix", "culture": "mil", "lieu": "Kaolack", "annee": 2031,
+        "sujet": "aucun", "question_fr": "Combien coûte le mil à Kaolack ?"}])
+    bot = Assistant(kb, speak=False)
+    res = bot.ask_text("Zorglub blabla trucmuche", "fr")
+    assert calls and res.llm == "comprehension" and res.intent == "prix"
+    ref = bot.ask_text("Quel est le prix du mil à Kaolack ?", "fr")
+    assert ref.llm == "" and len(calls) == 1  # question claire : aucun appel au LLM
+    assert res.answer_fr == ref.answer_fr and res.highlight.value == ref.highlight.value
+
+
+@needs_data
+def test_llm_synthesis_is_dropped_when_it_invents_a_number(kb, monkeypatch):
+    from agribaat.pipeline import Assistant
+
+    q = "Comment lutter contre le striga dans le mil ?"
+    bot = Assistant(kb, speak=False)
+    base = bot.ask_text(q, "fr")
+    if not (base.source or "").endswith("(extrait)"):
+        pytest.skip("pas d'extrait de document pour cette question")
+    # 1) réponse avec un chiffre inventé : rejetée, on garde l'extrait
+    _fake_llm(monkeypatch, [None, {"repond": True, "reponse": "Mettez 987654 kg de fumier.",
+                                   "passages_utilises": [1]}])
+    res = bot.ask_text(q, "fr")
+    assert res.llm == "" and res.answer_fr == base.answer_fr
+    # 2) réponse sans chiffre, passage cité : acceptée, source indiquée
+    from agribaat import llm
+
+    llm.CACHE.unlink()  # la réponse rejetée est en cache (elle le resterait : même rejet)
+    _fake_llm(monkeypatch, [None, {"repond": True, "reponse": "Arrachez le striga avant "
+                                   "la floraison et utilisez une variété adaptée.",
+                                   "passages_utilises": [1]}])
+    res = bot.ask_text(q, "fr")
+    assert res.llm == "synthese" and "chiffres vérifiés" in res.source
+    assert res.answer_fr.startswith("Arrachez le striga")
+
+
+def test_llm_disabled_without_key(monkeypatch):
+    from agribaat import llm
+
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.delenv("ANTHROPIC_AUTH_TOKEN", raising=False)
+    monkeypatch.setenv("AGRIBAAT_LLM", "auto")
+    assert not llm.enabled() and llm.understand("dugub", "Wolof") is None

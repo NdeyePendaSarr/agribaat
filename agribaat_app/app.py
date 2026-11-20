@@ -18,7 +18,8 @@ from agribaat.answers import CATALOGUE, ICONS, fmt_month, fmt_number, fmt_period
 from agribaat.knowledge import KnowledgeBase
 from agribaat.knowledge import decade_end
 from agribaat.lexicon import PRODUCT_BY_KEY, PRODUCTS
-from agribaat import bulletin, calendrier, carte, charts, labo, langues, meteo, models, usage, vente, warmup
+from agribaat import (bulletin, calendrier, carte, charts, labo, langues, llm, meteo, models,
+                      usage, vente, warmup)
 from agribaat.carte import SenegalMap
 from agribaat.charts import area_chart
 from agribaat.pipeline import Assistant, Result
@@ -307,6 +308,13 @@ def answer_card(res: Result, spoken: bool = False) -> str:
         parts.append('<span class="achip miss">Aucune donnée trouvée</span>')
     if res.source:
         parts.append(f'<span class="achip src">Source : {esc(res.source)}</span>')
+    if res.llm == "comprehension":
+        parts.append('<span class="achip ai" title="Claude a compris la question ; les chiffres '
+                     "viennent des tables officielles.\">🤖 Compris par l'IA</span>")
+    elif res.llm == "synthese":
+        parts.append('<span class="achip ai" title="Réponse rédigée par Claude à partir des seuls '
+                     'passages cités ; chaque nombre a été vérifié dans les documents.">'
+                     "🤖 Rédigé par l'IA · chiffres vérifiés</span>")
     parts.append("</div>")
     if spoken:  # question vocale : on montre ce que l'app a entendu
         heard = esc(res.question_wo) if res.question_wo else "<i>(rien de compréhensible)</i>"
@@ -1135,6 +1143,15 @@ ABOUT_HTML = (
     "nombres dits en lettres.<br><br><b>Pulaar</b> : même chaîne avec Wav2vec2-fula et la "
     "voix Meta MMS ; <b>sereer</b> : réponses écrites. Phrases pulaar et sereer relues "
     "par des locuteurs natifs.</div>"
+    '<div class="pipe"><h3>🤖 IA générative sous contrôle (Claude)</h3>'
+    "Seulement quand les mots-clés ne suffisent pas : <b>1. compréhension</b> — Claude "
+    "remplit un formulaire fermé (intention, culture, lieu, année), traité ensuite par le "
+    "moteur habituel : les chiffres viennent toujours des tables ; <b>2. rédaction</b> — "
+    "pour une question de pratique agricole, réponse courte écrite à partir des seuls "
+    "passages des documents ISRA / ANACIM, <b>rejetée si un nombre n'y figure pas</b>. "
+    "Seul le texte de la question est envoyé (ni voix, ni nom). Sans clé ou sans connexion, "
+    "l'app répond comme avant. "
+    f"<br><small>État : {html.escape(llm.status())}</small></div>"
     "<h3>Axes d'amélioration</h3><ul>"
     "<li>Validation du wolof par des locuteurs natifs (fiche <code>validation_wolof.csv</code>)."
     "</li><li>Pulaar et sereer : entraînement de la reconnaissance vocale sur "

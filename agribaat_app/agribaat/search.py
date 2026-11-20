@@ -73,14 +73,19 @@ class PassageIndex:
 
     def best(self, question: str, min_score: float = 6.0) -> Passage | None:
         """Meilleur passage, ou None si rien n'est assez proche de la question."""
+        found = self.top(question, 1, min_score)
+        return found[0] if found else None
+
+    def top(self, question: str, k: int = 3, min_score: float = 6.0) -> list[Passage]:
+        """Les k meilleurs passages (mêmes garde-fous que `best`), du plus pertinent."""
         query = {w for w in tokens(question) if w in self.idf}
         if not query or not self.docs:
-            return None
+            return []
         # Garde-fous : le mot le plus rare de la question (le plus distinctif) doit
         # figurer dans le passage, ainsi que la moitié au moins des mots.
         key_word = max(query, key=lambda w: self.idf[w])
         k1, b = 1.5, 0.75
-        best_i, best = -1, 0.0
+        scored = []
         for i, doc in enumerate(self.docs):
             matched = sum(w in doc for w in query)
             if key_word not in doc or matched * 2 < len(query) or matched < min(2, len(query)):
@@ -91,12 +96,11 @@ class PassageIndex:
                 f = doc.get(w)
                 if f:
                     score += self.idf[w] * f * (k1 + 1) / (f + norm)
-            if score > best:
-                best_i, best = i, score
-        if best_i < 0 or best < min_score:
-            return None
-        row = self.passages.iloc[best_i]
-        return Passage(str(row["texte"]), str(row["source"]), round(best, 1))
+            if score >= min_score:
+                scored.append((score, i))
+        scored.sort(reverse=True)
+        return [Passage(str(self.passages.iloc[i]["texte"]), str(self.passages.iloc[i]["source"]),
+                        round(score, 1)) for score, i in scored[:k]]
 
 
 # ------------------------------------------------------------ préparation

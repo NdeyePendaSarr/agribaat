@@ -10,5 +10,7 @@ sentencepiece>=0.2
 huggingface_hub>=0.23  # empreinte vocale (téléchargée une fois)
 soundfile>=0.12
 numpy>=1.24
+# IA générative sous contrôle (facultatif : sans clé API, l'app fonctionne sans)
+anthropic>=2.12
 # Tests
 pytest>=8.0

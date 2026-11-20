@@ -19,7 +19,14 @@
    Game Bar, vidéo dans `Vidéos\Captures`) ou l'enregistreur d'écran d'Ubuntu.
    Encore plus simple : `python demo_auto.py --filmer` : Chrome filme lui-même l'onglet,
    voix comprise, dans `outputs/demo_agribaat.webm` (environ 4 min, 20 Mo).
-5. Sans rien filmer : `python demo_auto.py --headless` produit
+5. **IA générative (facultatif)** : avant `python app.py`, mettre la clé API Claude de
+   l'équipe dans la fenêtre PowerShell : `$env:ANTHROPIC_API_KEY="sk-ant-..."` (ne jamais
+   l'écrire dans un fichier du dépôt). La page « À propos » affiche « État : actif ».
+   Pendant la répétition, poser aussi 2 ou 3 questions libres (ex. « Comment lutter contre
+   le striga dans le mil ? ») : la réponse de l'IA est gardée dans
+   `outputs/llm_cache.json` et reviendra le jour J même sans internet. Sans clé, l'app
+   marche exactement comme avant.
+6. Sans rien filmer : `python demo_auto.py --headless` produit
    `outputs/demo_secours.html`, les écrans de la démo avec les vraies réponses vocales,
    qui s'enchaînent tout seuls dans un navigateur, même sans internet.
 

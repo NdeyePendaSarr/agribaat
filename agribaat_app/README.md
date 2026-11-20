@@ -153,6 +153,20 @@ Les machines de 16 Go ou plus peuvent essayer les deux modèles plus gros, plus 
   14 régions. « Quand semer le mil à Kaffrine ? » dans l'Assistant ajoute ce calendrier à la
   réponse (en français). Fin de saison et zones : repères généraux, à affiner avec l'ANACIM.
 
+- **IA générative sous contrôle** (API Claude, `agribaat/llm.py`, facultatif) : appelée
+  seulement quand les mots-clés ne suffisent pas. (1) Compréhension : Claude remplit un
+  formulaire fermé (intention, culture, lieu, année, sujet, question en français) que le
+  moteur habituel traite, donc les chiffres viennent toujours des tables ; une année n'est
+  gardée que si elle est écrite dans la question. (2) Rédaction : pour une question de
+  pratique agricole, réponse courte écrite à partir des 3 passages les plus proches des
+  documents ISRA / ANACIM ; elle est rejetée si un nombre n'y figure pas ou si aucun
+  passage n'est cité, et l'extrait brut est alors gardé. Badges « 🤖 Compris par l'IA » /
+  « 🤖 Rédigé par l'IA · chiffres vérifiés ». Activer : `$env:ANTHROPIC_API_KEY="..."` avant
+  `python app.py` (modèle `claude-opus-5-5`, changeable avec `AGRIBAAT_LLM_MODEL` ;
+  `AGRIBAAT_LLM=0` pour couper). Seul le texte de la question part chez Anthropic. Les
+  résultats sont gardés dans `outputs/llm_cache.json` : une question déjà posée marche
+  ensuite hors ligne (utile pour la démo).
+
 - **Où vendre ?** (page « 🧭 Où vendre ? ») : pour un producteur d'une région, classe les
   marchés suivis par le PAM dans un rayon choisi (50 à 300 km) selon le prix net, c.-à-d. le
   dernier prix relevé moins le transport (FCFA par sac de 100 kg et par 100 km, valeur saisie

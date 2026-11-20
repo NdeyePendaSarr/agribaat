@@ -6,13 +6,14 @@ Chaque étape est protégée : si un modèle manque, on continue en mode dégrad
 
 from __future__ import annotations
 
+import dataclasses
 import time
 from dataclasses import dataclass, field
 
 import numpy as np
 
 import config
-from . import labo, langues, models
+from . import labo, langues, llm, models
 from .answers import answer
 from .knowledge import KnowledgeBase
 from .nlu import parse
@@ -33,6 +34,7 @@ class Result:
     timings: dict[str, float] = field(default_factory=dict)
     warnings: list[str] = field(default_factory=list)
     intent: str = ""  # sujet compris (prix, pluie, météo…) : mesure d'impact
+    llm: str = ""  # rôle du LLM : "" | "comprehension" | "synthese" (voir llm.py)
 
 
 class Assistant:
@@ -105,6 +107,7 @@ class Assistant:
         start = time.perf_counter()
         query = query or parse([res.question_wo, res.question_fr], self.kb)
         ans = answer(query, self.kb, langue.module)
+        query, ans = self._with_llm(res, query, ans, langue, from_local)
         res.intent = query.intent or ""
         res.timings["reponse"] = round(time.perf_counter() - start, 3)
         res.answer_fr, res.source, res.found = ans.text, ans.source, ans.found
@@ -128,3 +131,42 @@ class Assistant:
                                     res.speech_wo)
         res.timings["total"] = round(sum(v for k, v in res.timings.items() if k != "total"), 2)
         return res
+
+    def _with_llm(self, res: Result, query, ans, langue, from_local: bool):
+        """LLM sous contrôle (llm.py), seulement quand les mots-clés ne suffisent pas.
+
+        1. Compréhension : Claude remplit un formulaire fermé, que le moteur habituel
+           traite (les chiffres viennent des tables). 2. Synthèse : réponse rédigée à
+           partir des passages des documents, rejetée si un nombre n'y figure pas.
+        """
+        excerpt = (ans.source or "").endswith("(extrait)")
+        weak = (not ans.found or excerpt or query.intent is None or query.intent_guessed
+                or query.intent == "fiche")
+        if not weak or query.intent == "salutation":
+            return query, ans
+        start = time.perf_counter()
+        question = res.question_wo or res.question_fr
+        u = llm.understand(question, langue.label if from_local else "Français")
+        if u is not None and u.intent not in ("hors_sujet", "salutation"):
+            q2 = parse([u.question_fr, u.place, res.question_wo], self.kb)
+            q2 = dataclasses.replace(
+                q2, intent=u.intent, intent_guessed=False,
+                product=u.product or q2.product, year=u.year or q2.year,
+                topic=u.topic or q2.topic)
+            ans2 = answer(q2, self.kb, langue.module)
+            better = ans2.found and (not ans.found or excerpt or ans2.highlight is not None)
+            if better:
+                query, ans, excerpt = q2, ans2, (ans2.source or "").endswith("(extrait)")
+                res.llm = "comprehension"
+                res.question_fr = res.question_fr or u.question_fr
+        if excerpt:
+            question_fr = res.question_fr or (u.question_fr if u else "") or question
+            passages = self.kb.search_many(query.text, 3)
+            syn = llm.synthesize(question_fr, passages)
+            if syn is not None:
+                ans = dataclasses.replace(
+                    ans, text=syn.text, found=True,
+                    source=" ; ".join(syn.sources) + " · rédigé par l'IA, chiffres vérifiés")
+                res.llm = "synthese"
+        res.timings["llm"] = round(time.perf_counter() - start, 2)
+        return query, ans

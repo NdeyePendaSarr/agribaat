@@ -163,6 +163,11 @@ class KnowledgeBase:
             self._search = PassageIndex.load(self._passages_file)
         return self._search.best(question)
 
+    def search_many(self, question: str, k: int = 3):
+        """Les k passages les plus pertinents (pour la synthèse contrôlée, llm.py)."""
+        self.search("")  # charge l'index si besoin
+        return self._search.top(question, k)
+
 
 
     # ------------------------------------------------------------------ prix
