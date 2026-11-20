@@ -101,6 +101,7 @@ Les enregistrements restent sur la machine (ils ne sont pas envoyés sur GitHub)
 | 9 | Langue **Pulaar**, question type « coggu gawri e Kawlak » (ou au micro) | Même réponse chiffrée **en pulaar, lue à voix haute** |
 | 10 | Langue **Sereer · écrit**, taper « ndoɓ no Mbour » | Réponse **écrite en sereer** (pas encore de voix sereer) |
 | 11 | Menu **🌤️ Météo en direct**, puis « 🔊 Écouter le conseil » | **Prévisions Open-Meteo en temps réel** (7 jours) et conseil lu en wolof ou en pulaar ; question à l'Assistant : « Va-t-il pleuvoir à Kaolack ? » |
+| 11 bis | Même page, ouvrir **🌱 Calendrier de semis**, choisir « Hivernage 2025 » | **Démarrage réel des pluies** : Kaffrine 02/08 → alerte semis tardif et variétés hâtives ; Saint-Louis : faux départ le 14/08 repéré ; grille des 14 régions |
 | 12 | Onglet **🗺️ Climat & cultures** | **Carte du Sénégal** : zone climatique de chaque région et cultures où son rendement dépasse la moyenne nationale (ex. Sédhiou : mil +74 %), variétés adaptées à la pluviométrie |
 
 Phrases pulaar et sereer relues et approuvées par Mouhameth et Seydina (18/11). La

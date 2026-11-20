@@ -7,6 +7,7 @@ import html
 import importlib.util
 import logging
 import urllib.parse
+from datetime import date
 from pathlib import Path
 
 import gradio as gr
@@ -17,7 +18,7 @@ from agribaat.answers import CATALOGUE, fmt_month, fmt_number, fmt_period, place
 from agribaat.knowledge import KnowledgeBase
 from agribaat.knowledge import decade_end
 from agribaat.lexicon import PRODUCT_BY_KEY, PRODUCTS
-from agribaat import bulletin, carte, labo, langues, meteo, models, usage, warmup
+from agribaat import bulletin, calendrier, carte, charts, labo, langues, meteo, models, usage, warmup
 from agribaat.carte import SenegalMap
 from agribaat.charts import area_chart
 from agribaat.pipeline import Assistant, Result
@@ -703,6 +704,61 @@ def meteo_listen(region: str, lang: str):
     return labo.synthesize(langue.labo_key, text)
 
 
+# ---------------------------------------------------------------- calendrier de semis
+CAL_MODES = [("Maintenant (prévisions)", "now"), ("Hivernage 2025 (relevés)", "2025"),
+             ("Hivernage 2024 (relevés)", "2024")]
+CROP_LABELS = {"mil": "🌾 Mil", "sorgho": "🌾 Sorgho", "arachide": "🥜 Arachide",
+               "niebe": "🫘 Niébé"}
+
+
+def calendar_view(region: str, mode: str):
+    """(fiche de la région, graphique des pluies, tableau des 14 régions)."""
+    region = region or "Kaffrine"
+    cal = calendrier.build(region, mode or "now", kb.varieties)
+    if cal is None:
+        msg = ('<div class="mt-card"><b>Données de pluie indisponibles</b><p>Pas de connexion '
+               "à Open-Meteo et aucune donnée gardée en mémoire.</p></div>")
+        return msg, "", ""
+    var = "".join(
+        f'<div class="cal-var"><b>{CROP_LABELS[c]}</b><span>{html.escape(", ".join(v))}</span>'
+        "</div>" for c, v in cal.varieties.items())
+    when = ("à semer lors du prochain hivernage" if cal.status == "Saison sèche" else
+            "dont le cycle tient avant la fin habituelle des pluies")
+    var_html = (f'<div class="sn-sub">Variétés adaptées ({when})</div>{var}' if var else "")
+    late = f'<div class="warn">⚠️ {html.escape(cal.late)}</div>' if cal.late else ""
+    card = (f'<div class="mt-card cal-card {cal.level}"><div class="cal-st">'
+            f"{'✅' if cal.level == 'ok' else '⚠️' if cal.level == 'alerte' else '🌱'} "
+            f"{html.escape(cal.status)}</div><h4>📍 {carte.label(region)}</h4>"
+            f"<p>{html.escape(cal.message)}</p>{late}{var_html}"
+            '<div class="src-note">Règle : au moins 20 mm en 3 jours, sans période sèche de 7 '
+            "jours dans les 30 jours suivants. Pluies : Open-Meteo. Variétés : catalogue "
+            "CEDEAO. Fin de saison et zones : repères généraux.</div></div>")
+    period = ("31 derniers jours et 16 jours de prévisions" if mode == "now" else
+              f"mai à octobre {mode}")
+    chart = charts.rain_bars(cal.days, today=date.today() if mode == "now" else None,
+                             onset=cal.onset.day if cal.onset else None,
+                             false_starts=tuple(f.day for f in cal.false_starts),
+                             title=f"Pluie jour par jour · {carte.label(region)}",
+                             source=f"Open-Meteo · {period}")
+    return card, chart, calendar_national(mode or "now")
+
+
+def calendar_national(mode: str) -> str:
+    rain = calendrier.recent_rain() if mode == "now" else calendrier.season_rain(int(mode))
+    rows = []
+    for region in sorted(carte.REGION_ZONE, key=carte.label):
+        cal = calendrier.build(region, mode, kb.varieties, rain=rain)
+        if cal is None:
+            continue
+        fs = f"⚠️ faux départ {cal.false_starts[0].day:%d/%m}" if cal.false_starts else ""
+        rows.append(f'<div class="cal-reg {cal.level}"><b>{carte.label(region)}</b>'
+                    f"<span>{html.escape(cal.status)}</span><em>{cal.total:.0f} mm</em>"
+                    f"<i>{fs}</i></div>")
+    title = "maintenant" if mode == "now" else f"hivernage {mode}"
+    return (f'<div class="mt-card"><h4>🇸🇳 Démarrage de la saison · {title}</h4>'
+            f'<div class="cal-grid">{"".join(rows)}</div></div>') if rows else ""
+
+
 # ---------------------------------------------------------------- bulletins & alertes
 SUB_TYPES = ["Organisation de producteurs", "Radio communautaire", "Producteur", "Conseiller"]
 SUB_CHANNELS = ["WhatsApp", "SMS", "Appel vocal", "Radio"]
@@ -1229,6 +1285,22 @@ with gr.Blocks(title="AgriBaat", css=CSS, theme=THEME, js=APP_JS) as demo:
         mt_refresh.click(lambda r, l: meteo_view(r, l, force=True), [mt_region, mt_lang], mt_out)
         mt_listen.click(meteo_listen, [mt_region, mt_lang], mt_audio)
         demo.load(meteo_view, [mt_region, mt_lang], mt_out)
+        with gr.Accordion("🌱 Calendrier de semis : quand la saison des pluies démarre vraiment",
+                          open=True):
+            with gr.Row(elem_classes="toolbar"):
+                cal_region = gr.Dropdown(MAP_REGIONS, value="Kaffrine", label="Région")
+                cal_mode = gr.Radio(CAL_MODES, value="2025", label="Période",
+                                    elem_id="cal-mode")
+            with gr.Row(equal_height=False):
+                with gr.Column(scale=2, min_width=280):
+                    cal_card = gr.HTML()
+                with gr.Column(scale=3, min_width=320):
+                    cal_chart = gr.HTML()
+            cal_nat = gr.HTML()
+            cal_out = [cal_card, cal_chart, cal_nat]
+            cal_region.change(calendar_view, [cal_region, cal_mode], cal_out)
+            cal_mode.change(calendar_view, [cal_region, cal_mode], cal_out)
+            demo.load(calendar_view, [cal_region, cal_mode], cal_out)
 
     with gr.Tab("📻 Bulletins & alertes"):
         gr.HTML(page_head("📻", "Bulletins vocaux & alertes climat",

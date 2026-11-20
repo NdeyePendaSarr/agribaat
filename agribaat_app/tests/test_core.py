@@ -779,3 +779,56 @@ def test_assistant_answers_are_logged_with_topic(monkeypatch):
     assert list(df["sujet"]) == ["Prix des marchés"] and list(df["canal"]) == ["Texte"]
     kpis, _, _ = app.impact_view("terrain")
     assert "questions posées" in kpis
+
+
+def _rain(start, values):
+    from datetime import date, timedelta
+
+    d0 = date.fromisoformat(start)
+    return [(d0 + timedelta(days=i), float(v)) for i, v in enumerate(values)]
+
+
+def test_onset_rule_and_false_start():
+    """20 mm en 3 jours sans 7 jours secs ensuite ; sinon faux départ."""
+    from datetime import date
+
+    from agribaat import calendrier
+
+    # 25 mm le 1er juillet puis 10 jours secs (faux départ), puis 30 mm le 20 et pluies régulières
+    values = [25] + [0] * 18 + [30] + [5 if i % 3 == 0 else 0 for i in range(60)]
+    onset, false = calendrier.detect(_rain("2025-07-01", values), date(2025, 6, 1),
+                                     date(2025, 12, 31))
+    assert [f.day.isoformat() for f in false] == ["2025-07-01"]
+    assert onset.day.isoformat() == "2025-07-20" and onset.confirmed and onset.observed
+    none, _ = calendrier.detect(_rain("2025-07-01", [5] * 60), date(2025, 6, 1),
+                                date(2025, 12, 31))
+    assert none is None  # jamais 20 mm en 3 jours
+
+
+@needs_data
+def test_sowing_calendar_dry_season_and_late_onset(kb):
+    from datetime import date
+
+    from agribaat import calendrier
+
+    dry = {"Kaolack": _rain("2026-10-20", [0] * 47)}
+    cal = calendrier.build("Kaolack", "now", kb.varieties, today=date(2026, 11, 20), rain=dry)
+    assert cal.status == "Saison sèche" and "fin juin" in cal.message and cal.varieties
+    late = {"Kaffrine": _rain("2025-05-01", [0] * 93 + [30] + [6] * 90)}  # démarrage le 2/08
+    cal = calendrier.build("Kaffrine", "2025", kb.varieties, rain=late)
+    assert cal.onset.day == date(2025, 8, 2) and cal.late and cal.level == "alerte"
+    early = {"Sedhiou": _rain("2025-05-01", [0] * 50 + [30] + [6] * 120)}  # 20 juin
+    cal = calendrier.build("Sedhiou", "2025", kb.varieties, rain=early)
+    assert cal.level == "ok" and cal.varieties.get("mil") and not cal.late
+
+
+def test_rain_chart_marks_onset_and_forecast():
+    from datetime import date
+
+    from agribaat.charts import rain_bars
+
+    days = _rain("2025-07-01", [0, 25, 3, 0, 12])
+    svg = rain_bars(days, today=date(2025, 7, 3), onset=date(2025, 7, 2),
+                    false_starts=(date(2025, 7, 1),), title="Pluie", source="test")
+    assert "semis 02/07" in svg and "faux départ 01/07" in svg and "prévisions" in svg
+    assert "(prévision)" in svg and "40 mm" in svg

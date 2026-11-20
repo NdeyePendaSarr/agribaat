@@ -144,6 +144,15 @@ Les machines de 16 Go ou plus peuvent essayer les deux modèles plus gros, plus 
   dernières prévisions (outputs/meteo_cache.json) sont utilisées, avec leur date.
   Phrases météo locales : brouillon à faire relire (wolof.py, pulaar.py).
 
+- **Calendrier de semis** (page Météo, section « 🌱 Calendrier de semis ») : détecte le vrai
+  démarrage de l'hivernage à partir des pluies jour par jour (Open-Meteo : 30 jours relevés +
+  16 jours de prévision, ou archives des hivernages 2024 et 2025). Règle agronomique : au moins
+  20 mm en 3 jours, le premier jour pluvieux, sans période sèche de 7 jours dans les 30 jours
+  suivants ; sinon « faux départ ». Indique les variétés du catalogue dont le cycle tient dans
+  la saison restante, alerte si le semis est tardif, et donne la date de démarrage pour les
+  14 régions. « Quand semer le mil à Kaffrine ? » dans l'Assistant ajoute ce calendrier à la
+  réponse (en français). Fin de saison et zones : repères généraux, à affiner avec l'ANACIM.
+
 - **Bulletins vocaux & alertes** (page « Bulletins & alertes ») : bulletin audio de la semaine
   par région et par langue (météo + prix du mil et de l'arachide + sources), enregistré dans
   `outputs/bulletins/` pour une radio communautaire ou un groupe WhatsApp ; régions en alerte

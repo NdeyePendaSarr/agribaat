@@ -28,6 +28,63 @@ def _fmt(v: float) -> str:
     return f"{v:,.0f}".replace(",", " ")
 
 
+def rain_bars(days: list[tuple[date, float]], *, today: date | None = None,
+              onset: date | None = None, false_starts: tuple[date, ...] = (),
+              title: str = "", source: str = "") -> str:
+    """Pluie jour par jour (barres), avec le jour de démarrage (vert), les faux départs
+    (argile) et la frontière relevés / prévisions (aujourd'hui)."""
+    esc = html.escape
+    if not days:
+        return ""
+    W, H, L, R, T, B = 760, 230, 44, 12, 26, 32
+    top = max(20.0, max(v for _, v in days))
+    step = _nice_step(top, 4)
+    ymax = math.ceil(top / step) * step
+    n = len(days)
+    bw = (W - L - R) / n
+    py = lambda v: T + (1 - v / ymax) * (H - T - B)  # noqa: E731
+    parts = []
+    v = 0.0
+    while v <= ymax + 1e-9:
+        parts.append(f'<line x1="{L}" x2="{W - R}" y1="{py(v):.1f}" y2="{py(v):.1f}" class="g"/>'
+                     f'<text x="{L - 6}" y="{py(v) + 4:.1f}" class="ya">{v:.0f}</text>')
+        v += step
+    for i, (d, mm) in enumerate(days):
+        x = L + i * bw
+        fut = today is not None and d > today
+        cls = "rb fut" if fut else "rb"
+        if mm > 0:
+            parts.append(f'<rect x="{x + bw * .15:.1f}" y="{py(mm):.1f}" width="{bw * .7:.1f}" '
+                         f'height="{py(0) - py(mm):.1f}" class="{cls}"><title>{d:%d/%m} : '
+                         f'{mm:.0f} mm{" (prévision)" if fut else ""}</title></rect>')
+        if d.day == 1 or i == 0:
+            parts.append(f'<text x="{x:.1f}" y="{H - 10}" class="xa" text-anchor="start">'
+                         f"{d:%d/%m}</text>")
+
+    def mark(day, cls, text):
+        idx = next((i for i, (d, _) in enumerate(days) if d == day), None)
+        if idx is None:
+            return ""
+        x = L + (idx + .5) * bw
+        return (f'<line x1="{x:.1f}" x2="{x:.1f}" y1="{T - 6}" y2="{py(0):.1f}" class="{cls}"/>'
+                f'<text x="{x + 4:.1f}" y="{T - 10}" class="mk {cls}">{esc(text)}</text>')
+    for fs in false_starts[:1]:
+        parts.append(mark(fs, "fs", f"faux départ {fs:%d/%m}"))
+    if onset:
+        parts.append(mark(onset, "on", f"semis {onset:%d/%m}"))
+    if today and days[0][0] <= today < days[-1][0]:
+        idx = next(i for i, (d, _) in enumerate(days) if d > today)
+        x = L + idx * bw
+        parts.append(f'<line x1="{x:.1f}" x2="{x:.1f}" y1="{T}" y2="{py(0):.1f}" class="now"/>'
+                     f'<text x="{x + 4:.1f}" y="{T + 12}" class="mk now">prévisions →</text>')
+    svg = (f'<svg viewBox="0 0 {W} {H}" class="ag-chart rain-chart" role="img" '
+           f'aria-label="{esc(title)}">{"".join(parts)}</svg>')
+    total = sum(v for _, v in days)
+    return (f'<div class="chart-card"><div class="cc-head"><div><h4>{esc(title)}</h4>'
+            f'<span>{esc(source)}</span></div><div class="cc-last"><b>{total:.0f} mm</b>'
+            f"<small>au total</small></div></div>{svg}</div>")
+
+
 MONTHS = ("janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.",
           "nov.", "déc.")
 

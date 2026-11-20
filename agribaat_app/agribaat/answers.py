@@ -492,7 +492,17 @@ def _answer(q: Query, kb: KnowledgeBase) -> Answer:
     if q.intent == "pluie":
         return _rain_answer(q, kb)
     if q.intent == "conseil":
-        return _advice_answer(q, kb)
+        ans = _advice_answer(q, kb)
+        if q.topic == "semis":  # « quand semer … à Kaffrine ? » : calendrier de la région
+            region = _meteo_region(q, kb)
+            if region:
+                from . import calendrier
+
+                cal = calendrier.build(region, "now", kb.varieties)
+                if cal is not None:
+                    ans = dataclasses.replace(ans, text=ans.text + f" Calendrier de semis à "
+                                              f"{place(region)} : {cal.status}. {cal.message}")
+        return ans
     if q.intent == "technique":
         return _technique_answer(q, kb)
     if q.intent == "meteo":

@@ -629,6 +629,40 @@ body.nav-open .nav-scrim { display: block; position: fixed; inset: 0; z-index: 9
 .block:has(.imp-grid), .block:has(.imp-field) { background: transparent !important; border: none !important;
                                                 box-shadow: none !important; padding: 0 !important; }
 
+/* 16. Calendrier de semis ------------------------------------------------------------ */
+.cal-card { border-left: 5px solid var(--ag-rain); }
+.cal-card.ok { border-left-color: var(--ag-leaf); }
+.cal-card.alerte { border-left-color: var(--ag-clay); }
+.cal-st { display: inline-block; font-size: .8rem; font-weight: 800; border-radius: 999px; padding: 4px 12px;
+          margin-bottom: 8px; background: var(--ag-rain-50); color: #1d4f73; }
+.cal-card.ok .cal-st { background: var(--ag-leaf-50); color: var(--ag-leaf-600); }
+.cal-card.alerte .cal-st { background: var(--ag-clay-50); color: var(--ag-clay); }
+.cal-card p { font-size: .92rem; line-height: 1.5; }
+.cal-var { display: flex; gap: 10px; align-items: baseline; padding: 7px 10px; margin: 5px 0; border-radius: 10px;
+           background: var(--ag-surface-2); border: 1px solid var(--ag-line); font-size: .88rem; }
+.cal-var b { flex: 0 0 96px; color: var(--ag-forest); }
+.rain-chart .rb { fill: var(--ag-rain); }
+.rain-chart .rb.fut { fill: #9cc7e6; }
+.rain-chart line.on { stroke: var(--ag-leaf); stroke-width: 2.5; }
+.rain-chart line.fs { stroke: var(--ag-clay); stroke-width: 2; stroke-dasharray: 5 4; }
+.rain-chart line.now { stroke: var(--ag-muted); stroke-width: 1.5; stroke-dasharray: 3 3; }
+.rain-chart .mk { font-size: 14px; font-weight: 800; font-family: var(--ag-font); paint-order: stroke;
+                  stroke: #fff; stroke-width: 4px; }
+.rain-chart .mk.on { fill: var(--ag-leaf-600); }
+.rain-chart .mk.fs { fill: var(--ag-clay); }
+.rain-chart .mk.now { fill: var(--ag-muted); }
+.cal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; margin-top: 10px; }
+.cal-reg { display: flex; flex-direction: column; gap: 2px; padding: 9px 12px; border-radius: 12px;
+           background: var(--ag-surface-2); border: 1px solid var(--ag-line); border-left: 4px solid var(--ag-rain); }
+.cal-reg.ok { border-left-color: var(--ag-leaf); }
+.cal-reg.alerte { border-left-color: var(--ag-clay); }
+.cal-reg b { color: var(--ag-forest); }
+.cal-reg span { font-size: .82rem; font-weight: 700; }
+.cal-reg em { font-style: normal; font-size: .78rem; color: var(--ag-rain); font-weight: 700; }
+.cal-reg i { font-style: normal; font-size: .76rem; color: var(--ag-clay); font-weight: 700; }
+.block:has(.cal-card), .block:has(.cal-grid) { background: transparent !important; border: none !important;
+                                               box-shadow: none !important; padding: 0 !important; }
+
 /* 11. Accessibilité : mouvement réduit ------------------------------------------- */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
