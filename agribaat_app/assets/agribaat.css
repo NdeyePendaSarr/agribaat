@@ -99,6 +99,17 @@ footer { display: none !important; }
 .side-foot span { color: #fff; font-size: .82rem; font-weight: 600; }
 .side-foot small { color: #9fc3ae; font-size: .72rem; line-height: 1.4; margin-top: 4px; }
 .nav-scrim { display: none; }
+/* Bouton de fermeture du menu */
+.side-close { margin-left: auto; align-self: flex-start; width: 34px; height: 34px; flex: 0 0 auto;
+              border-radius: 10px; border: 1px solid rgba(255, 255, 255, .14); background: rgba(255, 255, 255, .06);
+              color: #e4efe8; font-size: .95rem; cursor: pointer; transition: background .18s, transform .18s var(--ag-ease); }
+.side-close:hover { background: rgba(255, 255, 255, .16); color: #fff; transform: rotate(90deg); }
+/* Menu replié (ordinateur) : le contenu prend toute la largeur, ☰ le rouvre */
+.sidenav { transition: transform .28s var(--ag-ease); }
+body.side-collapsed .sidenav { transform: translateX(-105%); box-shadow: none; }
+body.side-collapsed .gradio-container { margin-left: 0 !important; }
+body.side-collapsed .nav-toggle { display: inline-flex !important; align-items: center; justify-content: center; }
+.gradio-container { transition: margin-left .28s var(--ag-ease); }
 /* Tiroir ouvert (téléphone) : hors media query, car Gradio réécrit les sélecteurs « body ». */
 body.nav-open .sidenav { transform: none !important; }
 body.nav-open .nav-scrim { display: block; position: fixed; inset: 0; z-index: 90; background: rgba(10, 30, 22, .45); }

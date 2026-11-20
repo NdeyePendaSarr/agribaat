@@ -216,7 +216,9 @@ def sidebar_html() -> str:
         f'<span class="sl-ico">{icon}</span><span>{html.escape(label)}</span></a>'
         for i, (tab, icon, label) in enumerate(nav_items()))
     return ('<aside class="sidenav"><div class="brand"><div class="logo">🌾</div><div>'
-            '<b>AgriBaat</b><small>Assistant agricole vocal</small></div></div>'
+            '<b>AgriBaat</b><small>Assistant agricole vocal</small></div>'
+            '<button class="side-close" aria-label="Fermer le menu" title="Fermer le menu">✕'
+            '</button></div>'
             f'<div class="side-sec">Navigation</div><nav>{links}</nav>'
             '<div class="side-sec">Langues</div><div class="side-langs">'
             '<span>Wolof</span><span>Pulaar</span><span>Sereer</span><span>Français</span></div>'
@@ -825,7 +827,18 @@ APP_JS = """
     if (page && label) page.textContent = label;
   };
   document.addEventListener("click", e => {
-    if (e.target.closest(".nav-toggle")) { document.body.classList.toggle("nav-open"); return; }
+    // ☰ : ouvre le tiroir (téléphone) ou rouvre le menu replié (ordinateur).
+    // ✕ : ferme le tiroir (téléphone) ou replie le menu (ordinateur).
+    const wide = window.innerWidth > 900;
+    if (e.target.closest(".nav-toggle")) {
+      document.body.classList.toggle(wide ? "side-collapsed" : "nav-open");
+      return;
+    }
+    if (e.target.closest(".side-close")) {
+      document.body.classList.remove("nav-open");
+      if (wide) document.body.classList.add("side-collapsed");
+      return;
+    }
     if (e.target.closest(".nav-scrim")) { document.body.classList.remove("nav-open"); return; }
     const a = e.target.closest(".side-link");
     if (!a) return;
