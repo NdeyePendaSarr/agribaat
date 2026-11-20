@@ -32,7 +32,7 @@
   --ag-shadow: 0 1px 2px rgba(23, 35, 29, .04), 0 8px 24px rgba(23, 35, 29, .07);
   --ag-shadow-lg: 0 18px 40px rgba(14, 59, 44, .18);
   --ag-ease: cubic-bezier(.2, .7, .2, 1);
-  --ag-font: "Plus Jakarta Sans", "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --ag-font: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
   /* compatibilité avec les classes existantes */
   --ab-green: var(--ag-leaf); --ab-green-d: var(--ag-forest);
   --ab-mint: var(--ag-leaf-50); --ab-line: var(--ag-line);
@@ -461,6 +461,73 @@ body.nav-open .nav-scrim { display: block; position: fixed; inset: 0; z-index: 9
   .ex-card { font-size: .8rem !important; padding: 10px !important; }
   .about { padding: 16px; }
 }
+
+/* 12. Typographie : une seule police, une échelle ---------------------------------- */
+/* Corps 15 px · petit 13 px · micro 12 px minimum · titres en graisse 700/800. */
+.gradio-container { font-size: 15px; line-height: 1.55; -webkit-font-smoothing: antialiased;
+                    text-rendering: optimizeLegibility; font-feature-settings: "tnum" 0, "kern" 1; }
+.gradio-container h1, .gradio-container h2, .gradio-container h3, .gradio-container h4 {
+  font-family: var(--ag-font) !important; letter-spacing: -.015em; }
+.kpi .v, .tile b, .kpi-box .big, .hbar .v, .vtable td.num, .cc-last b, .sn-card li {
+  font-variant-numeric: tabular-nums; }
+.kpi .k, .kpi-box .k, .achip, .sn-sub, .ex-title, .side-sec { font-size: .75rem !important; }
+.gradio-container .prose { font-size: 15px; }
+.gradio-container label > span, .gradio-container .label-wrap span { font-size: .84rem !important; }
+
+/* Sélecteur de langue : pilule compacte alignée à droite, sans grand cadre vide */
+#lang-toggle { display: flex; justify-content: flex-end; }
+#lang-toggle .wrap { display: inline-flex !important; width: auto !important; flex-wrap: nowrap;
+                     box-shadow: var(--ag-shadow-sm); }
+#status-row { align-items: center !important; }
+
+/* Accordéons : en-têtes lisibles, comme des titres de section */
+.gradio-container .label-wrap { padding: 14px 16px !important; }
+.gradio-container .label-wrap > span:first-child { font-size: .95rem !important; font-weight: 800 !important;
+                                                    color: var(--ag-forest) !important; }
+.gradio-container .label-wrap .icon { color: var(--ag-leaf) !important; }
+
+/* Cases à cocher */
+.gradio-container input[type=checkbox] { width: 18px; height: 18px; accent-color: var(--ag-leaf);
+                                         border-radius: 5px !important; }
+.gradio-container label:has(input[type=checkbox]) { display: flex; align-items: center; gap: 8px;
+  padding: 10px 12px !important; border-radius: 12px !important; background: var(--ag-surface-2) !important;
+  border: 1px solid var(--ag-line) !important; font-weight: 600; cursor: pointer; }
+
+/* Graphique en courbe (agribaat/charts.py) */
+.block:has(> .chart-card), .block:has(.chart-card), .block:has(> .rank), .block:has(.rank) {
+  background: transparent !important; border: none !important; box-shadow: none !important; padding: 0 !important; }
+.chart-card { background: var(--ag-surface); border: 1px solid var(--ag-line); border-radius: var(--ag-radius-lg);
+              padding: 16px 18px 10px; box-shadow: var(--ag-shadow); }
+.cc-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
+.cc-head h4 { margin: 0; font-size: 1.02rem; font-weight: 800; color: var(--ag-forest); }
+.cc-head span { font-size: .8rem; color: var(--ag-muted); }
+.cc-last { text-align: right; background: var(--ag-leaf-50); border: 1px solid var(--ag-leaf-100);
+           border-radius: 12px; padding: 6px 12px; }
+.cc-last b { display: block; font-size: 1.1rem; font-weight: 800; color: var(--ag-forest); white-space: nowrap; }
+.cc-last small { font-size: .74rem; color: var(--ag-muted); }
+.cc-empty { padding: 40px 0; text-align: center; color: var(--ag-muted); }
+.ag-chart { width: 100%; height: auto; display: block; overflow: visible; }
+.ag-chart .g { stroke: #ece6d8; stroke-width: 1; }
+.ag-chart .ya, .ag-chart .xa { font-size: 15px; fill: #7a857f; font-family: var(--ag-font); }
+.ag-chart .ya { text-anchor: end; }
+.ag-chart .xa { text-anchor: middle; }
+.ag-chart .ln { fill: none; stroke: var(--ag-leaf); stroke-width: 2.4; stroke-linejoin: round; stroke-linecap: round; }
+.ag-chart .mx { fill: var(--ag-gold); stroke: #fff; stroke-width: 2.5; }
+.ag-chart .last { fill: var(--ag-forest); stroke: #fff; stroke-width: 2.5; }
+.ag-chart .ann { font-size: 15px; font-weight: 800; fill: var(--ag-gold-700); font-family: var(--ag-font);
+                 paint-order: stroke; stroke: #fff; stroke-width: 4px; }
+.ag-chart .hit { fill: transparent; cursor: crosshair; }
+.ag-chart .hit:hover { fill: var(--ag-leaf); stroke: #fff; stroke-width: 2; }
+
+/* Classement des marchés */
+.rank { display: flex; flex-direction: column; gap: 12px; }
+.rank .hbars { box-shadow: var(--ag-shadow); }
+.rank .hbar { grid-template-columns: minmax(0, 1fr) 1fr 74px; }
+.rank .hbar .n { text-align: left; }
+.rank .hbars:nth-of-type(2) .fill { background: linear-gradient(90deg, var(--ag-gold), var(--ag-clay)); }
+
+/* Espacements verticaux réguliers entre les blocs d'une page */
+.tabitem > .column { gap: 14px !important; }
 
 /* 11. Accessibilité : mouvement réduit ------------------------------------------- */
 @media (prefers-reduced-motion: reduce) {

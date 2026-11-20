@@ -19,6 +19,7 @@ from agribaat.knowledge import decade_end
 from agribaat.lexicon import PRODUCT_BY_KEY, PRODUCTS
 from agribaat import carte, labo, langues, warmup
 from agribaat.carte import SenegalMap
+from agribaat.charts import area_chart
 from agribaat.pipeline import Assistant, Result
 
 # Windows : quand le navigateur recharge la page, asyncio journalise une « erreur »
@@ -137,6 +138,20 @@ WARMUP = (warmup.start(assistant, [(t, LANG_CODES[l]) for t, l in WARM_QUESTIONS
 # de fond intégrée à la page (aucun fichier à servir, marche hors ligne).
 ASSETS = Path(__file__).with_name("assets")
 CSS = (ASSETS / "agribaat.css").read_text(encoding="utf-8")
+# Police Plus Jakarta Sans (variable, licence SIL OFL) intégrée : aucune requête réseau.
+_FONT_RANGES = {"latin": "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, "
+                         "U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, "
+                         "U+2193, U+2212, U+2215, U+FEFF, U+FFFD",
+                "latin-ext": "U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, "
+                             "U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, "
+                             "U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF"}
+for _subset, _range in _FONT_RANGES.items():
+    _file = ASSETS / "fonts" / f"plus-jakarta-sans-{_subset}.woff2"
+    if _file.exists():
+        CSS = ("@font-face {font-family: 'Plus Jakarta Sans'; font-style: normal; "
+               "font-display: swap; font-weight: 200 800; src: url(data:font/woff2;base64,"
+               + base64.b64encode(_file.read_bytes()).decode() + ") format('woff2'); "
+               f"unicode-range: {_range};}}\n") + CSS
 BACKGROUND = ASSETS / "fond_agricole.webp"
 if BACKGROUND.exists():
     _bg = "data:image/webp;base64," + base64.b64encode(BACKGROUND.read_bytes()).decode()
@@ -460,12 +475,30 @@ def price_kpis(product: str, region: str, market: str) -> str:
         f'<div class="s">{s}</div></div>' for k, v, s in cards) + "</div>"
 
 
-def price_chart(product: str, region: str, market: str) -> pd.DataFrame:
+def price_chart(product: str, region: str, market: str) -> str:
+    """Courbe du prix mensuel (moyenne des marchés retenus)."""
     df = _filtered_prices(product, region)
     if market != ALL:
         df = df[df["market"] == market]
-    return (df.groupby("date", as_index=False)["price_xof_kg"].mean()
-            .rename(columns={"price_xof_kg": "prix_fcfa_kg"}))
+    series = df.groupby("date")["price_xof_kg"].mean()
+    where = place(market) if market != ALL else (place(region) if region != ALL else "Sénégal")
+    label = PRODUCT_BY_KEY[product].label
+    return area_chart([(d.date(), float(v)) for d, v in series.items()],
+                      title=f"Prix du {label} · {where}", unit="FCFA/kg",
+                      source="Prix de détail mensuel · PAM / WFP")
+
+
+def market_rank(product: str, region: str) -> str:
+    """Classement visuel : marchés les moins chers et les plus chers (12 derniers mois)."""
+    df = latest_by_market(product, region)
+    if df.empty:
+        return hbars_html("Marchés", [], "FCFA")
+    rows = list(zip(df["Marché"], df["Prix (FCFA/kg)"].astype(float)))
+    n = min(5, len(rows))
+    cheap = hbars_html("🟢 Les moins chers", rows[:n], "FCFA")
+    dear = hbars_html("🔴 Les plus chers", rows[::-1][:n], "FCFA")
+    return (f'<div class="rank">{cheap}{dear}<div class="src-note">Dernier relevé de '
+            f"chaque marché, 12 derniers mois · {len(rows)} marchés.</div></div>")
 
 
 def on_price_filters(product: str, region: str):
@@ -473,7 +506,7 @@ def on_price_filters(product: str, region: str):
     dd = gr.Dropdown(choices=[("Tous les marchés", ALL)] + [(place(m), m) for m in markets],
                      value=ALL)
     return (dd, price_kpis(product, region, ALL), price_chart(product, region, ALL),
-            latest_by_market(product, region))
+            market_rank(product, region), latest_by_market(product, region))
 
 
 def on_price_market(product: str, region: str, market: str):
@@ -539,8 +572,18 @@ def stat_kpis(product: str, indicator: str) -> str:
         f'<div class="s">{s}</div></div>' for k, v, s in cards) + "</div>"
 
 
+def national_chart(product: str, indicator: str) -> str:
+    series = national_series(product, indicator)
+    label = PRODUCT_BY_KEY[product].label
+    name = dict((v, k) for k, v in INDICATORS).get(indicator, indicator).split(" (")[0]
+    return area_chart([(pd.Timestamp(y).date(), float(v)) for y, v in
+                       zip(series["year"], series["value"])],
+                      title=f"{name} · {label} au Sénégal", unit=UNITS[indicator],
+                      source=f"FAOSTAT · {YEARS_FAO[0]}–{YEARS_FAO[1]}", yearly=True)
+
+
 def on_stats(product: str, indicator: str):
-    return (stat_kpis(product, indicator), national_series(product, indicator),
+    return (stat_kpis(product, indicator), national_chart(product, indicator),
             regional_bars(product, indicator))
 
 
@@ -742,8 +785,9 @@ def api_demander(question: str, langue: str = "fr") -> dict:
 THEME = gr.themes.Soft(
     primary_hue="green", secondary_hue="amber", neutral_hue="stone",
     radius_size=gr.themes.sizes.radius_lg,
-    font=[gr.themes.GoogleFont("Plus Jakarta Sans"), gr.themes.GoogleFont("Inter"),
-          "system-ui", "sans-serif"],
+    # Police intégrée à la page (assets/fonts) : identique même sans internet.
+    font=[gr.themes.Font("Plus Jakarta Sans"), gr.themes.Font("system-ui"),
+          gr.themes.Font("Segoe UI"), gr.themes.Font("sans-serif")],
 ).set(
     body_background_fill="#f7f2e8", body_text_color="#17231d",
     block_background_fill="#ffffff", block_border_color="#e7dfcf", block_radius="16px",
@@ -883,15 +927,19 @@ with gr.Blocks(title="AgriBaat", css=CSS, theme=THEME, js=APP_JS) as demo:
             dd_region = gr.Dropdown(PRICE_REGIONS, value=ALL, label="Région")
             dd_market = gr.Dropdown([("Tous les marchés", ALL)], value=ALL, label="Marché")
         kpis = gr.HTML()
-        chart = gr.LinePlot(x="date", y="prix_fcfa_kg", height=360, x_title=" ",
-                            y_title="FCFA / kg", title="Prix de détail mensuel — PAM/WFP")
-        with gr.Accordion("Dernier prix par marché, 12 derniers mois (du moins cher au plus cher)", open=True):
+        with gr.Row(equal_height=False):
+            with gr.Column(scale=3, min_width=320):
+                chart = gr.HTML()
+            with gr.Column(scale=2, min_width=260):
+                rank = gr.HTML()
+        with gr.Accordion("Tableau complet : dernier prix de chaque marché", open=False):
             table = gr.Dataframe(interactive=False, max_height=360)
         price_filters = [dd_product, dd_region]
+        price_out = [dd_market, kpis, chart, rank, table]
         for comp in price_filters:
-            comp.change(on_price_filters, price_filters, [dd_market, kpis, chart, table])
+            comp.change(on_price_filters, price_filters, price_out)
         dd_market.input(on_price_market, [dd_product, dd_region, dd_market], [kpis, chart])
-        demo.load(on_price_filters, price_filters, [dd_market, kpis, chart, table])
+        demo.load(on_price_filters, price_filters, price_out)
 
     with gr.Tab("🌱 Production"):
         gr.HTML(page_head("🌱", "Production agricole",
@@ -902,9 +950,8 @@ with gr.Blocks(title="AgriBaat", css=CSS, theme=THEME, js=APP_JS) as demo:
             dd_ind = gr.Dropdown(INDICATORS, value="production", label="Indicateur")
         stat_cards = gr.HTML()
         with gr.Row(equal_height=False):
-            nat_chart = gr.LinePlot(x="year", y="value", height=340, x_title=" ",
-                                    y_title=" ", title=f"Sénégal — évolution FAOSTAT "
-                                    f"({YEARS_FAO[0]}–{YEARS_FAO[1]})", scale=3)
+            with gr.Column(scale=3, min_width=320):
+                nat_chart = gr.HTML()
             with gr.Column(scale=2, min_width=260):
                 reg_chart = gr.HTML()
         stat_inputs = [dd_sp, dd_ind]

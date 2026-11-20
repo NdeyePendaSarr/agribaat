@@ -320,7 +320,7 @@ def test_interface_tabs_render_with_real_data(monkeypatch):
     card = app.on_text("Quel est le prix du mil à Kaolack ?", "Français", [])[0]
     assert "Chiffre vérifié" in card and "300" in card and "Kaolack" in card
     kpis, series, bars = app.on_stats("arachide", "production")
-    assert "Record" in kpis and len(series) > 10 and 'class="fill"' in bars
+    assert "Record" in kpis and "ag-chart" in series and series.count("class=\"hit\"") > 10 and 'class="fill"' in bars
     assert "vtable" in app.variety_table("arachide", "court", False)
     assert "hbar" in app.rain_by_region(app.DECADES[0][1])[0]
     for lang, cards in app.EXAMPLES_BY_LANG.items():
@@ -611,3 +611,14 @@ def test_senegal_map_regions_and_best_crops(kb):
     card = m.region_card("Kaolack")
     assert "Climat : zone" in card and "kg/ha" in card and "DAPSA" in card
     assert "Aucune culture au-dessus" in m.region_card("Dakar")
+
+
+def test_area_chart_annotates_max_and_last():
+    from datetime import date
+
+    from agribaat.charts import area_chart
+
+    svg = area_chart([(date(2020, 1, 1), 100.0), (date(2021, 1, 1), 300.0),
+                      (date(2022, 1, 1), 200.0)], title="Test", unit="t", source="S", yearly=True)
+    assert "Max 300 · 2021" in svg and "200 t" in svg and svg.count('class="hit"') == 3
+    assert "Pas assez" in area_chart([(date(2020, 1, 1), 1.0)], title="T", unit="", source="")
