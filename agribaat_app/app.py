@@ -17,7 +17,7 @@ from agribaat.answers import CATALOGUE, fmt_month, fmt_number, fmt_period, place
 from agribaat.knowledge import KnowledgeBase
 from agribaat.knowledge import decade_end
 from agribaat.lexicon import PRODUCT_BY_KEY, PRODUCTS
-from agribaat import bulletin, carte, labo, langues, meteo, models, warmup
+from agribaat import bulletin, carte, labo, langues, meteo, models, usage, warmup
 from agribaat.carte import SenegalMap
 from agribaat.charts import area_chart
 from agribaat.pipeline import Assistant, Result
@@ -205,6 +205,7 @@ def nav_items() -> list[tuple[str, str, str]]:
     """(texte de l'onglet, icône, libellé du menu), dans l'ordre des onglets."""
     items = [("Assistant", "🎙️", "Assistant vocal"), ("Météo en direct", "🌤️", "Météo en direct"),
              ("Bulletins & alertes", "📻", "Bulletins & alertes"),
+             ("Impact", "📊", "Impact & tests terrain"),
              ("Climat & cultures", "🗺️", "Climat & cultures"),
              ("Prix des marchés", "📈", "Prix des marchés"), ("Production", "🌱", "Production")]
     items += [("Conseils", "🌦️", "Conseils de saison")] if ADVICE_READY else []
@@ -357,18 +358,23 @@ def _history_md(history: list[tuple[str, str]]) -> str:
     return "\n".join(f"- **{html.escape(q)}** — {html.escape(a)}" for q, a in history[:6])
 
 
-def _render(res: Result, history: list, spoken: bool = False):
+def _render(res: Result, history: list, spoken: bool = False, canal: str = "Texte",
+            lang: str = "", session: dict | None = None):
     question = res.question_fr or res.question_wo
     if question:
         history = [(question, res.answer_fr)] + history[:9]
-    return answer_card(res, spoken), res.audio, _details(res), history, _history_md(history)
+    event = usage.log_question(canal=canal, langue=lang or langues.get(res.lang).label,
+                               sujet=res.intent, trouve=res.found,
+                               temps_s=res.timings.get("total", 0.0), session=session)
+    return (answer_card(res, spoken), res.audio, _details(res), history, _history_md(history),
+            event)
 
 
 # Laisse la réponse précédente affichée (gr.skip n'existe pas dans les vieux Gradio).
-NOTHING = ((gr.skip() if hasattr(gr, "skip") else gr.update()),) * 5
+NOTHING = ((gr.skip() if hasattr(gr, "skip") else gr.update()),) * 6
 
 
-def on_voice(audio, lang, history):
+def on_voice(audio, lang, history, session=None):
     # Message doux (pas d'état « Erreur » sur les cases de réponse).
     code = LANG_CODES.get(lang, "wo")
     if code == "srr":
@@ -384,14 +390,15 @@ def on_voice(audio, lang, history):
         return NOTHING
     # Français choisi : la question parlée reste en wolof (pas de reconnaissance du français).
     return _render(assistant.ask_audio(sr, data, "pul" if code == "pul" else "wo"), history,
-                   spoken=True)
+                   spoken=True, canal="Voix", lang=lang, session=session)
 
 
-def on_text(text: str, lang: str, history):
+def on_text(text: str, lang: str, history, session=None, canal: str = "Texte"):
     if not text or not text.strip():
         gr.Warning("Tapez d'abord une question.")
         return NOTHING
-    return _render(assistant.ask_text(text, LANG_CODES.get(lang, "wo")), history)
+    return _render(assistant.ask_text(text, LANG_CODES.get(lang, "wo")), history,
+                   canal=canal, lang=lang, session=session)
 
 
 MIC_HEAD = {
@@ -417,10 +424,20 @@ def on_lang(lang: str):
             *[gr.Button(value=label) for label in labels])
 
 
-def on_example(i: int, lang: str, history: list):
+def on_example(i: int, lang: str, history: list, session=None):
     """Clic sur la i-ème question type de la langue choisie."""
     question, _ = EXAMPLES_BY_LANG.get(lang, EXAMPLES_BY_LANG["Wolof"])[i]
-    return on_text(question, lang, history)
+    return on_text(question, lang, history, session, canal="Question type")
+
+
+def on_feedback(event: str | None, understood: bool):
+    """Avis de l'utilisateur sur la dernière réponse (mesure « réponses comprises »)."""
+    if not event:
+        gr.Warning("Posez d'abord une question.")
+        return
+    usage.log_feedback(event, understood)
+    gr.Info("Merci ! Votre avis est enregistré." if understood else
+            "Merci : nous allons améliorer cette réponse.")
 
 
 # ---------------------------------------------------------------- prix
@@ -773,6 +790,98 @@ def on_outbox():
         "message_fr": "Message (français)"})
 
 
+# ---------------------------------------------------------------- impact
+PROFILES = ["Producteur", "Productrice", "Responsable d'OP", "Conseiller agricole", "Autre"]
+
+
+def _pct(v) -> str:
+    return "—" if v is None else f"{v:.0f} %"
+
+
+def impact_view(scope: str):
+    """(chiffres clés, graphiques, avant/après) pour « terrain » ou « tout »."""
+    df = usage.load(field_only=scope == "terrain")
+    s = usage.summary(df)
+    who = "pendant les tests terrain" if scope == "terrain" else "depuis le début"
+    if s["questions"] == 0:
+        empty = (f'<div class="mt-card"><h4>Aucune question enregistrée {who}</h4><p>'
+                 "Démarrez une session de test ci-dessous, puis faites poser des questions "
+                 "dans l'Assistant vocal.</p></div>")
+        return empty, "", impact_field()
+    tiles = [
+        ("❓", f"{s['questions']}", "questions posées"),
+        ("👥", f"{s['participants']}", f"participants ({s['femmes']} femme(s))"),
+        ("✅", _pct(s["trouve_pct"]), "réponses trouvées"),
+        ("👍", _pct(s["compris_pct"]), f"réponses comprises ({s['avis']} avis)"),
+        ("⏱️", "—" if s["temps_median"] is None
+         else f"{s['temps_median']:.1f} s".replace(".", ","),
+         "temps de réponse médian"),
+        ("🗣️", _pct(s["local_pct"]), "en wolof, pulaar ou sereer"),
+    ]
+    kpis = '<div class="kpis">' + "".join(
+        f'<div class="kpi"><div class="k">{k}</div><div class="v">{v}</div><div class="s">'
+        f"{html.escape(sub)}</div></div>" for k, v, sub in tiles) + "</div>"
+    by_lang = df["langue"].value_counts()
+    by_topic = df["sujet"].value_counts()
+    by_canal = df["canal"].value_counts()
+    bars = ('<div class="imp-grid">'
+            + hbars_html("Par langue", [(k, float(v)) for k, v in by_lang.items()], "")
+            + hbars_html("Par sujet", [(k, float(v)) for k, v in by_topic.items()], "")
+            + hbars_html("Par canal", [(k, float(v)) for k, v in by_canal.items()], "")
+            + "</div>")
+    days = df.assign(jour=df["horodatage"].str[:10]).groupby("jour").size()
+    if len(days) >= 2:
+        bars += area_chart([(pd.Timestamp(d).date(), float(n)) for d, n in days.items()],
+                           title="Questions par jour", unit="questions",
+                           source="Journal d'utilisation AgriBaat (anonyme)", yearly=False)
+    return kpis, bars, impact_field()
+
+
+def impact_field() -> str:
+    """Avant / avec AgriBaat, d'après la feuille test_terrain/resultats_test_terrain.csv."""
+    r = usage.field_results()
+    if r is None:
+        return ('<div class="mt-card imp-field"><h4>📋 Avant / avec AgriBaat</h4><p>Remplissez '
+                "<code>test_terrain/resultats_test_terrain.csv</code> après chaque entretien "
+                "(fiche d'entretien imprimable dans le même dossier) : la comparaison "
+                "s'affichera ici.</p></div>")
+    before = "—" if r["avant_min"] is None else f"{r['avant_min']:.0f} min"
+    after = "—" if r["apres_min"] is None else f"{r['apres_min'] * 60:.0f} s"
+    return (f'<div class="mt-card imp-field"><h4>📋 Avant / avec AgriBaat · {r["personnes"]} '
+            "personne(s) interrogée(s)</h4><div class=\"imp-ba\"><div><small>Pour connaître un "
+            f"prix aujourd'hui</small><b>{before}</b></div><div class=\"arrow\">→</div><div>"
+            f"<small>Avec AgriBaat</small><b>{after}</b></div></div><div class=\"imp-row\">"
+            f"<span>Question comprise du premier coup : <b>{_pct(r['premier_coup_pct'])}</b>"
+            f"</span><span>Chiffre redit correctement : <b>{_pct(r['redit_pct'])}</b></span>"
+            "</div><div class=\"src-note\">Valeurs médianes, d'après la feuille de résultats "
+            "des tests terrain.</div></div>")
+
+
+def on_session_start(code, profil, sexe, commune):
+    code = (code or "").strip().upper()
+    if not code:
+        gr.Warning("Donnez un code de participant (P1, P2…), jamais son nom.")
+        return None, session_banner(None)
+    session = {"code": code, "profil": profil or "", "sexe": sexe or "", "commune": commune or ""}
+    gr.Info(f"Session {code} démarrée : faites poser des questions dans l'Assistant vocal.")
+    return session, session_banner(session)
+
+
+def session_banner(session) -> str:
+    if not session:
+        return ('<div class="mode text">Aucune session de test en cours : les questions sont '
+                "comptées comme utilisation de l'équipe.</div>")
+    return (f'<div class="mode ok">Test terrain en cours · participant {html.escape(session["code"])}'
+            f' · {html.escape(session["profil"])} — passez à l\'Assistant vocal.</div>')
+
+
+def impact_export(scope: str):
+    df = usage.load(field_only=scope == "terrain")
+    path = usage.OUT / f"impact_{scope}_{pd.Timestamp.now():%Y-%m-%d_%H%M}.csv"
+    df.to_csv(path, sep=";", index=False, encoding="utf-8-sig")
+    return gr.File(value=str(path), visible=True)
+
+
 # ---------------------------------------------------------------- carte climat
 SN_MAP = SenegalMap(kb.regional, kb.varieties, kb.rain)
 MAP_MODES = [("🌾 Cultures à fort rendement", "best"), ("🌦️ Zones climatiques", "zones"),
@@ -936,6 +1045,9 @@ def api_demander(question: str, langue: str = "fr") -> dict:
     """
     langue = langue if langue in ("fr", "wo", "pul", "srr") else "fr"
     res = api_assistant.ask_text(question or "", langue)
+    usage.log_question(canal="API", langue=langues.get(res.lang).label if langue != "fr"
+                       else "Français", sujet=res.intent, trouve=res.found,
+                       temps_s=res.timings.get("total", 0.0))
     hl = res.highlight
     return {
         "question": question, "langue": res.lang, "trouve": res.found,
@@ -1025,6 +1137,8 @@ with gr.Blocks(title="AgriBaat", css=CSS, theme=THEME, js=APP_JS) as demo:
     gr.HTML(sidebar_html(), elem_id="sidenav-host")
     gr.HTML(topbar_html(), elem_id="topbar-host")
     history = gr.State([])
+    test_session = gr.State(None)  # test terrain en cours : {"code", "profil", "sexe"}
+    last_event = gr.State(None)  # identifiant de la dernière question (pour l'avis)
 
     with gr.Tab("🎙️ Assistant"):
         gr.HTML(hero_html())
@@ -1052,11 +1166,16 @@ with gr.Blocks(title="AgriBaat", css=CSS, theme=THEME, js=APP_JS) as demo:
                 out_card = gr.HTML(EMPTY_CARD)
                 out_audio = gr.Audio(label="🔊 Réponse vocale", autoplay=True,
                                      visible=VOICE_READY, elem_id="answer-audio")
+                with gr.Row(elem_id="feedback-row"):
+                    fb_yes = gr.Button("👍 J'ai compris", size="sm", variant="secondary")
+                    fb_no = gr.Button("👎 Pas clair", size="sm", variant="secondary")
                 with gr.Accordion("🔍 Ce que l'assistant a compris", open=False):
                     out_details = gr.Markdown()
                 with gr.Accordion("🕘 Questions récentes", open=False):
                     out_hist = gr.Markdown(_history_md([]), elem_classes="hist")
-        outputs = [out_card, out_audio, out_details, history, out_hist]
+        outputs = [out_card, out_audio, out_details, history, out_hist, last_event]
+        fb_yes.click(lambda e: on_feedback(e, True), last_event, None)
+        fb_no.click(lambda e: on_feedback(e, False), last_event, None)
 
         gr.HTML('<div class="ex-title">Questions types</div>')
         example_buttons = []  # libellés : ceux de la langue choisie (voir on_lang)
@@ -1072,16 +1191,17 @@ with gr.Blocks(title="AgriBaat", css=CSS, theme=THEME, js=APP_JS) as demo:
                 btn_text = gr.Button("Envoyer", variant="primary", scale=1, min_width=90)
 
         lang.change(on_lang, lang, [mic_title, mic, kb_box, *example_buttons])
-        btn_voice.click(on_voice, [mic, lang, history], outputs)
+        btn_voice.click(on_voice, [mic, lang, history, test_session], outputs)
         if VOICE_READY:
             # La question part dès qu'on arrête l'enregistrement ou qu'on importe un
             # fichier : plus besoin de penser à cliquer sur « Envoyer ».
-            mic.stop_recording(on_voice, [mic, lang, history], outputs)
-            mic.upload(on_voice, [mic, lang, history], outputs)
-        btn_text.click(on_text, [txt, lang, history], outputs)
-        txt.submit(on_text, [txt, lang, history], outputs)
+            mic.stop_recording(on_voice, [mic, lang, history, test_session], outputs)
+            mic.upload(on_voice, [mic, lang, history, test_session], outputs)
+        btn_text.click(on_text, [txt, lang, history, test_session], outputs)
+        txt.submit(on_text, [txt, lang, history, test_session], outputs)
         for i, button in enumerate(example_buttons):  # un clic pose la question
-            button.click(lambda lg, h, i=i: on_example(i, lg, h), [lang, history], outputs)
+            button.click(lambda lg, h, s, i=i: on_example(i, lg, h, s),
+                         [lang, history, test_session], outputs)
 
     with gr.Tab("🌤️ Météo en direct"):
         gr.HTML(page_head("🌤️", "Météo en direct",
@@ -1162,6 +1282,39 @@ with gr.Blocks(title="AgriBaat", css=CSS, theme=THEME, js=APP_JS) as demo:
             al_send.click(on_outbox, None, [al_note, al_outbox])
         demo.load(lambda: (alerts_html(), subscribers_table(), sub_choices()), None,
                   [al_now, sub_table, sub_pick])
+
+    with gr.Tab("📊 Impact"):
+        gr.HTML(page_head("📊", "Impact & tests terrain",
+                          "Ce que les utilisateurs demandent, ce qu'ils comprennent, et le "
+                          "temps gagné. Journal anonyme : ni texte, ni voix, ni nom."))
+        with gr.Accordion("🧪 Session de test terrain", open=True):
+            with gr.Row(elem_classes="toolbar"):
+                ts_code = gr.Textbox(label="Code du participant", placeholder="P1, P2…")
+                ts_profil = gr.Dropdown(PROFILES, value=PROFILES[0], label="Profil")
+                ts_sexe = gr.Radio(["Femme", "Homme"], label="Sexe (facultatif)")
+                ts_commune = gr.Textbox(label="Commune (facultatif)")
+            with gr.Row():
+                ts_start = gr.Button("▶️ Démarrer la session", variant="primary")
+                ts_stop = gr.Button("⏹️ Terminer la session", variant="secondary")
+            ts_banner = gr.HTML(session_banner(None))
+            ts_start.click(on_session_start, [ts_code, ts_profil, ts_sexe, ts_commune],
+                           [test_session, ts_banner])
+            ts_stop.click(lambda: (None, session_banner(None)), None, [test_session, ts_banner])
+        with gr.Row(elem_classes="toolbar"):
+            imp_scope = gr.Radio([("Tests terrain", "terrain"), ("Toute l'utilisation", "tout")],
+                                 value="terrain", label="Afficher", elem_id="imp-scope")
+            imp_refresh = gr.Button("🔄 Actualiser", variant="secondary", scale=0, min_width=130)
+            imp_export = gr.Button("⬇️ Exporter (CSV)", variant="secondary", scale=0,
+                                   min_width=150)
+        imp_kpis = gr.HTML()
+        imp_field = gr.HTML()
+        imp_bars = gr.HTML()
+        imp_file = gr.File(label="Export pour le dossier", visible=False)
+        imp_out = [imp_kpis, imp_bars, imp_field]
+        imp_scope.change(impact_view, imp_scope, imp_out)
+        imp_refresh.click(impact_view, imp_scope, imp_out)
+        imp_export.click(impact_export, imp_scope, imp_file)
+        demo.load(impact_view, imp_scope, imp_out)
 
     with gr.Tab("🗺️ Climat & cultures"):
         gr.HTML(page_head("🗺️", "Quoi cultiver, et où ?",

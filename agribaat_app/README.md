@@ -151,6 +151,13 @@ Les machines de 16 Go ou plus peuvent essayer les deux modèles plus gros, plus 
   localement avec leur accord ; messages d'alerte préparés dans `outputs/envois/`. L'envoi réel
   par SMS / WhatsApp demande un compte opérateur (Africa's Talking, Twilio…), à brancher.
 
+- **Impact & tests terrain** (page « Impact ») : journal anonyme de chaque question (canal,
+  langue, sujet, réponse trouvée, temps ; ni texte, ni voix, ni nom) dans
+  `outputs/journal_usage.csv`, avis « 👍 J'ai compris / 👎 Pas clair » sous chaque réponse,
+  sessions de test terrain par code de participant (P1, P2…) pour séparer les vrais
+  utilisateurs de l'équipe, comparaison « avant / avec AgriBaat » tirée de
+  `test_terrain/resultats_test_terrain.csv`, export CSV pour le dossier.
+
 Produits : mil, sorgho, maïs, riz, arachide, niébé, oignon, manioc, fonio.
 
 ### Enrichir le vocabulaire des langues locales (sans toucher au code)

@@ -62,6 +62,17 @@ Ensuite : `pip install -r agribaat_app/requirements.txt` (l'app demande Gradio 5
 
 Les enregistrements restent sur la machine (ils ne sont pas envoyés sur GitHub).
 
+## 1 quater. Tests terrain : mesurer l'impact (avant le jury)
+
+1. Imprimer `test_terrain/FICHE_TEST_TERRAIN.docx` (une fiche par personne).
+2. Partie 1 de la fiche (sans montrer l'app) : comment la personne s'informe aujourd'hui.
+3. Dans l'app, menu **📊 Impact & tests terrain** : code du participant (P1, P2… jamais le
+   nom), profil, puis **Démarrer la session**.
+4. Menu **Assistant vocal** : la personne pose ses questions ; après chaque réponse, elle
+   (ou l'enquêteur) clique **👍 J'ai compris** ou **👎 Pas clair**.
+5. **Terminer la session**, puis recopier la fiche dans `test_terrain/resultats_test_terrain.csv`.
+6. Page Impact : chiffres clés, « avant / avec AgriBaat », **Exporter (CSV)** pour le dossier.
+
 ## 2. Le jour J
 
 1. Fermer tout ce qui consomme de la mémoire : Chrome (onglets lourds), Docker Desktop

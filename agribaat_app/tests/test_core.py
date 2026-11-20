@@ -716,3 +716,66 @@ def test_alerts_subscribers_and_outbox(tmp_path, monkeypatch):
     assert rows[0]["destinataire"] == "GIE Ndimbal" and "Reentino" in rows[0]["message"]
     bulletin.unsubscribe(0)
     assert [s["nom"] for s in bulletin.subscribers()] == ["Radio Dakar"]
+
+
+@pytest.fixture(autouse=True)
+def _private_usage_journal(tmp_path, monkeypatch):
+    """Les tests n'écrivent jamais dans le vrai journal d'utilisation (chiffres d'impact)."""
+    from agribaat import usage
+
+    monkeypatch.setattr(usage, "EVENTS", tmp_path / "journal_usage.csv")
+    monkeypatch.setattr(usage, "FEEDBACK", tmp_path / "journal_avis.csv")
+
+
+def test_usage_journal_is_anonymous_and_counts_field_tests():
+    from agribaat import usage
+
+    team = usage.log_question(canal="Texte", langue="Français", sujet="prix", trouve=True,
+                              temps_s=0.4)
+    p1 = {"code": "P1", "profil": "Productrice", "sexe": "Femme"}
+    a = usage.log_question(canal="Voix", langue="Wolof", sujet="meteo", trouve=True,
+                           temps_s=12.0, session=p1)
+    b = usage.log_question(canal="Voix", langue="Wolof", sujet="", trouve=False, temps_s=8.0,
+                           session=p1)
+    usage.log_feedback(a, True)
+    usage.log_feedback(b, False)
+    usage.log_feedback(team, True)
+    text = usage.EVENTS.read_text(encoding="utf-8-sig")
+    assert "Quel" not in text and "prix du mil" not in text  # aucune question en clair
+    field = usage.summary(usage.load(field_only=True))
+    assert field["questions"] == 2 and field["participants"] == 1 and field["femmes"] == 1
+    assert field["trouve_pct"] == 50 and field["compris_pct"] == 50 and field["voix_pct"] == 100
+    assert usage.summary(usage.load())["questions"] == 3
+    assert set(usage.load()["sujet"]) == {"Prix des marchés", "Météo en direct",
+                                          "Question non comprise"}
+
+
+def test_field_sheet_before_after(tmp_path):
+    from agribaat import usage
+
+    sheet = tmp_path / "resultats.csv"
+    sheet.write_text(
+        "n_fiche;prix_temps_aujourd_hui_min;t1_temps_s;t1_comprise (oui/2e essai/non);"
+        "t1_redit_chiffre (oui/non)\n1;30;20;oui;oui\n2;60;40;2e essai;non\n",
+        encoding="utf-8-sig")
+    r = usage.field_results(sheet)
+    assert r["personnes"] == 2 and r["avant_min"] == 45 and round(r["apres_min"] * 60) == 30
+    assert r["premier_coup_pct"] == 50 and r["redit_pct"] == 50
+
+
+@needs_data
+@needs_advice
+def test_assistant_answers_are_logged_with_topic(monkeypatch):
+    monkeypatch.setenv("AGRIBAAT_WARMUP", "0")
+    import importlib
+
+    from agribaat import usage
+
+    app = importlib.import_module("app")
+    out = app.on_text("Quel est le prix du mil à Kaolack ?", "Français", [],
+                      {"code": "P2", "profil": "Producteur", "sexe": "Homme"})
+    assert len(out) == 6 and out[5]  # identifiant de la question pour l'avis
+    df = usage.load(field_only=True)
+    assert list(df["sujet"]) == ["Prix des marchés"] and list(df["canal"]) == ["Texte"]
+    kpis, _, _ = app.impact_view("terrain")
+    assert "questions posées" in kpis

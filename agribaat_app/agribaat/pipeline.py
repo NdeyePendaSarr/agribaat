@@ -32,6 +32,7 @@ class Result:
     highlight: object | None = None  # chiffre clé (answers.Highlight)
     timings: dict[str, float] = field(default_factory=dict)
     warnings: list[str] = field(default_factory=list)
+    intent: str = ""  # sujet compris (prix, pluie, météo…) : mesure d'impact
 
 
 class Assistant:
@@ -104,6 +105,7 @@ class Assistant:
         start = time.perf_counter()
         query = query or parse([res.question_wo, res.question_fr], self.kb)
         ans = answer(query, self.kb, langue.module)
+        res.intent = query.intent or ""
         res.timings["reponse"] = round(time.perf_counter() - start, 3)
         res.answer_fr, res.source, res.found = ans.text, ans.source, ans.found
         res.highlight = ans.highlight
