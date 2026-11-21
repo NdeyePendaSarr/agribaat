@@ -19,6 +19,8 @@
    Game Bar, vidéo dans `Vidéos\Captures`) ou l'enregistreur d'écran d'Ubuntu.
    Encore plus simple : `python demo_auto.py --filmer` : Chrome filme lui-même l'onglet,
    voix comprise, dans `outputs/demo_agribaat.webm` (17 étapes, environ 5 min, 14 Mo ; la photo du diagnostic se change dans le SCENARIO de `demo_auto.py`).
+   Version courte pour le dépôt (2 min maximum) : `python demo_auto.py --filmer --court`
+   → `outputs/demo_agribaat_2min.webm` (9 étapes, environ 1 min 50 s).
 5. **IA générative (facultatif)** : avant `python app.py`, mettre la clé API Claude de
    l'équipe dans la fenêtre PowerShell : `$env:ANTHROPIC_API_KEY="sk-ant-..."` (ne jamais
    l'écrire dans un fichier du dépôt). La page « À propos » affiche « État : actif ».

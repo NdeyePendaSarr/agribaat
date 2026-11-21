@@ -74,6 +74,27 @@ SCENARIO = [
      "À propos"),
 ]
 
+# Version courte (≈ 2 min) pour le dépôt : python demo_auto.py --filmer --court
+SCENARIO_COURT = [
+    ("AgriBaat — l'assistant agricole vocal, en wolof, pulaar et sereer", "home", None),
+    ("Question en wolof : le prix du mil à Kaolack — chiffre vérifié, source, réponse lue",
+     "example", "njëg dugub ci Kaolack"),
+    ("Le climat devient une décision : quand récolter l'arachide ? (ANACIM)", "example",
+     "Quand récolter l'arachide ?"),
+    ("Question libre : l'IA rédige à partir des documents ISRA, chiffres vérifiés",
+     "ask", "Comment lutter contre le striga dans le mil ?"),
+    ("Météo en direct et calendrier de semis : le vrai démarrage des pluies", "tab",
+     "Météo en direct"),
+    ("Calendrier de semis : vrai démarrage ou faux départ (hivernage 2025)", "scroll",
+     ".cal-card"),
+    ("Où vendre ? Le marché le plus rentable après transport, et le meilleur mois", "tab",
+     "Où vendre"),
+    ("Diagnostic photo : l'IA décrit, les documents conseillent, le conseiller confirme",
+     "photo", str(config.APP_DIR / "assets" / "fond_agricole.webp")),
+    ("Impact : chaque question comptée, sans nom ni voix, pour les tests terrain", "tab",
+     "Impact"),
+]
+
 # Défilement jusqu'à un élément (scrollIntoView ne suffit pas toujours avec Gradio).
 SCROLL_TO_JS = """((sel, off) => {
   const e = document.querySelector(sel); if (!e) return false;
@@ -258,16 +279,19 @@ SLICE_JS = """new Promise(done => {
 })"""
 
 
-def save_video(br: Browser) -> None:
+def save_video(br: Browser, path: Path = VIDEO) -> None:
     size = br.js(STOP_REC_JS)
     step = 4 * 1024 * 1024
-    with VIDEO.open("wb") as f:
+    with path.open("wb") as f:
         for start in range(0, size, step):
             f.write(base64.b64decode(br.js(SLICE_JS % (start, min(size, start + step)))))
-    print(f"Vidéo : {VIDEO} ({size / 1e6:.1f} Mo)")
+    print(f"Vidéo : {path} ({size / 1e6:.1f} Mo)")
 
 
-def run(headless: bool, film: bool = False) -> None:
+def run(headless: bool, film: bool = False, short: bool = False) -> None:
+    scenario = SCENARIO_COURT if short else SCENARIO
+    video = VIDEO.with_name("demo_agribaat_2min.webm") if short else VIDEO
+    pause = 2 if short else 5  # temps de lecture d'un écran sans réponse vocale
     br = Browser(headless, film)
     slides = []
     try:
@@ -280,7 +304,7 @@ def run(headless: bool, film: bool = False) -> None:
             VIDEO.parent.mkdir(parents=True, exist_ok=True)
             print("● Enregistrement :", br.js_gesture(START_REC_JS))
             time.sleep(1)
-        for title, action, arg in SCENARIO:
+        for title, action, arg in scenario:
             print("▶", title)
             br.js(CAPTION_JS.replace("__T__", json.dumps(title)))
             before = answer_text(br)
@@ -315,9 +339,8 @@ def run(headless: bool, film: bool = False) -> None:
                     br.js(CLICK_BY_TEXT_JS % (json.dumps("button.ex-card"), json.dumps(arg)))
                 wait_for(br, f"(s => s.includes('Français :') && s !== {json.dumps(before)})"
                              f"({ANSWER_SIG})")
-                br.js("document.querySelector('.answer').scrollIntoView({block: 'start'});"
-                      "window.scrollBy(0, -90)")
-                time.sleep(1.5)
+                time.sleep(1.5)  # la carte finit de s'afficher (sinon la page redescend)
+                br.js(SCROLL_TO_JS % (json.dumps(".answer"), 90))
                 if action == "example":  # réponse vocale (fichier fourni par l'app)
                     # Réponse identique à la précédente (même fichier audio) : l'app ne
                     # la relance pas d'elle-même, on appuie sur lecture.
@@ -326,6 +349,8 @@ def run(headless: bool, film: bool = False) -> None:
                     link = audio_link(br)
                     if link:
                         audio = httpx.get(link, timeout=30).content
+                time.sleep(1)  # le lecteur audio peut encore déplacer la page
+                br.js(SCROLL_TO_JS % (json.dumps(".answer"), 90))
             elif action == "tab":
                 br.js(SIDE_LINK_JS % json.dumps(arg))
                 time.sleep(4)
@@ -359,37 +384,46 @@ def run(headless: bool, film: bool = False) -> None:
                              f"({ANSWER_SIG})", 90)
                 time.sleep(1.5)  # la carte réponse finit de s'afficher avant de défiler
                 br.js(SCROLL_TO_JS % (json.dumps(".answer"), 90))
+                time.sleep(1.5)
+                br.js(SCROLL_TO_JS % (json.dumps(".answer"), 90))
                 time.sleep(2)
             elif action == "photo":  # diagnostic photo : envoi d'une image puis analyse
                 br.js(SIDE_LINK_JS % json.dumps("Diagnostic photo"))
                 time.sleep(2)
-                br.call("DOM.enable")
-                root = br.call("DOM.getDocument", depth=-1, pierce=True)["root"]["nodeId"]
-                for node in br.call("DOM.querySelectorAll", nodeId=root,
-                                    selector="input[type=file]")["nodeIds"]:
-                    attrs = " ".join(br.call("DOM.getAttributes", nodeId=node)["attributes"])
-                    if "image/*" in attrs:
-                        br.call("DOM.setFileInputFiles", nodeId=node, files=[arg])
-                time.sleep(4)
+                # Au tout premier envoi après le démarrage de l'app, la vignette s'affiche
+                # parfois écrasée (quelques pixels de large) : on renvoie alors la photo.
+                for _attempt in range(2):
+                    br.call("DOM.enable")
+                    root = br.call("DOM.getDocument", depth=-1, pierce=True)["root"]["nodeId"]
+                    for node in br.call("DOM.querySelectorAll", nodeId=root,
+                                        selector="input[type=file]")["nodeIds"]:
+                        attrs = " ".join(br.call("DOM.getAttributes", nodeId=node)["attributes"])
+                        if "image/*" in attrs:
+                            br.call("DOM.setFileInputFiles", nodeId=node, files=[arg])
+                    if wait_for(br, "[...document.querySelectorAll('img')].some(i => "
+                                    "i.src.includes('gradio_api/file') && "
+                                    "i.getBoundingClientRect().width > 100)", 8):
+                        break
+                time.sleep(2)
                 br.js(CLICK_BY_TEXT_JS % (json.dumps("button"), json.dumps("Analyser la photo")))
                 wait_for(br, "!!document.querySelector('.diag-card.ok, .diag-card.alerte')", 120)
                 br.js("window.scrollTo(0, 0)")
-                time.sleep(2)
+                time.sleep(5 if short else 2)  # laisser lire le résultat
             shot = br.screenshot()
             duration = _duration(audio) if audio else 0
             slides.append({"title": title, "png": shot, "audio": audio})
             # Laisse le temps d'écouter la réponse (fenêtre visible) ou de lire l'écran.
-            time.sleep((duration + 2) if not headless and audio else (1 if headless else 5))
+            time.sleep((duration + 2) if not headless and audio else (1 if headless else pause))
         br.js(CLICK_BY_TEXT_JS % (json.dumps("#lang-toggle label"), json.dumps("Wolof")))
         br.js(CAPTION_JS.replace(
             "__T__", json.dumps("AgriBaat — équipe SMART AGRO · PAS Challenge 2026")))
         if not headless:
             time.sleep(4)
         if film:
-            save_video(br)
+            save_video(br, video)
     finally:
         br.close()
-    build_html(slides)
+    build_html(slides, OUT.with_name("demo_secours_2min.html") if short else OUT)
 
 
 def _duration(wav: bytes) -> float:
@@ -402,7 +436,7 @@ def _duration(wav: bytes) -> float:
         return 0
 
 
-def build_html(slides: list[dict]) -> None:
+def build_html(slides: list[dict], out: Path = OUT) -> None:
     from PIL import Image
 
     items = []
@@ -414,9 +448,9 @@ def build_html(slides: list[dict]) -> None:
                       "audio": ("data:audio/wav;base64," + base64.b64encode(s["audio"]).decode())
                       if s["audio"] else None})
     html = PLAYER.replace("__SLIDES__", json.dumps(items))
-    OUT.parent.mkdir(parents=True, exist_ok=True)
-    OUT.write_text(html, encoding="utf-8")
-    print(f"Démo de secours : {OUT} ({OUT.stat().st_size // 1024} Ko, {len(items)} écrans)")
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(html, encoding="utf-8")
+    print(f"Démo de secours : {out} ({out.stat().st_size // 1024} Ko, {len(items)} écrans)")
 
 
 PLAYER = """<!doctype html><html lang="fr"><head><meta charset="utf-8">
@@ -465,7 +499,9 @@ if __name__ == "__main__":
                         help="sans fenêtre : produit seulement outputs/demo_secours.html")
     parser.add_argument("--filmer", action="store_true",
                         help="filme la démo (son compris) dans outputs/demo_agribaat.webm")
+    parser.add_argument("--court", action="store_true",
+                        help="version de 2 min (outputs/demo_agribaat_2min.webm avec --filmer)")
     args = parser.parse_args()
     if args.headless and args.filmer:
         sys.exit("--filmer a besoin d'une fenêtre visible (le son est coupé en --headless).")
-    run(args.headless, args.filmer)
+    run(args.headless, args.filmer, args.court)
