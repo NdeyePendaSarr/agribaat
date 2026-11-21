@@ -38,7 +38,8 @@ from pathlib import Path
 APP = Path(__file__).resolve().parent
 IGNORE = ["outputs/**", "tests/**", "test_voix/**", "__pycache__/**", "**/__pycache__/**",
           "*.avant_refonte", "resultats_test_voix.csv", ".pytest_cache/**", "README.md",
-          "seed_cache/**", "*.log", "*.wav"]
+          "seed_cache/**", "*.log", "*.wav",
+          ".venv/**", "venv/**", ".venv_win/**", ".env", ".git/**"]
 
 SPACE_README = """---
 title: AgriBaat
