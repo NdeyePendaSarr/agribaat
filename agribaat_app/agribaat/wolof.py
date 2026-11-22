@@ -90,7 +90,7 @@ T = {
     "conseils_sans_sujet": "Amuma digal bu jëm ci {sujet}. Yii ñoo mujj.",
     "extrait": "Amuma tontu bu leer, waaye gis naa xibaar bii ci {source}. "
                "Ci farañse la bind.",
-    # --- Météo en direct (20/11) : BROUILLON, à faire relire par un locuteur natif ---
+    # --- Météo en direct (20/11) : relu par Mouhameth (22/11) ---
     "meteo_resume": "Ci {lieu}, ci juróom-ñaari fan yii di ñëw: taw bi dina tollu ci {mm}, "
                     "tàngaay bi dina yegg {tmax}.",
     "meteo_resume_sec": "Ci {lieu}, ci juróom-ñaari fan yii di ñëw: tàngaay bi dina yegg {tmax}.",
@@ -104,11 +104,11 @@ T = {
     "meteo_sec": "Du am taw ci ayu-bés bii: ndoxal sa tool saa su nekk.",
     "meteo_vent": "Ngelaw li dafa bari: bul def garab.",
     "meteo_normal": "Amul benn jafe-jafe ci asamaan bi ci fan yii di ñëw.",
-    # --- Bulletin vocal et alertes (20/11) : BROUILLON, à faire relire ---
+    # --- Bulletin vocal et alertes (20/11) : relu par Mouhameth (22/11) ---
     "bulletin_intro": "Xibaaru AgriBaat ci {lieu}.",
     "bulletin_fin": "AgriBaat: xibaar yi jóge nañu ci ANACIM, PAM ak Open-Meteo.",
     "alerte_intro": "Artu AgriBaat ci {lieu}!",
-    # --- Où vendre ? (20/11) : BROUILLON, à faire relire ---
+    # --- Où vendre ? (20/11) : relu par Mouhameth (22/11) ---
     "vente_marche": "Ngir jaay sa {produit}, marse bi gëna jariñ ci sa wet mooy {marche}: kilo "
                     "bi {prix}, yoon wi {km}. Bu nga dindee njëgu yoon wi, dangay gañ {gain} "
                     "ci kilo bu nekk, buy méngoo ak {local}.",

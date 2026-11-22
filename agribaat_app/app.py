@@ -691,8 +691,7 @@ def meteo_view(region: str, lang: str, force: bool = False):
             "traduit pour l'instant.</div>")
     local_html = (f'<div class="mt-card mt-local"><div class="mt-lh">🗣️ Conseil en '
                   f"{langue.label.lower()}</div><p>« {html.escape(local.text)} »</p>{note}"
-                  '<div class="draft">Phrases météo en brouillon : à faire relire par un '
-                  "locuteur natif.</div></div>")
+                  "</div>")  # phrases météo wolof et pulaar relues par Mouhameth (22/11)
     return now, adv, local_html, meteo_national()
 
 
@@ -941,12 +940,13 @@ def on_bulletin(region: str, lang: str):
         f'<div class="bl-sec"><h5>{html.escape(s.title)}</h5>'
         f'<p class="bl-local">« {html.escape(s.local.text if s.local else "")} »</p>'
         f'<p class="bl-fr">{html.escape(s.fr)}</p></div>' for s in b.sections)
+    # Wolof et pulaar relus par Mouhameth (22/11) ; le sereer attend encore la relecture de Seydina.
+    draft = ('<div class="draft">Phrases sereer d’ouverture, de clôture et d’alerte en brouillon : '
+             "à faire relire par un locuteur natif. Les phrases de prix sont déjà relues.</div>"
+             if langue.code == "srr" else "")
     script = (f'<div class="mt-card bl-card"><div class="bl-head"><span>📻</span><div><h4>'
               f"Bulletin AgriBaat · {carte.label(b.region)}</h4><small>{b.made:%d/%m/%Y} · "
-              f"{langue.label}</small></div></div>{blocks}"
-              '<div class="draft">Phrases d’ouverture, de clôture et de météo en brouillon : '
-              "à faire relire par un locuteur natif. Les phrases de prix sont déjà relues."
-              "</div></div>")
+              f"{langue.label}</small></div></div>{blocks}{draft}</div>")
     audio = None
     if VOICE_READY and langue.voice_out:
         path = bulletin.record(b)

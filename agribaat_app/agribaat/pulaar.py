@@ -80,7 +80,7 @@ T = {
     "conseils_sans_sujet": "Mi alaa wasiyaaji e {sujet}. Ɗii ɗoo ko sakkitiiɗi.",
     "extrait": "Mi alaa jaabawol laaɓngol, kono mi yiyii ngol humpito e {source}. "
                "Ngol winndaa ko e farayseere.",
-    # --- Météo en direct (20/11) : BROUILLON, à faire relire par Mouhameth ---
+    # --- Météo en direct (20/11) : relu par Mouhameth (22/11) ---
     "meteo_resume": "E {lieu}, e balɗe jeeɗiɗi garooje ɗee: toɓo ina yettoo {mm}, ngulɓiri "
                     "ina yettoo {tmax}.",
     "meteo_resume_sec": "E {lieu}, e balɗe jeeɗiɗi garooje ɗee: ngulɓiri ina yettoo {tmax}.",
@@ -95,11 +95,11 @@ T = {
     "meteo_sec": "Toɓo alaa e ndee yontere: yarnu ngesa maa sahaa kala.",
     "meteo_vent": "Henndu ina tiiɗi: wata a waɗ lekki.",
     "meteo_normal": "Alaa caɗeele asamaan e balɗe garooje ɗee.",
-    # --- Bulletin vocal et alertes (20/11) : BROUILLON, à faire relire par Mouhameth ---
+    # --- Bulletin vocal et alertes (20/11) : relu par Mouhameth (22/11) ---
     "bulletin_intro": "Kabaruuji AgriBaat e {lieu}.",
     "bulletin_fin": "AgriBaat: kabaruuji ɗii iwi ko e ANACIM, PAM e Open-Meteo.",
     "alerte_intro": "Reentino, AgriBaat e {lieu}!",
-    # --- Où vendre ? (20/11) : BROUILLON, à faire relire par Mouhameth ---
+    # --- Où vendre ? (20/11) : relu par Mouhameth (22/11) ---
     "vente_marche": "Ngam yeeyde {produit} maa, luumo ɓurngo nafde e takko maa ko {marche}: "
                     "kiloo ko {prix}, laawol ngol ko {km}. So a ittii coggu laawol, a heɓay "
                     "{gain} e kiloo kala, so fotondiraa e {local}.",
